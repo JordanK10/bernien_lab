@@ -1,0 +1,224 @@
+#include <iostream>
+#include "CameraClient.h"
+#include "SDRController.h"
+#include "TrapController.h"
+#include "control_interface.h"
+#include "Console.h"
+#include <fstream>
+#include <limits>
+
+using namespace std;
+
+static bool const CONNECT_TO_CAMERA_SERVER = false;
+static bool connectToSDR = false;
+
+
+/*
+void runConsole(TrapController &trapController, SDRController &sdrController) {
+	// Loop console input.
+	while (true) {
+		sdrController.pushWaveform(trapController.takeConsoleInput());
+	}
+}
+*/
+/*
+static chrono::high_resolution_clock::time_point start_timer;
+void startTimer() {
+	start_timer = chrono::high_resolution_clock::now();
+}
+
+double timeElapsed() {
+	return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_timer).count();
+}
+
+int promptForInteger(string attr) {
+	int val;
+	cout << "Enter " << attr << ": ";
+	while (!(cin >> val)) {
+		cout << "Unable to parse value." << endl;
+		cin.clear();
+		cin.ignore(0xfffff, '\n');
+		cout << "Enter " << attr << ": " << endl;
+	}
+
+	return val;
+}
+
+double promptForDouble(string attr) {
+	double val;
+	cout << "Enter " << attr << ": ";
+	while (!(cin >> val)) {
+		cout << "Unable to parse value." << endl;
+		cin.clear();
+		cin.ignore(0xfffff, '\n');
+		cout << "Enter " << attr << ": " << endl;
+	}
+
+	return val;
+}
+
+void runHuggingSequence(TrapController &trapController, SDRController &sdrController) {
+	cout << "Starting hugging sequence!" << endl;
+	int numReps = promptForInteger("number of repetitions");
+	double minimumDistance = promptForDouble("minimum distance (MHz)");
+	
+	bool shouldStayHugging = promptForInteger("should remain close");
+
+	trapController.setDefaultTrapConfigurations(0);
+
+	trapController.addTrap(1.E6, 0.05);
+	trapController.addTrap(2.E6, 0.05);
+
+	double dest = 1.0E6 + minimumDistance * 1.E6;
+	double duration = 0.001;
+
+	Waveform startingWaveform, movingCloserWaveform, intermediateWaveform, movingAwayWaveform, finalWaveform;
+
+	startingWaveform = trapController.generateWaveform();
+	
+	trapController.traps[1].changeToFrequency(dest, duration);
+	movingCloserWaveform = trapController.generateWaveform(duration);
+
+	if (!shouldStayHugging) {
+		intermediateWaveform = trapController.generateWaveform(duration);
+
+		trapController.traps[1].changeToFrequency(2.E6, duration);
+		movingAwayWaveform = trapController.generateWaveform(duration);
+	}
+
+	finalWaveform = trapController.generateWaveform();
+
+
+	// Start waveform so we can make sure the initial traps look good.
+	sdrController.pushWaveform(startingWaveform);
+
+	for (int repetition = 0; repetition < numReps; repetition++) {
+		resetRecvTrigger();
+		waitForStartSequenceTrigger();
+
+		sdrController.pushWaveform(startingWaveform);
+		cout << "Starting repetition " << repetition << endl;
+
+		// On trigger, move traps[1] close to traps[0].
+		resetRecvTrigger();
+		waitForAnalyzeImageTrigger();
+
+		sdrController.pushWaveform(movingCloserWaveform);
+		if (!shouldStayHugging) {
+			sdrController.pushWaveform(intermediateWaveform);
+			sdrController.pushWaveform(movingAwayWaveform);
+		}
+		sdrController.pushWaveform(finalWaveform);
+	}
+}
+*/
+void recordMetadata(int seqNumber, int numRepetitions, double *durations, bool *underflowRecords) {
+	string filename = "C:\\Users\\Control\\Desktop\\Data\\seq_" + to_string(seqNumber) + "_records.txt";
+	fstream f(filename, ios::out);
+
+	for (int i = 0; i < numRepetitions; i++) {
+		f << i << " ";
+		if (!underflowRecords[i]) {
+			f << "success ";
+		}
+		else {
+			f << "underflow ";
+		}
+		f << durations[i] << endl;
+	}
+}
+
+
+int main() {
+	initializeAdwinConnection();
+
+	CameraClient cameraClient(CONNECT_TO_CAMERA_SERVER);
+
+	double sampleRate = 100E6;
+	double centerFreq_MHz = 76;
+	double centerFrequency;
+
+	//cout << "Enter center frequency (in MHz): ";
+	//cin >> centerFreq_MHz;
+
+	centerFrequency = centerFreq_MHz * 1.0E6;
+
+	double gain = 1;
+
+	SDRController sdrController(connectToSDR, sampleRate, centerFrequency, gain);
+
+	TrapController trapController(centerFrequency, sampleRate, gain);
+
+	trapController.loadDefaultTrapConfiguration("seventy_2016_03_31_optimized_3.txt");
+
+	Waveform w = trapController.generateWaveform();
+	w.writeToBinaryFile("old_static_traps");
+	//trapController.precomputeWaveforms();
+	//trapController.testPrecomputedWaveforms();
+
+	/*
+	while (true) {
+		runHuggingSequence(trapController, sdrController);
+		cout << endl << endl << endl;
+	}*/
+
+	//trapController.loadPrecomputedWaveforms();
+	//while (true);
+	//return 0;
+	runConsole(trapController, sdrController, cameraClient);
+
+	/*
+	sdrController.pushWaveform(trapController.generateWaveform());
+
+	vector<bool> atomsPresent;
+	for (int i = 0; i < trapController.traps.size(); i++) {
+		if (rand() % 2 == 0) {
+			atomsPresent.push_back(true);
+		}
+		else {
+			atomsPresent.push_back(false);
+		}
+	}
+	Waveform startingWaveform = trapController.generateWaveform();
+	vector<Waveform *>waveforms = trapController.rearrangeTraps(atomsPresent, false, REARRANGE_MODE_STACK_FROM_BOTTOM);
+
+	while (true) {
+		cout << "Starting sequence." << endl;
+		sdrController.pushWaveform(startingWaveform);
+		this_thread::sleep_for(2s);
+		cout << "Rearranging..." << endl << endl;
+		sdrController.pushWaveforms(waveforms);
+		this_thread::sleep_for(2s);
+	}
+
+	*/
+
+	//trapController.addTrap(1.E6, 0.1);
+	//trapController.addTrap(3.E6, 0.1);
+	/*
+	chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
+	vector<bool> atomsPresent = client.findAtoms(trapController.trapFrequencies());
+	chrono::high_resolution_clock::time_point end = chrono::high_resolution_clock::now();
+	cout << "Time to find atoms: " << chrono::duration_cast<chrono::microseconds>(end - start).count() << endl;
+
+	for (int i = 0; i < atomsPresent.size(); i++) {
+		cout << atomsPresent[i] << ", ";
+	}
+	cout << endl;
+	*/
+
+	//trapController.testPrecomputedWaveforms();
+	/*
+	trapController.setDefaultTrapConfigurations(0);
+
+	sdrController.pushWaveform(trapController.generateWaveform());
+
+	this_thread::sleep_for(10ms);
+	runConsole(trapController, sdrController);
+	*/
+	
+
+	//sdrController.joinSendThread();
+
+	return 0;
+}

@@ -1,0 +1,611 @@
+#include "TrapController.h"
+#include <iomanip>
+#include <thread>
+#include <stdlib.h>
+#include <algorithm>
+#include <stdexcept>
+#include <cmath>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <string>
+#include <iomanip>
+#include <dirent.h>
+#include <fstream>
+
+using namespace std;
+
+TrapController::TrapController(double centerFreq, double sampleRate, double gain) {
+	srand(time(NULL));
+
+	long int waveTableFreq = 1E3;
+	waveTable = new WaveTable((long int)sampleRate, waveTableFreq);
+	centerFrequency = centerFreq;
+	sdr_gain = gain;
+}
+
+
+void TrapController::addTrap(double frequency, double amplitude, double phase) {
+	traps.push_back(Trap(waveTable, frequency, amplitude, phase));
+}
+
+Waveform TrapController::generateWaveform(double duration) {
+	size_t num_samples = (size_t)(duration * waveTable->sampleRate);
+
+	std::vector<std::complex<float>> waveform;
+	waveform.resize(num_samples);
+
+	for (size_t sample_index = 0; sample_index < num_samples; sample_index++) {
+		std::complex<float> sample = 0;
+		for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
+			sample += traps[trap_index].nextSample();
+		}
+
+		waveform[sample_index] = sample;
+	}
+
+	return Waveform(waveform);
+}
+
+vector<double> TrapController::trapFrequencies() {
+	vector<double> frequencies;
+	for (int i = 0; i < traps.size(); i++) {
+		frequencies.push_back(traps[i].frequency);
+	}
+	return frequencies;
+}
+
+void TrapController::printAvailableDefaultTrapConfigurations() {
+	DIR *dir;
+	struct dirent *epdf;
+
+
+	dir = opendir("./DefaultTrapConfigurations");
+
+	vector<string> filenames;
+
+	if (dir != NULL) {
+		cout << "Available default trap configurations:" << endl;
+		while (epdf = readdir(dir)) {
+			if (epdf->d_name[0] != '.') {
+				filenames.push_back(epdf->d_name);
+			}
+		}
+
+		sort(filenames.begin(), filenames.end());
+		for (int i = 0; i < filenames.size(); i++) {
+			cout << " " << filenames[i] << endl;
+		}
+	} else {
+		cout << "Unable to open file." << endl;
+	}
+}
+
+
+bool TrapController::loadDefaultTrapConfiguration(string filename) {
+	ifstream config_file("./DefaultTrapConfigurations/" + filename);
+
+	if (!config_file.is_open()) {
+		cout << "Unable to open file: " << filename << endl;
+		printAvailableDefaultTrapConfigurations();
+		return false;
+	}
+
+	vector<Trap> previousTraps = traps;
+
+	traps.clear();
+
+	string tokens[3];
+	int numTokensParsed = 0;
+	while (config_file >> tokens[numTokensParsed]) {
+		numTokensParsed++;
+
+		if (numTokensParsed == 3) {
+			numTokensParsed = 0;
+			try {
+				double freq = stod(tokens[0]) * 1.0E6;
+				double amplitude = stod(tokens[1]);
+				double phase = stod(tokens[2]);
+
+				addTrap(freq - centerFrequency, amplitude, phase);
+			} catch (const invalid_argument&) {
+			}
+		}
+	}
+
+	config_file.close();
+
+	if (!sanitizeTraps(sdr_gain, false)) {
+		cout << "Unable to load trap configuration: not sanitized." << endl;
+		traps = previousTraps;
+		return false;
+	}
+
+	return true;
+}
+
+
+vector<Waveform *> TrapController::rearrangeTraps(std::vector<bool> atomsPresent, bool usePrecomputedWaveforms, enum rearrange_mode mode) {
+	// If usePrecomputedWaveforms, then use the loaded waveforms from disk. Otherwise, compute this rearrangement directly.
+	if (usePrecomputedWaveforms) {
+		vector<int> destinations;
+		int numLoaded = 0;
+		
+		for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
+			if (atomsPresent[trap_index]) {
+				destinations.push_back(numLoaded++);
+			}
+			else {
+				destinations.push_back(-1);
+			}
+		}
+
+		return combinePrecomputedWaveforms(destinations);
+	}
+	
+
+	// Save starting frequencies and amplitudes.
+	vector<Trap> originalTraps;
+	for (int i = 0; i < traps.size(); i++) {
+		originalTraps.push_back(traps[i]);
+	}
+
+	double fadeDuration = 0.001;
+	double rearrangeDuration = 0.001;
+
+	vector<Waveform *> waveforms;
+	
+	// Fade out:
+	for (int i = 0; i < atomsPresent.size(); i++) {
+		if (!atomsPresent[i]) {
+			traps[i].changeToAmplitude(0, fadeDuration);
+		}
+	}
+	fadeOutWaveform = generateWaveform(fadeDuration);
+
+	// Rearrange:
+	int next_trap_index_to_fill = 0;
+
+	if (mode == REARRANGE_MODE_STACK_FROM_BOTTOM) {
+		for (int i = 0; i < traps.size(); i++) {
+			if (atomsPresent[i]) {
+				//traps[i].changeToFrequency(originalTraps[next_trap_index_to_fill].frequency, rearrangeDuration);
+				//traps[i].changeToAmplitude(originalTraps[next_trap_index_to_fill].amplitude, rearrangeDuration);
+				next_trap_index_to_fill++;
+			}
+		}
+	}
+	else if (mode == REARRANGE_MODE_MOVE_TO_CENTER) {
+		cout << "Not implemented yet, dummy!" << endl;
+	}
+	rearrangeWaveform = generateWaveform(rearrangeDuration);
+
+	// Fade in:
+	for (int i = 0; i < atomsPresent.size(); i++) {
+		if (!atomsPresent[i]) {
+			//traps[i].frequency = originalTraps[next_trap_index_to_fill].frequency;
+			//traps[i].changeToAmplitude(originalTraps[next_trap_index_to_fill].amplitude, fadeDuration);
+			//traps[i].changeToAmplitude(originalTraps[i].amplitude, fadeDuration);
+
+			next_trap_index_to_fill++;
+		}
+	}
+	fadeInWaveform = generateWaveform(fadeDuration);
+
+	finalWaveform = generateWaveform();
+
+	waveforms.push_back(&fadeOutWaveform);
+	waveforms.push_back(&rearrangeWaveform);
+	waveforms.push_back(&fadeInWaveform);
+	waveforms.push_back(&finalWaveform);
+
+	return waveforms;
+}
+
+void TrapController::combineRearrangeWaveform(size_t worker, vector<int> *destinations, int chunkSize, const size_t totalWaveformSize, const size_t fadeInStartIndex) {
+	size_t start = chunkSize * worker;
+	size_t end = chunkSize * (worker + 1);
+	if (end > totalWaveformSize) {
+		end = totalWaveformSize;
+	}
+
+	for (int trap_index = 0; trap_index < destinations->size(); trap_index++) {
+		if ((*destinations)[trap_index] != -1) {
+			for (size_t i = start; i < end; i++) {
+				rearrangeWaveform.dataVector[i] += loadedTrapWaveforms[trap_index][(*destinations)[trap_index]].dataVector[i];
+
+				// Also add this data to the final waveform, if appropriate.
+				if (i > fadeInStartIndex) {
+					finalWaveform.dataVector[i - fadeInStartIndex] += loadedTrapWaveforms[trap_index][(*destinations)[trap_index]].dataVector[i];
+				}
+
+			}
+		}
+	}
+}
+
+void TrapController::combineFadeOutWaveforms(size_t worker, vector<int> *destinations, int chunkSize, const size_t fadeWaveformSize) {
+	size_t start = chunkSize * worker;
+	size_t end = chunkSize * (worker + 1);
+	if (end > fadeWaveformSize) {
+		end = fadeWaveformSize;
+	}
+
+	for (int trap_index = 0; trap_index < destinations->size(); trap_index++) {
+		if ((*destinations)[trap_index] == -1) {
+			// Fade out this trap:
+			for (size_t i = start; i < end; i++) {
+				rearrangeWaveform.dataVector[i] += fadeOutWaveforms[trap_index].dataVector[i];
+			}
+		}
+	}
+}
+
+void TrapController::combineFadeInWaveforms(size_t worker, vector<int> *destinations, int numLoaded, int chunkSize, const size_t fadeWaveformSize, const size_t fadeInStartIndex) {
+	size_t start = chunkSize * worker;
+	size_t end = chunkSize * (worker + 1);
+	if (end > fadeWaveformSize) {
+		end = fadeWaveformSize;
+	}
+
+	for (int trap_index = numLoaded; trap_index < destinations->size(); trap_index++) {
+		// Fade in this trap:
+		for (size_t i = start; i < end; i++) {
+			rearrangeWaveform.dataVector[fadeInStartIndex + i] += fadeInWaveforms[trap_index].dataVector[i];
+		}
+	}
+}
+
+void TrapController::combineFinalWaveforms(size_t worker, vector<int> *destinations, int numLoaded, int chunkSize, const size_t fadeWaveformSize) {
+	size_t start = chunkSize * worker;
+	size_t end = chunkSize * (worker + 1);
+	if (end > fadeWaveformSize) {
+		end = fadeWaveformSize;
+	}
+
+	for (int trap_index = numLoaded; trap_index < destinations->size(); trap_index++) {
+		for (size_t i = start; i < end; i++) {
+			finalWaveform.dataVector[i] += loadedTrapWaveforms[trap_index][0].dataVector[i];
+		}
+	}
+}
+
+vector<Waveform *> TrapController::combinePrecomputedWaveforms(vector<int> &destinations) {
+	const size_t fadeWaveformSize = fadeOutWaveforms[0].dataVector.size();
+	const size_t totalWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
+
+	fill(rearrangeWaveform.dataVector.begin(), rearrangeWaveform.dataVector.end(), 0);
+	fill(finalWaveform.dataVector.begin(), finalWaveform.dataVector.end(), 0);
+
+	int numLoaded = 0;
+	for (int i = 0; i < destinations.size(); i++) {
+		if (destinations[i] != -1) {
+			numLoaded++;
+		}
+	}
+
+	int chunkSize = ceil((double)totalWaveformSize / numWorkers);
+	size_t fadeInStartIndex = totalWaveformSize - fadeWaveformSize;
+
+	// Compute combined rearranging waveform for all loaded traps:
+	thread *workers[numWorkers];
+	for (size_t worker = 0; worker < numWorkers; worker++) {
+		workers[worker] = new thread(&TrapController::combineRearrangeWaveform, this, worker, &destinations, chunkSize, totalWaveformSize, fadeInStartIndex);
+	}
+	for (size_t worker = 0; worker < numWorkers; worker++) {
+		workers[worker]->join();
+		delete workers[worker];
+	}
+
+
+	chunkSize = ceil((double)fadeWaveformSize / numWorkers);
+
+	// Fade out during first part of waveform:
+	for (size_t worker = 0; worker < numWorkers; worker++)
+	{
+		workers[worker] = new thread(&TrapController::combineFadeOutWaveforms, this, worker, &destinations, chunkSize, fadeWaveformSize);
+	}
+	for (size_t worker = 0; worker < numWorkers; worker++)
+	{
+		workers[worker]->join();
+		delete workers[worker];
+	}
+
+
+	// Fade in during last part of waveform:
+	for (size_t worker = 0; worker < numWorkers; worker++)
+	{
+		workers[worker] = new thread(&TrapController::combineFadeInWaveforms, this, worker, &destinations, numLoaded, chunkSize, fadeWaveformSize, fadeInStartIndex);
+	}
+	for (size_t worker = 0; worker < numWorkers; worker++)
+	{
+		workers[worker]->join();
+		delete workers[worker];
+	}
+
+	// Final waveform for empty traps.
+	for (size_t worker = 0; worker < numWorkers; worker++)
+	{
+		workers[worker] = new thread(&TrapController::combineFinalWaveforms, this, worker, &destinations, numLoaded, chunkSize, fadeWaveformSize);
+	}
+	for (size_t worker = 0; worker < numWorkers; worker++)
+	{
+		workers[worker]->join();
+		delete workers[worker];
+	}
+
+	vector<Waveform *> waveforms;
+	waveforms.push_back(&rearrangeWaveform);
+	waveforms.push_back(&finalWaveform);
+
+	rearrangeWaveform.writeToBinaryFile("waveform_slow0");
+	finalWaveform.writeToBinaryFile("waveform_slow1");	
+
+	return waveforms;
+}
+
+
+void TrapController::printTraps() {
+	for (int i = 0; i < traps.size(); i++) {
+		cout << i << ": " << traps[i] << endl;
+	}
+}
+
+bool TrapController::sanitizeTraps(double new_gain, bool shouldPrintTotalPower) {
+	double totalPower = 0.0;
+	double totalAmplitude = 0.0;
+
+	for (int i = 0; i < traps.size(); i++) {
+		double phase = traps[i].getPhase();
+		if (phase < 0.0 || phase >= 1.0) {
+			cout << "Trap #" << i << ": phase " << phase << " out of bounds [0, 1)" << endl;
+			return false;
+		}
+
+		double freq = traps[i].frequency / 1.0E6;
+		if (freq < -40 || freq > 40) {
+			cout << "Trap #" << i << ": frequency " << freq << " out of bounds [-40, 40]" << endl;
+			return false;
+		}
+
+		double amp = traps[i].amplitude;
+		if (amp < 0 || amp > 0.5) {
+			cout << "Trap #" << i << ": amplitude" << amp << " out of bounds [0, 0.5]" << endl;
+			return false;
+		}
+
+		double powerInMode = amp * amp * 5300; // Conversion from amplitude -> RF power
+		totalPower += powerInMode;
+		totalAmplitude += amp;
+	}
+
+	if (new_gain == -1) {
+		new_gain = sdr_gain;
+	}
+	double gainFactor = pow(10.0, (new_gain - 1.0)/ 10.0);
+
+	if (shouldPrintTotalPower) {
+		cout << "Total power: " << totalPower * gainFactor << " mW" << endl;
+	}
+
+	if (totalPower * gainFactor > 1600) { // Upper limit on power we can deliver to the AOD.
+		cout << "Total power " << totalPower * gainFactor << " out of bounds: must be < 1400 mW." << endl;
+		return false;
+	}
+
+	if (totalAmplitude > 0.99) { // Upper limit on total amplitude.
+		cout << "Total amplitude " << totalAmplitude << " out of bounds: must be <= 0.99" << endl;
+		return false;
+	}
+
+	return true;
+}
+
+void TrapController::saveTrapStates() {
+	for (int i = 0; i < traps.size(); i++) {
+		traps[i].saveState();
+	}
+}
+
+void TrapController::restoreTrapStates() {
+	for (int i = 0; i < traps.size(); i++) {
+		traps[i].restoreState();
+	}
+}
+
+double trapIndexToFrequency(int trap_index) {
+	return 0.5E6*((float)trap_index) - 18.E6;
+}
+
+string filenameForLoadedTrap(double startFreq, double endFreq, double startPhase) {
+	stringstream stream;
+	stream << "Moving_";
+	stream << fixed << setprecision(1) << startFreq;
+	stream << "_to_";
+	stream << fixed << setprecision(1) << endFreq;
+	stream << "_startphase_";
+	stream << fixed << setprecision(3) << startPhase;
+	return stream.str();
+}
+
+string filenameForFadingTransition(bool fadeOut, double freq, double startPhase) {
+	stringstream stream;
+	if (fadeOut) {
+		stream << "FadeOut_";
+	}
+	else {
+		stream << "FadeIn_";
+	}
+	stream << fixed << setprecision(1) << freq;
+	stream << "_startphase_";
+	stream << fixed << setprecision(3) << startPhase;
+	return stream.str();
+}
+
+
+void TrapController::precomputeWaveforms() {
+	double rearrangeDuration = 0.001;
+	double fadeDuration = 0.001;
+
+
+	chrono::high_resolution_clock::time_point start_timer = chrono::high_resolution_clock::now();
+
+	vector<Trap> total_traps;
+	for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
+		//vector<double> trap_parameters = default_twenty[trap_index];
+		total_traps.push_back(traps[trap_index]);
+		//total_traps.push_back(Trap(waveTable, trap_parameters[0] * 1.0E6 - centerFrequency, trap_parameters[1], trap_parameters[2]));
+	}
+
+	cout << "Precomputing waveforms..." << flush;
+	for (int trap_index = 0; trap_index < total_traps.size(); trap_index++) {
+		cout << "\rPrecomputing waveforms... index " << trap_index << "            " << flush;
+
+		// Loaded waveform
+		for (int dest_index = 0; dest_index < total_traps.size(); dest_index++) {
+			string filename = filenameForLoadedTrap(total_traps[trap_index].frequency / 1.0E6, total_traps[dest_index].frequency / 1.0E6, total_traps[trap_index].getPhase());
+			if (false && Waveform::fileExists(filename)) {
+				continue;
+			}
+
+			traps.clear();
+
+			addTrap(total_traps[trap_index].frequency, total_traps[trap_index].amplitude, total_traps[trap_index].getPhase());
+
+			Waveform holdStillDuringFadeOut = generateWaveform(fadeDuration);
+
+			traps[0].changeToFrequency(total_traps[dest_index].frequency, rearrangeDuration);
+			traps[0].changeToAmplitude(total_traps[dest_index].amplitude, rearrangeDuration);
+
+			Waveform rearrangeWaveform = generateWaveform(rearrangeDuration);
+			Waveform holdStillDuringFadeIn = generateWaveform(fadeDuration);
+
+			vector<complex<float>> totalDataVector;
+			totalDataVector.insert(totalDataVector.end(), holdStillDuringFadeOut.dataVector.begin(), holdStillDuringFadeOut.dataVector.end());
+			totalDataVector.insert(totalDataVector.end(), rearrangeWaveform.dataVector.begin(), rearrangeWaveform.dataVector.end());
+			totalDataVector.insert(totalDataVector.end(), holdStillDuringFadeIn.dataVector.begin(), holdStillDuringFadeIn.dataVector.end());
+			
+			Waveform totalWaveform(totalDataVector);
+			totalWaveform.writeToBinaryFile(filename);
+		}
+
+		// Fading out
+		string fadingOutFilename = filenameForFadingTransition(true, total_traps[trap_index].frequency / 1.0E6, total_traps[trap_index].getPhase());
+		if (false && !Waveform::fileExists(fadingOutFilename)) {
+			traps.clear();
+			addTrap(total_traps[trap_index].frequency, total_traps[trap_index].amplitude, total_traps[trap_index].getPhase());
+			traps[0].changeToAmplitude(0, fadeDuration);
+			
+			Waveform w = generateWaveform(fadeDuration);
+			w.writeToBinaryFile(fadingOutFilename);
+		}
+
+		// Fading in
+		string fadingInFilename = filenameForFadingTransition(false, total_traps[trap_index].frequency / 1.0E6, total_traps[trap_index].getPhase());
+		if (false && !Waveform::fileExists(fadingInFilename)) {
+			traps.clear();
+			addTrap(total_traps[trap_index].frequency, 0.0, total_traps[trap_index].getPhase());
+			traps[0].changeToAmplitude(total_traps[trap_index].amplitude, fadeDuration);
+
+			Waveform w = generateWaveform(fadeDuration);
+			w.writeToBinaryFile(fadingInFilename);
+		}
+	}
+
+	traps = total_traps;
+
+	chrono::high_resolution_clock::time_point end_timer = chrono::high_resolution_clock::now();
+	double msElapsed = (chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_timer)).count();
+
+	cout << "\rPrecomputing waveforms... done! (Time elapsed: " << (msElapsed / 1000.0) << " s)                  " << endl;
+}
+
+void TrapController::loadPrecomputedWaveforms() {
+	cout << "Loading precomputed waveforms..." << flush;
+
+	chrono::high_resolution_clock::time_point start_timer = chrono::high_resolution_clock::now();
+
+	vector<Trap> total_traps;
+	for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
+		//vector<double> trap_parameters = default_twenty[trap_index];
+		total_traps.push_back(traps[trap_index]);
+		//total_traps.push_back(Trap(waveTable, trap_parameters[0] * 1.0E6 - centerFrequency, trap_parameters[1], trap_parameters[2]));
+	}
+
+	cout << "\rLoading precomputed waveforms... fading waveforms" << flush;
+	// Fading waveforms:
+	for (int trap_index = 0; trap_index < total_traps.size(); trap_index++) {
+		fadeOutWaveforms[trap_index].initializeFromBinaryFile(filenameForFadingTransition(true, total_traps[trap_index].frequency / 1.0E6, total_traps[trap_index].getPhase()));
+		fadeInWaveforms[trap_index].initializeFromBinaryFile(filenameForFadingTransition(false, total_traps[trap_index].frequency / 1.0E6, total_traps[trap_index].getPhase()));
+	}
+
+	// Rearranging waveforms:
+	for (int trap_index = 0; trap_index < total_traps.size(); trap_index++) {
+		cout << "\rLoading precomputed waveforms... moving waveforms, index " << trap_index << "        " << flush;
+
+		for (int dest_index = 0; dest_index < total_traps.size(); dest_index++) {
+			loadedTrapWaveforms[trap_index][dest_index].initializeFromBinaryFile(filenameForLoadedTrap(total_traps[trap_index].frequency / 1.0E6, total_traps[dest_index].frequency / 1.0E6, total_traps[trap_index].getPhase()));
+		}
+	}
+	rearrangeWaveform.dataVector.resize(loadedTrapWaveforms[0][0].dataVector.size());
+	finalWaveform.dataVector.resize(fadeOutWaveforms[0].dataVector.size());
+
+
+
+	chrono::high_resolution_clock::time_point end_timer = chrono::high_resolution_clock::now();
+	double msElapsed = (chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_timer)).count();
+
+	cout << "\rLoading precomputed waveforms... done! (Time elapsed: " << (msElapsed / 1000.0) << " s)                      " << endl;
+}
+
+
+void TrapController::testPrecomputedWaveforms() {
+	loadPrecomputedWaveforms();
+	
+	while (true) {
+		this_thread::sleep_for(chrono::seconds(2));
+
+		vector<bool> atomsPresent;
+		for (int i = 0; i < traps.size(); i++) {
+			if (rand() % 2 == 0) {
+				atomsPresent.push_back(true);
+			}
+			else {
+				atomsPresent.push_back(false);
+			}
+		}
+
+		cout << "Combining rearrangement waveforms..." << endl;
+
+		chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
+		rearrangeTraps(atomsPresent, true, REARRANGE_MODE_STACK_FROM_BOTTOM);
+		chrono::high_resolution_clock::time_point end = chrono::high_resolution_clock::now();
+
+		cout << "Done combining waveforms! Time: " <<
+			chrono::duration_cast<chrono::milliseconds>(end - start).count() << endl;
+	}
+}
+
+void TrapController::testOnTheFlyComputedWaveforms() {
+	vector<bool> atomsPresent;
+	for (int i = 0; i < traps.size(); i++) {
+		if (rand() % 2 == 0) {
+			atomsPresent.push_back(true);
+		}
+		else {
+			atomsPresent.push_back(false);
+		}
+	}
+
+	while (true) {
+		this_thread::sleep_for(chrono::seconds(2));
+
+		cout << "Combining rearrangement waveforms..." << endl;
+
+		chrono::high_resolution_clock::time_point start = chrono::high_resolution_clock::now();
+		rearrangeTraps(atomsPresent, true, REARRANGE_MODE_STACK_FROM_BOTTOM);
+		chrono::high_resolution_clock::time_point end = chrono::high_resolution_clock::now();
+
+		cout << "Done combining waveforms! Time: " <<
+			chrono::duration_cast<chrono::milliseconds>(end - start).count() << endl;
+	}
+}
