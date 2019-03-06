@@ -55,7 +55,7 @@ void printTrapHelp() {
 	cout << "traps change [index] [property: freq, amp, phase] [new value]" << endl;
 	cout << "traps delete [index]" << endl;
 	cout << "traps load_default [default_name: 100(0.49).txt, 70(0.70).txt]" << endl;
-	cout << "traps set_phases [phase arguments]" << endl;	
+	cout << "traps set_phases [phase arguments]" << endl;
 }
 
 void printCameraHelp() {
@@ -184,9 +184,9 @@ bool processTrapsInput(vector<string> &commandTokens, TrapController &trapContro
 				// If a static waveform has been precomputed for this set of traps,
 				// load the precomputed version rather than computing a new waveform for the same set of traps.
 				Waveform static_waveform;
-				
+
 				bool loadedPrecomputedStaticWaveform = static_waveform.initializeFromStaticWaveform(configuration_filename);
-				
+
 				// If we loaded the file, then no need to generate a new waveform.
 				if (loadedPrecomputedStaticWaveform && sdrController.isConnected()) {
 					cout << "Loaded pre-computed static waveform." << endl;
@@ -194,7 +194,7 @@ bool processTrapsInput(vector<string> &commandTokens, TrapController &trapContro
 				} else {
 					waveformShouldChange = true;
 				}
-			} 
+			}
 		}
 		else {
 			cout << "Usage: load_default [default_name]" << endl;
@@ -278,8 +278,6 @@ bool processTrapsInput(vector<string> &commandTokens, TrapController &trapContro
 		}
 		printTrapHelp();
 	}
-
-
 	if (waveformShouldChange && !trapController.sanitizeTraps()) {
 		trapController.traps = previousTraps;
 		waveformShouldChange = false;
@@ -396,7 +394,7 @@ vector<int> promptForIntegerSequence(string attr) {
 			if (allTokensValid) {
 				return intSequence;
 			}
-		
+
 		} else {
 			cout << "Unable to parse cluster integer sequence. Example: 2 3 2" << endl;
 		}
@@ -456,8 +454,6 @@ void pickRearrangementMode(enum rearrange_mode &mode, int &modeArgument) {
 		modeArgument = enteredTargetNum;
 	}
 }
-
-
 
 
 void runRearrangementSequence(TrapController &trapController, SDRController &sdrController,
@@ -720,10 +716,10 @@ bool processInput(vector<string> &commandTokens, TrapController &trapController,
 
 void runConsole(TrapController &trapController, SDRController &sdrController) {
 	bool shouldExit = false;
-	while (!shouldExit) {		
+	while (!shouldExit) {
 		cout << endl;
 		vector<string> commandTokens = takeInput();
-		
+
 		if (commandTokens.size() == 0) {
 			continue;
 		}

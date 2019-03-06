@@ -17,7 +17,8 @@
 
 using namespace std;
 
-TrapController::TrapController(double centerFreq, double sampleRate, double gain) {
+TrapController::TrapController(double centerFreq, double sampleRate,
+	double gain) {
 	srand(time(NULL));
 
 	long int waveTableFreq = 1E3;
@@ -25,7 +26,6 @@ TrapController::TrapController(double centerFreq, double sampleRate, double gain
 	centerFrequency = centerFreq;
 	sdr_gain = gain;
 }
-
 
 void TrapController::addTrap(double frequency, double amplitude, double phase) {
 	traps.push_back(Trap(waveTable, frequency, amplitude, phase));
@@ -83,7 +83,6 @@ void TrapController::printAvailableDefaultTrapConfigurations() {
 	}
 }
 
-
 bool TrapController::loadDefaultTrapConfiguration(string filename) {
 	ifstream config_file("./DefaultTrapConfigurations/" + filename);
 
@@ -133,19 +132,21 @@ void TrapController::prepareLineDisplay(string text) {
 	lineDisplay.setText(text);
 }
 
-
 void TrapController::printLineDisplay() {
 	lineDisplay.printDisplayToConsole();
 }
 
 vector<Waveform *> TrapController::rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument) {
-	// The main object to determine how we piece together the rearrangement waveforms is the "destination" vector, which defines
-	// the destination for each trap (or -1 if the trap should disappear). The "mode" argument defines how we will create this
-	// destination vector, with "modeArgument" as an optional parameter if we need to specify how to operate in the mode.
+/* The main object to determine how we piece together the rearrangement waveforms
+is the "destination" vector, which defines the destination for each trap (or -1
+if the trap should disappear). The "mode" argument defines how we will create
+this destination vector, with "modeArgument" as an optional parameter if we need
+to specify how to operate in the mode.
 
-	// The mode for rearrangement will determine how we build this destination vector, but then we can pass whatever vector we create
-	// to combineRearrangeWaveform and it will be computed.
-
+The mode for rearrangement will determine how we build this destination vector,
+but then we can pass whatever vector we createto combineRearrangeWaveform and
+it will be computed.
+*/
 	vector<int> destinations;
 
 	// Start by counting how many atoms are present.
@@ -272,7 +273,7 @@ vector<Waveform *> TrapController::rearrangeTraps(std::vector<bool> atomsPresent
 			}
 		} else {
 			// Calculate how many atoms we need for this line.
-	
+
 			int numAtomsNeeded = atomsPerCluster * numClustersToBuild;
 
 			// Go through the array and count the first N atoms that are present and send them to the
@@ -336,7 +337,6 @@ vector<Waveform *> TrapController::rearrangeTraps(std::vector<bool> atomsPresent
 				} else {
 					destinations.push_back(-1);
 				}
-
 				if (trap_index + 1 > clusterTargetIndices[numCounted]) {
 					// prematurely break skip mode
 					skippingExcessAtoms = false;
@@ -412,7 +412,8 @@ vector<Waveform *> TrapController::rearrangeTraps(std::vector<bool> atomsPresent
 	//return vector<Waveform *>();
 }
 
-void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform, int worker, vector<int> *destinations, const size_t movingWaveformSize) {
+void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
+	int worker, vector<int> *destinations, const size_t movingWaveformSize) {
 	int chunkSize = movingWaveformSize / numWorkers;
 	int startIndex = chunkSize * worker;
 	int endIndex = chunkSize * (worker + 1);
@@ -430,21 +431,25 @@ void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform, in
 	}
 }
 
-
 void TrapController::resetForRearrangement() {
 	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
 	memset(rearrangeWaveform.dataVector.data(), 0, movingWaveformSize * sizeof(complex<float>));
 }
 
-
-void TrapController::calculateClusterProperties(vector<int> pattern, int separation) {
+//Sets some parameters of atom clusters
+void TrapController::calculateClusterProperties(vector<int> pattern,
+	int separation) {
 	clusterSeparation = separation;
 	periodicClusterPattern = pattern;
 
+//Total atoms in the patter
 	clusterSize = 0;
+//Atom in each cluster
 	atomsPerCluster = 0;
 
 	bool addingAtoms = true;
+
+//Calculates clusterSize and atomsPerCluster
 	for (int i = 0; i < periodicClusterPattern.size(); i++) {
 		clusterSize += periodicClusterPattern[i];
 
@@ -454,8 +459,10 @@ void TrapController::calculateClusterProperties(vector<int> pattern, int separat
 		addingAtoms = !addingAtoms;
 	}
 
+//Periodicity
 	clusterPeriodicity = clusterSeparation + clusterSize;
 
+//Determines number of clusters to build
 	numClustersToBuild = 0;
 	while (numClustersToBuild * clusterPeriodicity < traps.size()) {
 		if (numClustersToBuild * clusterPeriodicity + clusterSize <= traps.size()) {
@@ -491,16 +498,16 @@ void TrapController::calculateClusterProperties(vector<int> pattern, int separat
 }
 
 
+/* Moving traps: This will be the sum of the "loaded trap" waveforms for each
+moving trap, designated by a start position and end position.
+*/
+vector<Waveform *> TrapController::combinePrecomputedWaveforms(
+	vector<int> &destinations) {
 
-// Moving traps:
-// This will be the sum of the "loaded trap" waveforms for each moving trap, designated by a start
-// position and end position.
-//
-vector<Waveform *> TrapController::combinePrecomputedWaveforms(vector<int> &destinations) {
 	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
 
 	thread *workers[numWorkers];
-	
+
 
 	// Moving traps:
 	complex<float> *movingWaveform = rearrangeWaveform.dataVector.data();
@@ -525,7 +532,6 @@ vector<Waveform *> TrapController::combinePrecomputedWaveforms(vector<int> &dest
 	return waveforms;
 }
 
-
 void TrapController::printTraps() {
 	cout << "SDR center frequency: " << centerFrequency << " MHz" << endl;
 	cout << "SDR gain: " << sdr_gain << endl;
@@ -535,7 +541,9 @@ void TrapController::printTraps() {
 }
 
 
-bool TrapController::sanitizeTraps(double new_gain, bool shouldPrintTotalPower) {
+//Checks to see if the traps are acceptable
+bool TrapController::sanitizeTraps(double new_gain,
+	bool shouldPrintTotalPower) {
 	double totalPower = 0.0;
 	double totalAmplitude = 0.0;
 
@@ -597,14 +605,16 @@ void TrapController::restoreTrapStates() {
 	}
 }
 
-string filenameForLoadedTrap(int startIndex, int endIndex, int numTraps, double duration) {
+string filenameForLoadedTrap(int startIndex, int endIndex, int numTraps,
+	double duration) {
 	stringstream stream;
 	stream << "rearrange_" << startIndex << "_to_" << endIndex << "_waveform_";
 	stream << fixed << setprecision(1) << duration << "ms_" << numTraps;
 	return stream.str();
 }
 
-// Assumes filenames are of the form N(A).txt, where N is the number of traps and A is the spacing in MHz.
+/* Assumes filenames are of the form N(A).txt, where N is the number of traps
+and A is the pacing in MHz.*/
 int numTrapsForConfigurationName(string config_name) {
 	int index_of_parens = config_name.find_first_of('(');
 
@@ -663,7 +673,7 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 																					 start_index, dest_index);
 		}
 	}
-	
+
 	rearrangeWaveform.dataVector.resize(loadedTrapWaveforms[0][0].dataVector.size());
 
 	chrono::high_resolution_clock::time_point end_timer = chrono::high_resolution_clock::now();
@@ -692,7 +702,7 @@ bool TrapController::mostRecentlyLoadedCorrectWaveforms(double duration, string 
 
 	if (lastLoadedWaveformProperties.ending_configuration.compare(ending_configuration) != 0) {
 		return false;
-	}	
+	}
 
 	if (lastLoadedWaveformProperties.duration != duration) {
 		return false;
@@ -701,13 +711,12 @@ bool TrapController::mostRecentlyLoadedCorrectWaveforms(double duration, string 
 	return true;
 }
 
-
 void TrapController::testPrecomputedWaveforms() {
 	//loadPrecomputedWaveforms(1.0);
 
 	cout << "Not implemented correctly! Talk to Harry." << endl;
 	return;
-	
+
 	while (true) {
 		this_thread::sleep_for(chrono::seconds(2));
 

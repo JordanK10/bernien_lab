@@ -22,7 +22,7 @@ SDRController.o: SDRController.cpp SDRController.h Waveform.h
 Trap.o: Trap.cpp Trap.hpp WaveTable.hpp
 	$(CC) $(CFLAGS) -c Trap.cpp Trap.hpp WaveTable.hpp
 
-TrapController.o: TrapController.cpp TrapController.h WaveTable.hpp Waveform.h LineDisplay.h
+TrapController.o: TrapController.cpp TrapController.h WaveTable.hpp Waveform.h LineD`isplay.h
 	$(CC) $(CFLAGS) -c TrapController.cpp
 
 Waveform.o: Waveform.cpp Waveform.h
