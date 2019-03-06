@@ -127,7 +127,7 @@ bool compareTrapFrequencies(Trap i, Trap j) {
 bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, StaticController &staticController, AWGController &awgController) {
 
 	std::vector<std::vector<Trap>> previousTraps;
-	for (int i = 0; i < trapControllerHandler.len; i++){
+	for (int i = 0; i < trapControllerHandler.size; i++){
 		std::vector<Trap> traps = trapControllerHandler.tcxList[i].traps;
 		previousTraps.push_back(traps);
 	}
@@ -138,7 +138,7 @@ bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &tra
 	} else if (commandTokens[1].compare("list") == 0) {
 		staticController.printTraps();
 	} else if (commandTokens[1].compare("sort") == 0) {
-		for (int i = 0; i < trapControllerHandler.len; i++){
+		for (int i = 0; i < trapControllerHandler.size; i++){
 			sort(trapControllerHandler.tcxList[i].traps.begin(), trapControllerHandler.tcxList[i].traps.end(), compareTrapFrequencies);
 			trapControllerHandler.tcxList[i].printTraps();
 		}
@@ -260,7 +260,7 @@ bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &tra
 		}
 		else if (commandTokens[2].compare("random") == 0) {
 			waveformShouldChange = true;
-			for (int j = 0; j < trapControllerHandler.len; j++){
+			for (int j = 0; j < trapControllerHandler.size; j++){
 				for (int i = 0; i < trapControllerHandler.tcxList[j].traps.size(); i++) {
 					double phase = (rand() % 10000) / 10000.0;
 					trapControllerHandler.tcxList[j].traps[i].setPhase(phase);
@@ -329,7 +329,7 @@ bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &tra
 	}
 
 	if (waveformShouldChange) {
-		for (int i = 0; i < trapControllerHandler.len; i++){
+		for (int i = 0; i < trapControllerHandler.size; i++){
 				if (!trapControllerHandler.tcxList[i].sanitizeTraps()){
 					trapControllerHandler.tcxList[i].traps = previousTraps[i];
 					waveformShouldChange = false;
