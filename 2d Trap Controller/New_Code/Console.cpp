@@ -89,30 +89,30 @@ void processRunCommand(vector<string> &commandTokens, TrapControllerHandler &tra
 		double moveDuration = 3.0; // In milliseconds
 
 		// Default name of trap configurations to start and end with.
-		// string starting_configuration = trapController.lastLoadedConfiguration;
-		// string ending_configuration = trapController.lastLoadedConfiguration;
+		string starting_configuration = trapControllerHandler.lastLoadedConfiguration;
+		string ending_configuration = trapControllerHandler.lastLoadedConfiguration;
 
 		// If parameters passed to call, then replace the default values.
-		// for (int tokenIndex = 2; tokenIndex + 1 < commandTokens.size(); tokenIndex += 2) {
-		// 	string indicator = commandTokens[tokenIndex];
-		// 	string arg = commandTokens[tokenIndex + 1];
-		//
-		// 	if (indicator.compare("-d") == 0) {
-		// 		try {
-		// 			double dur = stod(arg);
-		// 			moveDuration = dur;
-		// 		}
-		// 		catch (const std::invalid_argument&) {
-		// 			cout << "Unable to parse duration!" << endl;
-		// 		}
-		// 	} else if (indicator.compare("-start") == 0) {
-		// 		starting_configuration = arg;
-		// 	} else if (indicator.compare("-end") == 0) {
-		// 		ending_configuration = arg;
-		// 	}
-		// }
+		for (int tokenIndex = 2; tokenIndex + 1 < commandTokens.size(); tokenIndex += 2) {
+			string indicator = commandTokens[tokenIndex];
+			string arg = commandTokens[tokenIndex + 1];
 
-		// runRearrangementSequence(trapController, sdrController, moveDuration, starting_configuration, ending_configuration);
+			if (indicator.compare("-d") == 0) {
+				try {
+					double dur = stod(arg);
+					moveDuration = dur;
+				}
+				catch (const std::invalid_argument&) {
+					cout << "Unable to parse duration!" << endl;
+				}
+			} else if (indicator.compare("-start") == 0) {
+				starting_configuration = arg;
+			} else if (indicator.compare("-end") == 0) {
+				ending_configuration = arg;
+			}
+		}
+
+		runRearrangementSequence(trapController, awgController, moveDuration, starting_configuration, ending_configuration);
 	} else {
 		cout << "Run command unknown: " << commandTokens[1] << endl;
 		printRunHelp();
@@ -225,12 +225,9 @@ bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &tra
 		}
 	}
 	else if (commandTokens[1].compare("load_default") == 0) {
-		cout << "succes1";
 		if (commandTokens.size() >= 3) {
-			cout << "success2";
 			string configuration_filename = commandTokens[2];
 			if (trapControllerHandler.loadDefaultTrapConfiguration(configuration_filename)) {
-				cout << "success3";
 				// If a static waveform has been precomputed for this set of traps,
 				// load the precomputed version rather than computing a new waveform for the same set of traps.
 				Waveform static_waveform;
@@ -246,10 +243,10 @@ bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &tra
 				// }
 			}
 		}
-		// else {
-		// 	cout << "Usage: load_default [default_name]" << endl;
-		// 	trapController.printAvailableDefaultTrapConfigurations();
-		// }
+		else {
+			cout << "Usage: load_default [default_name]" << endl;
+			trapControllerHandler.printAvailableDefaultTrapConfigurations();
+		}
 	}
 	else if (commandTokens[1].compare("set_phases") == 0) {
 		if (commandTokens.size() < 3) {

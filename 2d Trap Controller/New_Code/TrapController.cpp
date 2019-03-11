@@ -46,66 +46,31 @@ void TrapController::setCenter(double xaxis, double freq){
 
 void TrapController::addTrap(double frequency, double amplitude, double phase) {
 	traps.push_back(Trap(waveTable, frequency, amplitude, phase));
+	printTraps();
 }
 
-void TrapController::printAvailableDefaultTrapConfigurations() {
-	DIR *dir;
-	struct dirent *epdf;
 
 
-	dir = opendir("./DefaultTrapConfigurations");
-
-	vector<string> filenames;
-
-	if (dir != NULL) {
-		cout << "Available default trap configurations:" << endl;
-		while ((epdf = readdir(dir))) {
-			if (epdf->d_name[0] != '.') {
-				filenames.push_back(epdf->d_name);
-			}
-		}
-
-		sort(filenames.begin(), filenames.end());
-		for (int i = 0; i < filenames.size(); i++) {
-			cout << " " << filenames[i] << endl;
-		}
-	} else {
-		cout << "Unable to open file." << endl;
-	}
-}
-
-bool TrapController::loadDefaultTrapConfiguration(string filename,int line) {
-	ifstream config_file("./DefaultTrapConfigurations/" + filename);
-
-	if (!config_file.is_open()) {
-		cout << "Unable to open file: " << filename << endl;
-		printAvailableDefaultTrapConfigurations();
-		return false;
-	}
+bool TrapController::loadDefaultTrapConfiguration(std::vector<std::vector<string>> tokenList, int groupSize) {
 
 	vector<Trap> previousTraps = traps;
 
 	traps.clear();
+	string line;
 
-	string tokens[3];
 	int numTokensParsed = 0;
-	while (config_file >> tokens[numTokensParsed]) {
-		numTokensParsed++;
+	for(int i=0;i<groupSize; i++){
+		vector<string> tokens  = tokenList[i];
+		try {
+			double freqx = stod(tokens[0]) * 1.0E6;
+			double freqy = stod(tokens[1]) * 1.0E6;
+			double amplitude = stod(tokens[2]);
+			double phase = stod(tokens[3]);
 
-		if (numTokensParsed == 3) {
-			numTokensParsed = 0;
-			try {
-				double freq = stod(tokens[0]) * 1.0E6;
-				double amplitude = stod(tokens[1]);
-				double phase = stod(tokens[2]);
-
-				addTrap(freq - xAxisCenterFreq, amplitude, phase);
-			} catch (const invalid_argument&) {
-			}
+			addTrap(freqx - xAxisCenterFreq, amplitude, phase);
+		} catch (const invalid_argument&) {
 		}
 	}
-
-	config_file.close();
 
 	if (!sanitizeTraps(awg_gain, false)) {
 		cout << "Unable to load trap configuration: not sanitized." << endl;
@@ -113,9 +78,8 @@ bool TrapController::loadDefaultTrapConfiguration(string filename,int line) {
 		return false;
 	}
 
-	lastLoadedConfiguration = filename;
-
 	return true;
+
 }
 
 //Checks to see if the traps are acceptable
@@ -173,7 +137,8 @@ bool TrapController::sanitizeTraps(double new_gain,
 void TrapController::printTraps() {
 	// cout << "SDR center frequency: " << centerFrequency << " MHz" << endl;
 	// cout << "SDR gain: " << sdr_gain << endl;
-	// for (int i = 0; i < traps.size(); i++) {
-	// 	cout << i << ": " << traps[i] << endl;
-	// }
+	cout << traps.size() << "\n";
+	for (int i = 0; i < traps.size(); i++) {
+		cout << i << " " << traps[i].frequency << " " << traps[i].amplitude << endl;
+	}
 }

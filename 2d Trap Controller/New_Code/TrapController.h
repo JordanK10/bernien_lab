@@ -13,6 +13,8 @@
 #define DEFAULT_WAVEFORM_DURATION 0.001
 #define MAX_NUM_TRAPS 101
 
+using namespace std;
+
 enum rearrange_mode {
 	REARRANGE_MODE_STACK_FROM_LEFT,
 	REARRANGE_MODE_STACK_FROM_RIGHT,
@@ -45,7 +47,7 @@ public:
 
     void setCenter(double xaxis, double freq);
 
-		bool loadDefaultTrapConfiguration(std::string filename,int line);
+		bool loadDefaultTrapConfiguration(std::vector<std::vector<std::string>> tokenList, int groupSize);
 
     std::vector<Trap> traps;
 
@@ -58,7 +60,6 @@ public:
     double awg_gain;
     double xAxisCenterFreq;
     double yAxisCenterFreq;
-		std::string lastLoadedConfiguration;
 
 
 private:
