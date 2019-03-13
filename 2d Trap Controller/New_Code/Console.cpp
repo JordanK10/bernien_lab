@@ -81,51 +81,10 @@ void printAdwinHelp() {
 	cout << "adwin send_trigger" << endl;
 }
 
-void processRunCommand(vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
-	if (commandTokens.size() == 1 || commandTokens[1].compare("help") == 0) {
-		printRunHelp();
-	} else if (commandTokens[1].compare("rearrangement") == 0) {
 
-		double moveDuration = 3.0; // In milliseconds
-
-		// Default name of trap configurations to start and end with.
-		string starting_configuration = trapControllerHandler.lastLoadedConfiguration;
-		string ending_configuration = trapControllerHandler.lastLoadedConfiguration;
-
-		// If parameters passed to call, then replace the default values.
-		for (int tokenIndex = 2; tokenIndex + 1 < commandTokens.size(); tokenIndex += 2) {
-			string indicator = commandTokens[tokenIndex];
-			string arg = commandTokens[tokenIndex + 1];
-
-			if (indicator.compare("-d") == 0) {
-				try {
-					double dur = stod(arg);
-					moveDuration = dur;
-				}
-				catch (const std::invalid_argument&) {
-					cout << "Unable to parse duration!" << endl;
-				}
-			} else if (indicator.compare("-start") == 0) {
-				starting_configuration = arg;
-			} else if (indicator.compare("-end") == 0) {
-				ending_configuration = arg;
-			}
-		}
-
-		runRearrangementSequence(trapController, awgController, moveDuration, starting_configuration, ending_configuration);
-	} else {
-		cout << "Run command unknown: " << commandTokens[1] << endl;
-		printRunHelp();
-	}
-}
-
-bool compareTrapFrequencies(Trap i, Trap j) {
-	return i.frequency < j.frequency;
-}
-
-
-void runRearrangementSequence(TrapController &trapController, SDRController &sdrController,
+void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGController &awgController,
 							  double moveDuration, string starting_configuration, string ending_configuration) {
+									return;
 	// cout << "Summoning Maxwell's demon..." << endl;
 	// cout << "Rearranging from " << starting_configuration << " configuration to " << ending_configuration << " in ";
 	// cout << fixed << setprecision(1) << moveDuration << " ms." << endl;
@@ -302,6 +261,50 @@ void runRearrangementSequence(TrapController &trapController, SDRController &sdr
 	// }
 
 }
+
+
+void processRunCommand(vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
+	if (commandTokens.size() == 1 || commandTokens[1].compare("help") == 0) {
+		printRunHelp();
+	} else if (commandTokens[1].compare("rearrangement") == 0) {
+
+		double moveDuration = 3.0; // In milliseconds
+
+		// Default name of trap configurations to start and end with.
+		string starting_configuration = trapControllerHandler.lastLoadedConfiguration;
+		string ending_configuration = trapControllerHandler.lastLoadedConfiguration;
+
+		// If parameters passed to call, then replace the default values.
+		for (int tokenIndex = 2; tokenIndex + 1 < commandTokens.size(); tokenIndex += 2) {
+			string indicator = commandTokens[tokenIndex];
+			string arg = commandTokens[tokenIndex + 1];
+
+			if (indicator.compare("-d") == 0) {
+				try {
+					double dur = stod(arg);
+					moveDuration = dur;
+				}
+				catch (const std::invalid_argument&) {
+					cout << "Unable to parse duration!" << endl;
+				}
+			} else if (indicator.compare("-start") == 0) {
+				starting_configuration = arg;
+			} else if (indicator.compare("-end") == 0) {
+				ending_configuration = arg;
+			}
+		}
+
+		runRearrangementSequence(trapControllerHandler, awgController, moveDuration, starting_configuration, ending_configuration);
+	} else {
+		cout << "Run command unknown: " << commandTokens[1] << endl;
+		printRunHelp();
+	}
+}
+
+bool compareTrapFrequencies(Trap i, Trap j) {
+	return i.frequency < j.frequency;
+}
+
 
 // Returns whether the waveform is different now.
 bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, StaticController &staticController, AWGController &awgController) {

@@ -14,11 +14,11 @@
 class Trap {
 public:
     Trap(WaveTable *, double freq, double amplit, double phase=0);
-    
+
 	friend std::ostream& operator<< (std::ostream&, Trap&);
 
 	std::complex<float> nextSample();
-    void changeToFrequency(double newFrequency, double duration);
+  void changeToFrequency(double newFrequency, double duration);
 	void changeToAmplitude(double newAmplitude, double duration);
 
 	void saveState();
@@ -29,11 +29,11 @@ public:
 
 	double frequency;
 	double amplitude;
-    
+
 private:
     long int phaseIndex;
 
-    
+
     bool isChangingFrequency;
     double newFrequency;
     size_t samplesSinceStartingFrequencyTransition;
@@ -48,7 +48,7 @@ private:
 	double savedFrequency;
 	double savedAmplitude;
 	long int savedPhaseIndex;
-    
+
     WaveTable *waveTable;
 };
 

@@ -1,5 +1,5 @@
 /** Created by J.Kemp with the atom Array team, Bernien group (2018). Based on
-  protocol developed by H.Levin with the Lukin Group (2016)
+  protocol developed by H.Levin with the Lukin Group (2016) --
 **/
 
 #include <iostream>

@@ -1,8 +1,9 @@
-CC = g++
+CC = gcc
 CFLAGS = -std=c++11 -O2 -pthread -g
+LIBS = -lspcm_linux
 
 all: main.cpp Console.o AWGController.o Trap.o StaticController.o TrapController.o TrapControllerHandler.o Waveform.o WaveTable.o
-	$(CC) $(CFLAGS) -o TrapController main.cpp Console.o AWGController.o Trap.o TrapController.o StaticController.o TrapControllerHandler.o Waveform.o WaveTable.o -lreadline
+	$(CC) $(CFLAGS) -o TrapController main.cpp Console.o AWGController.o Trap.o TrapController.o StaticController.o TrapControllerHandler.o Waveform.o WaveTable.o -lreadline -lspcm_linux
 
 Trap.o: Trap.cpp Trap.h
 	$(CC) $(CFLAGS) -c Trap.cpp Trap.h
