@@ -11,10 +11,6 @@
 
 using namespace std;
 
-static const string dir = "/home/control/Desktop/TrapWaveforms/";
-static const string static_waveforms = "static_waveforms/";
-
-
 Waveform::Waveform() {
 }
 
@@ -28,12 +24,9 @@ Waveform::Waveform(std::vector<std::complex<float>> data)
 	dataVector = data;
 }
 
-bool Waveform::fileExists(string filename) {
-	string path(dir);
-	path.append(filename);
 
-	ifstream file(path, ios::in | ios::binary);
-	return file.good();
+void Waveform::importFromBinaryFile(vector<complex<float>> tempVector) {
+	dataVector = tempVector;
 }
 
 void Waveform::initializeFromBinaryFile(string binaryFilename) {
@@ -49,17 +42,18 @@ void Waveform::initializeFromBinaryFile(string binaryFilename) {
 }
 
 bool Waveform::initializeFromStaticWaveform(string trap_configuration_file) {
-	int length = trap_configuration_file.length();
-	string waveform_filename = trap_configuration_file.substr(0, length - 4) + "_static"; // Remove .txt, replace with _static.
-
-	string waveform_path = static_waveforms + waveform_filename;
-
-	if (fileExists(waveform_path)) {
-		initializeFromBinaryFile(waveform_path);
-		return true;
-	} else {
-		return false;
-	}
+	return true;
+	// int length = trap_configuration_file.length();
+	// string waveform_filename = trap_configuration_file.substr(0, length - 4) + "_static"; // Remove .txt, replace with _static.
+	//
+	// string waveform_path = static_waveforms + waveform_filename;
+	//
+	// if (fileExists(waveform_path)) {
+	// 	initializeFromBinaryFile(waveform_path);
+	// 	return true;
+	// } else {
+	// 	return false;
+	// }
 }
 
 void Waveform::initializeFromMovingWaveform(double duration,

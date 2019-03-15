@@ -5,7 +5,7 @@
 #include "TrapController.h"
 #include "TrapControllerHandler.h"
 #include "StaticController.h"
-//#include "CameraServer.h"
+#include "CameraServer.h"
 
 /* Console documentation.
  * ----------------------

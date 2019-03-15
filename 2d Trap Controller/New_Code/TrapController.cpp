@@ -42,11 +42,27 @@ void TrapController::setCenter(double xaxis, double freq){
 
 }
 
-
+// void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
+// 	int worker, vector<int> *destinations, const size_t movingWaveformSize) {
+// 	int chunkSize = movingWaveformSize / numWorkers;
+// 	int startIndex = chunkSize * worker;
+// 	int endIndex = chunkSize * (worker + 1);
+//
+// 	for (int trap_index = 0; trap_index < destinations->size(); trap_index++) {
+// 		int dest_index = (*destinations)[trap_index];
+//
+// 		if (dest_index == -1) {
+// 			continue;
+// 		}
+//
+// 		for (int sample_index = startIndex; sample_index < endIndex; sample_index++) {
+// 			movingWaveform[sample_index] += loadedTrapWaveforms[trap_index][dest_index].dataVector[sample_index];
+// 		}
+// 	}
+// }
 
 void TrapController::addTrap(double frequency, double amplitude, double phase) {
 	traps.push_back(Trap(waveTable, frequency, amplitude, phase));
-	printTraps();
 }
 
 
@@ -141,4 +157,34 @@ void TrapController::printTraps() {
 	for (int i = 0; i < traps.size(); i++) {
 		cout << i << " " << traps[i].frequency << " " << traps[i].amplitude << endl;
 	}
+}
+
+vector<double> TrapController::trapFrequencies() {
+	vector<double> frequencies;
+	for (int i = 0; i < traps.size(); i++) {
+		frequencies.push_back(traps[i].frequency);
+	}
+	return frequencies;
+}
+
+void TrapController::resetForRearrangement() {
+	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
+	memset(rearrangeWaveform.dataVector.data(), 0, movingWaveformSize * sizeof(complex<float>));
+}
+
+
+vector<Waveform *> TrapController::rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument) {
+/* The main object to determine how we piece together the rearrangement waveforms
+is the "destination" vector, which defines the destination for each trap (or -1
+if the trap should disappear). The "mode" argument defines how we will create
+this destination vector, with "modeArgument" as an optional parameter if we need
+to specify how to operate in the mode.
+
+The mode for rearrangement will determine how we build this destination vector,
+but then we can pass whatever vector we createto combineRearrangeWaveform and
+it will be computed.
+*/
+	vector<int> destinations;
+	vector <Waveform *> blank;
+	return blank;
 }

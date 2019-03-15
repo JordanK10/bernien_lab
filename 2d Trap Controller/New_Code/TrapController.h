@@ -16,12 +16,13 @@
 using namespace std;
 
 enum rearrange_mode {
-	REARRANGE_MODE_STACK_FROM_LEFT,
-	REARRANGE_MODE_STACK_FROM_RIGHT,
+	REARRANGE_MODE_COMPACT_BL,
+	REARRANGE_MODE_COMPACT_TL,
+	REARRANGE_MODE_COMPACT_BR,
+	REARRANGE_MODE_COMPACT_TR,
 	REARRANGE_MODE_FIXED_ARRAY_WITHOUT_RESERVOIR,
 	REARRANGE_MODE_FIXED_ARRAY_WITH_RESERVOIR,
 	REARRANGE_MODE_FIXED_ARRAY_WITH_NEARBY_RESERVOIR,
-	REARRANGE_MODE_LINE_DISPLAY,
 	REARRANGE_MODE_CLUSTERS,
 	REARRANGE_MODE_OPTIMIZED_CLUSTERS,
 	REARRANGE_MODE_SLOW_VIDEO
@@ -55,15 +56,23 @@ public:
 
 		void printTraps();
 
+		std::vector<double> trapFrequencies();
+
+		void resetForRearrangement();
+
+		vector<Waveform *> rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument);
+
 		void printAvailableDefaultTrapConfigurations();
 
     double awg_gain;
     double xAxisCenterFreq;
     double yAxisCenterFreq;
 
+		Waveform staticStartingWaveform;
+		Waveform staticEndingWaveform;
 
 private:
-  	//void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<int> *destinations, const size_t movingWaveformSize);
+  	void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<int> *destinations, const size_t movingWaveformSize);
 
     bool majorAxisx;
 
@@ -71,12 +80,14 @@ private:
   	int lineDisplayCounter;
 
   	WaveTable *waveTable;
-  	//Waveform rearrangeWaveform;
+  	Waveform rearrangeWaveform;
 
   	struct loadedWaveformProperties lastLoadedWaveformProperties;
   	// Waveform loadedTrapWaveforms[MAX_NUM_TRAPS][MAX_NUM_TRAPS];
   	int numStartingTraps;
   	int numEndingTraps;
+
+		Waveform loadedTrapWaveforms[MAX_NUM_TRAPS][MAX_NUM_TRAPS];
 
 
   	std::vector<int> periodicClusterPattern;

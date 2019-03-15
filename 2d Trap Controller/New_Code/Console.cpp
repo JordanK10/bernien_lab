@@ -32,6 +32,16 @@ vector<string> parseCommand(string &cmd) {
 	return tokens;
 }
 
+static chrono::high_resolution_clock::time_point start_timer;
+void startTimer() {
+	start_timer = chrono::high_resolution_clock::now();
+}
+
+double timeElapsed() {
+	return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_timer).count();
+}
+
+
 vector<string> takeInput() {
 	string input(readline("#: "));
 	add_history(input.c_str());
@@ -41,6 +51,52 @@ vector<string> takeInput() {
 	}
 
 	return parseCommand(input);
+}
+
+int promptForInteger(string attr) {
+	int val;
+	cout << "Enter " << attr << ": ";
+	while (!(cin >> val)) {
+		cout << "Unable to parse value." << endl;
+		cin.clear();
+		cin.ignore(0xfffff, '\n');
+		cout << "Enter " << attr << ": " << endl;
+	}
+
+	return val;
+}
+
+vector<int> promptForIntegerSequence(string attr) {
+
+	while (true) {
+		cout << "Enter " << attr << ": ";
+		string input(readline(""));
+		vector<string> tokens = parseCommand(input);
+
+		if (tokens.size() > 0) {
+			bool allTokensValid = true;
+			vector<int> intSequence;
+
+			for (int i = 0; i < tokens.size(); i++) {
+				try {
+					int val = stoi(tokens[i]);
+					intSequence.push_back(val);
+				}
+				catch (const std::invalid_argument&) {
+					cout << "Unable to parse as integer: " << tokens[i] << endl;
+					allTokensValid = false;
+					break;
+				}
+			}
+
+			if (allTokensValid) {
+				return intSequence;
+			}
+
+		} else {
+			cout << "Unable to parse cluster integer sequence. Example: 2 3 2" << endl;
+		}
+	}
 }
 
 void printTrapHelp() {
@@ -81,184 +137,208 @@ void printAdwinHelp() {
 	cout << "adwin send_trigger" << endl;
 }
 
+void pickRearrangementMode(enum rearrange_mode &mode, int &modeArgument) {
+	cout << "Please select a rearrangement mode:" << endl;
+	cout << "0: Stack atoms from the left." << endl;
+	cout << "1: Stack atoms from the right." << endl;
+	cout << "2: Stack leftmost N atoms on the left." << endl;
+	cout << "3: Stack leftmost N atoms on the left, and build a reservoir on the far right." << endl;
+	cout << "4: Stack leftmost N atoms on the left, and build a reservoir nearby." << endl;
+	cout << "5: Line display!!!" << endl;
+	cout << "6: Prepare clusters of atoms (superlattice)." << endl;
+	cout << "7: Prepare clusters of atoms (improved routing!)." << endl;
+	cout << "8: Quick rearrangement to 'random loading', then slow rearrangement to 40 atom array." << endl;
+
+
+	int enteredMode = -1;
+	while (true) {
+		enteredMode = promptForInteger("rearrangement mode");
+
+		if (enteredMode >= 0 && enteredMode <= 8) {
+			break;
+		}
+		cout << "Please pick a mode from 0 to 8." << endl;
+	}
+	mode = (enum rearrange_mode)enteredMode;
+
+	// The mode argument is only used for options 2 and 3.
+	if (mode == REARRANGE_MODE_FIXED_ARRAY_WITHOUT_RESERVOIR || mode == REARRANGE_MODE_FIXED_ARRAY_WITH_RESERVOIR || mode == REARRANGE_MODE_FIXED_ARRAY_WITH_NEARBY_RESERVOIR) {
+		int enteredTargetNum = -1;
+
+		while (true) {
+			enteredTargetNum = promptForInteger("target array size");
+
+			if (enteredTargetNum >= 0) {
+				break;
+			}
+			cout << "Please pick a non-negative target size." << endl;
+		}
+
+		modeArgument = enteredTargetNum;
+	}
+}
+
 
 void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGController &awgController,
 							  double moveDuration, string starting_configuration, string ending_configuration) {
 									return;
-	// cout << "Summoning Maxwell's demon..." << endl;
-	// cout << "Rearranging from " << starting_configuration << " configuration to " << ending_configuration << " in ";
-	// cout << fixed << setprecision(1) << moveDuration << " ms." << endl;
-  //
-  //
-	// if (trapController.mostRecentlyLoadedCorrectWaveforms(moveDuration, starting_configuration, ending_configuration)) {
-	// 	cout << "Found precomputed rearrangement waveforms already loaded!" << endl;
-	// } else {
-	// 	cout << "Didn't find waveforms already in memory... reading from disk." << endl;
-  //
-	// 	bool readWaveforms = trapController.loadPrecomputedWaveforms(moveDuration, starting_configuration, ending_configuration);
-  //
-	// 	if (!readWaveforms) {
-	// 		return;
-	// 	}
-	// }
-  //
-  //
-	// enum rearrange_mode mode;
-	// int modeArgument;
-	// pickRearrangementMode(mode, modeArgument);
-  //
-  //
-	// if (!sdrController.isConnected()) {
-	// 	cout << "Error: Not connected to SDR!" << endl;
+	cout << "Summoning Maxwell's demon..." << endl;
+	cout << "Rearranging from " << starting_configuration << " configuration to " << ending_configuration << " in ";
+	// Throws a weird error....
+	//cout << fixed << std::setprecision(1) << moveDuration << " ms." << endl;
+
+	enum rearrange_mode mode;
+	int modeArgument;
+	pickRearrangementMode(mode, modeArgument);
+
+
+	// if (!awgController.isConnected()) {
+	// 	cout << "Error: Not connected to AWG!" << endl;
 	// 	cout << "***Aborting sequence***" << endl;
 	// 	return;
 	// }
-  //
-  //
-	// string lineDisplayText;
-  //
-  //
-	// if (mode == REARRANGE_MODE_LINE_DISPLAY) {
-	// 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
-  //
-	// 	cout << "Enter text to display:" << endl;
-	// 	getline(cin, lineDisplayText);
-	// 	trapController.prepareLineDisplay(lineDisplayText);
-	// 	trapController.printLineDisplay();
-	// } else if (mode == REARRANGE_MODE_FIXED_ARRAY_WITH_NEARBY_RESERVOIR) {
-	// 	int reservoirSeparation = promptForInteger("reservoir separation from array");
-  //
-	// 	trapController.reservoirSeparation = reservoirSeparation;
-	// } else if (mode == REARRANGE_MODE_CLUSTERS || mode == REARRANGE_MODE_OPTIMIZED_CLUSTERS) {
+
+
+	string lineDisplayText;
+
+
+	if (mode == REARRANGE_MODE_FIXED_ARRAY_WITH_NEARBY_RESERVOIR) {
+		int reservoirSeparation = promptForInteger("reservoir separation from array");
+
+		trapControllerHandler.reservoirSeparation = reservoirSeparation;
+	}// else if (mode == REARRANGE_MODE_CLUSTERS || mode == REARRANGE_MODE_OPTIMIZED_CLUSTERS) {
 	// 	vector<int> pattern = promptForIntegerSequence("cluster size (or pattern)");
 	// 	int separation = promptForInteger("separation between clusters");
 	// 	trapController.calculateClusterProperties(pattern, separation);
 	// }
-  //
+
 	// Waveform slowRearrangement;
 	// if (mode == REARRANGE_MODE_SLOW_VIDEO) {
 	// 	slowRearrangement.initializeFromBinaryFile("../TrapController/WaveformGeneration/slow_rearrangement_0.5s");
 	// }
-  //
-  //
-  //
-	// // Start sending waveform to SDR.
-	// Waveform startingWaveform = trapController.staticStartingWaveform;
-	// Waveform endingWaveform = trapController.staticEndingWaveform;
-  //
-  //
-	// CameraServer cameraServer;
-	// cameraServer.startServer();
-  //
-	// while (true) {
-	// 	cout << endl << endl;
-  //
-	// 	cout << "Waiting for connection from CameraController..." << endl;
-	// 	int successFindingCamerController = cameraServer.acceptConnection();
-  //
-	// 	if (!successFindingCamerController) {
-	// 		cout << "Error: Failure starting server!" << endl;
-	// 		cout << "***Aborting sequence***" << endl;
-	// 		return;
-	// 	}
-  //
-	// 	cout << "Received connection. Preparing for rearrangement..." << endl;
-  //
-  //
-	// 	// Record durations.
-	// 	vector<double> durations;
-	// 	vector<bool> underflowRecords;
-  //
-  //
-  //
-  //
-	// 	sdrController.pushWaveform(startingWaveform);
-  //
-  //
-	// 	int numRearrangementsPerformed = 0;
-	// 	while (true) {
-	// 		// Start of sequence: stream static initial waveform.
-	// 		sdrController.pushWaveform(startingWaveform);
-  //
-	// 		// Find atoms in new picture on camera:
-	// 		vector<bool> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapController.trapFrequencies().size());
-	// 		if (atomsPresent.size() == 0) {
-	// 			break;
-	// 		}
-  //
-	// 		numRearrangementsPerformed++;
-  //
-	// 		resetSendTrigger();
-	// 		trapController.resetForRearrangement();
-  //
-	// 		has_underflow = false;
-  //
-	// 		startTimer();
-  //
-  //
-	// 		// Rearrange traps:
-	// 		vector<Waveform *> rearrangementWaveforms = trapController.rearrangeTraps(atomsPresent, mode, modeArgument);
-  //
-	// 		// We want to be notified when the last waveform is pushed through to the SDR, so set a notification on the last segment of rearrangement.
-	// 		// Currently not actually implemented.
-	// 		//rearrangementWaveforms[0]->writeToBinaryFile("sample_rearrangement");
-  //
-	// 		rearrangementWaveforms[0]->shouldNotifyAfterSending = true;
-	// 		sdrController.pushWaveforms(rearrangementWaveforms);
-  //
-	// 		if (mode == REARRANGE_MODE_SLOW_VIDEO) {
-	// 			sdrController.pushWaveform(&slowRearrangement);
-	// 			sdrController.pushWaveform(startingWaveform);
-	// 		}
-  //
-  //
-	// 		//sdrController.waitOnWaveformNotification();
-	// 		// Record metadata
-	// 		double duration = timeElapsed();
-	// 		sendTrigger();
-  //
-	// 		//cout << "Duration from trigger -> trigger: " << duration << " ms" << endl;
-	// 		durations.push_back(duration);
-	// 		underflowRecords.push_back(has_underflow);
-  //
-	// 		cout << "Performed rearrangement " << numRearrangementsPerformed << ": ";
-	// 		for (int i = 0; i < atomsPresent.size(); i++) {
-	// 			if (atomsPresent[i]) {
-	// 				cout << "1";
-	// 			} else {
-	// 				cout << "0";
-	// 			}
-	// 		}
-	// 		cout << endl;
-	// 	}
-  //
-	// 	//recordMetadata(seqNumber, numRepetitions, durations, underflowRecords);
-  //
-	// 	int numUnderflows = 0;
-	// 	for (int i = 0; i < underflowRecords.size(); i++) {
-	// 		if (underflowRecords[i]) {
-	// 			numUnderflows++;
-	// 		}
-	// 	}
-	// 	cout << "Number of underflows: " << numUnderflows << " out of " << underflowRecords.size() << " repetitions." << endl;
-  //
-  //
-	// 	double avgDuration = 0;
-	// 	for (int i = 0; i < durations.size(); i++) {
-	// 		avgDuration += durations[i];
-	// 	}
-	// 	avgDuration /= (1.0 * durations.size());
-  //
-	// 	double durationVariance = 0;
-	// 	for (int i = 0; i < durations.size(); i++) {
-	// 		durationVariance += pow(avgDuration - durations[i], 2.0);
-	// 	}
-	// 	double stdDev = sqrt(durationVariance / durations.size());
-  //
-	// 	cout << "Duration from recv trigger -> send trigger: " << avgDuration << " +/- " << stdDev << endl;
-  //
-  //
-	// }
+
+
+
+	// Start sending waveform to SDR.
+	vector<Waveform> startingWaveform = trapControllerHandler.staticStartingWaveform;
+	vector<Waveform> endingWaveform = trapControllerHandler.staticEndingWaveform;
+
+
+	CameraServer cameraServer;
+	cameraServer.startServer();
+
+	while (true) {
+		cout << endl << endl;
+
+		cout << "Waiting for connection from CameraController..." << endl;
+		int successFindingCamerController = cameraServer.acceptConnection();
+
+		if (!successFindingCamerController) {
+			cout << "Error: Failure starting server!" << endl;
+			cout << "***Aborting sequence***" << endl;
+			return;
+		}
+
+		cout << "Received connection. Preparing for rearrangement..." << endl;
+
+
+		// Record durations.
+		vector<double> durations;
+		vector<bool> underflowRecords;
+
+
+
+		//
+		// sdrController.pushWaveform(startingWaveform);
+
+
+		int numRearrangementsPerformed = 0;
+		while (true) {
+			// // Start of sequence: stream static initial waveform.
+			// awgController.pushWaveform(startingWaveform);
+
+			// Find atoms in new picture on camera:
+			vector<bool> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapControllerHandler.trapFrequencies().size());
+			if (atomsPresent.size() == 0) {
+				break;
+			}
+
+			numRearrangementsPerformed++;
+
+			// // Adwin Control
+			// resetSendTrigger();
+			trapControllerHandler.resetForRearrangement();
+
+			has_underflow = false;
+
+			startTimer();
+
+
+			// Rearrange traps:
+			vector<Waveform *> rearrangementWaveforms = trapControllerHandler.rearrangeTraps(atomsPresent, mode, modeArgument);
+
+			// We want to be notified when the last waveform is pushed through to the SDR, so set a notification on the last segment of rearrangement.
+			// Currently not actually implemented.
+			//rearrangementWaveforms[0]->writeToBinaryFile("sample_rearrangement");
+
+			rearrangementWaveforms[0]->shouldNotifyAfterSending = true;
+			awgController.pushWaveforms(rearrangementWaveforms);
+
+			//SlowMo Rearrangement
+			// if (mode == REARRANGE_MODE_SLOW_VIDEO) {
+			// 	awgController.pushWaveform(&slowRearrangement);
+			// 	awgController.pushWaveform(startingWaveform);
+			// }
+
+			//sdrController.waitOnWaveformNotification();
+			// Record metadata
+			double duration = timeElapsed();
+
+			// //Adwin control
+			// sendTrigger();
+
+			//cout << "Duration from trigger -> trigger: " << duration << " ms" << endl;
+			durations.push_back(duration);
+			underflowRecords.push_back(has_underflow);
+
+			cout << "Performed rearrangement " << numRearrangementsPerformed << ": ";
+			for (int i = 0; i < atomsPresent.size(); i++) {
+				if (atomsPresent[i]) {
+					cout << "1";
+				} else {
+					cout << "0";
+				}
+			}
+			cout << endl;
+		}
+
+		//recordMetadata(seqNumber, numRepetitions, durations, underflowRecords);
+
+		int numUnderflows = 0;
+		for (int i = 0; i < underflowRecords.size(); i++) {
+			if (underflowRecords[i]) {
+				numUnderflows++;
+			}
+		}
+		cout << "Number of underflows: " << numUnderflows << " out of " << underflowRecords.size() << " repetitions." << endl;
+
+
+		double avgDuration = 0;
+		for (int i = 0; i < durations.size(); i++) {
+			avgDuration += durations[i];
+		}
+		avgDuration /= (1.0 * durations.size());
+
+		double durationVariance = 0;
+		for (int i = 0; i < durations.size(); i++) {
+			durationVariance += pow(avgDuration - durations[i], 2.0);
+		}
+		double stdDev = sqrt(durationVariance / durations.size());
+
+		cout << "Duration from recv trigger -> send trigger: " << avgDuration << " +/- " << stdDev << endl;
+
+
+	}
 
 }
 

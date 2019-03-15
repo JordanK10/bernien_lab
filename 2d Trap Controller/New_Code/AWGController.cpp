@@ -6,17 +6,16 @@ AWGController::AWGController(bool shouldConnect, double sample_rate, double cent
 	gain = tx_gain;
 
 	// if (shouldConnect) {
-	// 	initializeUHD();
-	// 	startStreaming();
-	// }
+	// 		string address = " ";
+	// 		hDrv = spcm_hOpen(address);
+	// 		if(!hDrv)
+	// 			cout << "open of driver failed \n";
 }
 
 	void AWGController::disconnect() {
 		shouldDisconnect = true;
 
-		// if (sendThread) {
-		// 	sendThread->join();
-		// }
+		// spcm_vClose(hDrv);
 
 		connected = false;
 	}
@@ -43,6 +42,37 @@ AWGController::AWGController(bool shouldConnect, double sample_rate, double cent
 		// waveformQueue.push(waveform);
 		// queueLock.unlock();
 	}
+
+	void AWGController::pushWaveforms(vector<Waveform> waveforms) {
+		// if (hasStartedStreaming) {
+		// 	queueLock.lock();
+		// }
+		// for (int i = 0; i < waveforms.size(); i++) {
+		// 	if (waveforms[i].shouldNotifyAfterSending) {
+		// 		notificationHasBeenSent = false;
+		// 	}
+		//
+		// 	localWaveforms.push(waveforms[i]);
+		//
+		// 	waveformQueue.push(&localWaveforms.back());
+		// }
+		// queueLock.unlock();
+	}
+
+	void AWGController::pushWaveforms(vector<Waveform *> waveforms) {
+		// if (hasStartedStreaming) {
+		// 	queueLock.lock();
+		// }
+		// for (int i = 0; i < waveforms.size(); i++) {
+		// 	if (waveforms[i]->shouldNotifyAfterSending) {
+		// 		notificationHasBeenSent = false;
+		// 	}
+		//
+		// 	waveformQueue.push(waveforms[i]);
+		// }
+		// queueLock.unlock();
+	}
+
 
 	bool AWGController::isConnected() {
 		return connected;

@@ -8,6 +8,10 @@
 #include <complex>
 #include <string>
 
+static const std::string dir = "/home/control/Desktop/TrapWaveforms/";
+static const std::string static_waveforms = "static_waveforms/";
+
+
 class Waveform
 {
 public:
@@ -21,11 +25,13 @@ public:
 
 	static bool fileExists(std::string filename);
 
-	void initializeFromBinaryFile(std::string filename);
+	void initializeFromBinaryFile(std::string binaryFilename);
+	bool initializeFromStaticWaveform(std::string trap_configuration_file);
+
+	void importFromBinaryFile(std::vector<std::complex<float>> tempVector);
 	void writeToFile(std::string filename);
 	void writeToBinaryFile(std::string filename);
 
-	bool initializeFromStaticWaveform(std::string trap_configuration);
 	void initializeFromMovingWaveform(double duration,
 									  std::string starting_configuration, std::string ending_configuration,
 									  int starting_index, int ending_index);

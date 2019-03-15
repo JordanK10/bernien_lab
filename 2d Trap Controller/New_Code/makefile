@@ -1,12 +1,13 @@
-CC = gcc
+CC = g++
 CFLAGS = -std=c++11 -O2 -pthread -g
-LIBS = -lspcm_linux
+#LIBS = -lspcm_linux
 
-all: main.cpp Console.o AWGController.o Trap.o StaticController.o TrapController.o TrapControllerHandler.o Waveform.o WaveTable.o
-	$(CC) $(CFLAGS) -o TrapController main.cpp Console.o AWGController.o Trap.o TrapController.o StaticController.o TrapControllerHandler.o Waveform.o WaveTable.o -lreadline -lspcm_linux
+all: main.cpp Console.o CameraServer.o AWGController.o Trap.o TrapController.o StaticController.o TrapControllerHandler.o Waveform.o WaveTable.o
+
+	$(CC) $(CFLAGS) -o TrapController main.cpp Console.o AWGController.o Trap.o TrapController.o StaticController.o TrapControllerHandler.o Waveform.o WaveTable.o -lreadline
 
 Trap.o: Trap.cpp Trap.h
-	$(CC) $(CFLAGS) -c Trap.cpp Trap.h
+	$(CC) $(CFLAGS) -c Trap.cpp
 
 TrapController.o: TrapController.cpp TrapController.h
 	$(CC) $(CFLAGS) -c TrapController.cpp
@@ -29,6 +30,8 @@ AWGController.o: AWGController.cpp AWGController.h
 Console.o: Console.cpp Console.h TrapController.h StaticController.h AWGController.h
 	$(CC) $(CFLAGS) -c Console.cpp
 
+CameraServer.o: CameraServer.cpp CameraServer.h
+		$(CC) $(CFLAGS) -c CameraServer.cpp
 
 clean:
 	$(RM) TrapController *.o Console *.o
