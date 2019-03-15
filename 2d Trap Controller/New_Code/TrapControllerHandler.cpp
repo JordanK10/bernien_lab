@@ -96,9 +96,9 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
           return false;
         numLinesParsed = 0;
         numGroupsParsed ++;
-        }
       }
     }
+  }
 
   lastLoadedConfiguration = filename;
 
