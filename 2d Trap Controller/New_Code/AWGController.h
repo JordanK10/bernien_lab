@@ -27,6 +27,9 @@ public:
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
 
+  void pushWaveform(std::vector<Waveform> waveform);
+
+
   void pushWaveforms(vector<Waveform> waveforms);
   void pushWaveforms(vector<Waveform *> waveforms);
 

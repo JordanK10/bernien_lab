@@ -53,7 +53,7 @@ CameraServer::~CameraServer()
 
 bool CameraServer::startServer() {
 	cout << "Starting server..." << endl;
-	serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+	// serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (serverSocket < 0) {
 		cout << "Unable to open socket!" << endl;
@@ -127,31 +127,36 @@ bool CameraServer::acceptConnection() {
 
 
 
-vector<bool> CameraServer::receiveIdentifiedAtomList(int numTraps) {
+vector<vector<bool>> CameraServer::receiveIdentifiedAtomList(int numTraps, int rowLen) {
 	char buf[1024];
 	bzero(buf, 1024);
 
 	int numBytes = read(cameraSocket, buf, 1023);
 
 	if (strlen(buf) == 0) {
-		return vector<bool>();
+		return vector<vector<bool>>();
 	} else if (strcmp(buf, "exit") == 0) {
-		return vector<bool>();
+		return vector<vector<bool>>();
 	}
 
 
 	stringstream listString(buf);
 
-	vector<bool> atomsPresent;
+	int counter = 0;
+
+	vector<vector<bool>> atomsPresent;
 	for (int i = 0; i < numTraps; i++) {
+		if (i != 0 && i%rowLen == 0){
+			counter ++;
+		}
 		int present;
 
 		listString >> present;
 
 		if (present == 1) {
-			atomsPresent.push_back(true);
+			atomsPresent[counter].push_back(true);
 		} else {
-			atomsPresent.push_back(false);
+			atomsPresent[counter].push_back(false);
 		}
 	}
 

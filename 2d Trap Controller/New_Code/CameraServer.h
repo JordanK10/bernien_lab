@@ -22,7 +22,7 @@ public:
 	bool acceptConnection();
 
 
-	std::vector<bool> receiveIdentifiedAtomList(int numTraps);
+	std::vector<std::vector<bool>> receiveIdentifiedAtomList(int numTraps, int rowLen);
 
 private:
 	int serverSocket;

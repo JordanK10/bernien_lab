@@ -6,9 +6,17 @@
 
 using namespace std;
 
+struct RearrangementMove{
+  std::vector<bool> startingConfig;
+  std::vector<bool> endingConfig;
+  int row;
+  int col;
+};
+
 class TrapControllerHandler {
 
 public:
+
 
   TrapControllerHandler(int len, int wid, double startFx, double fxIncrement, double startFy, double fyIncrement, double sampleRate, double gain);
 
@@ -23,8 +31,9 @@ public:
   void initializeFromBinaryFile(std::string filename);
 	bool initializeFromStaticWaveform(std::string trap_configuration);
 
+  std::vector<RearrangementMove> generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode);
 
-  std::vector<Waveform *> rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument=0);
+  std::vector<Waveform *> rearrangeTraps(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode, int modeArgument=0);
 
   void resetForRearrangement();
 

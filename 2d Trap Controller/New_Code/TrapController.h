@@ -60,9 +60,9 @@ public:
 
 		void resetForRearrangement();
 
-		vector<Waveform *> rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument);
-
 		void printAvailableDefaultTrapConfigurations();
+
+		vector<Waveform *> rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument);
 
     double awg_gain;
     double xAxisCenterFreq;

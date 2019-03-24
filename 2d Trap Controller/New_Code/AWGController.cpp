@@ -43,6 +43,10 @@ AWGController::AWGController(bool shouldConnect, double sample_rate, double cent
 		// queueLock.unlock();
 	}
 
+	void AWGController::pushWaveform(vector<Waveform> waveform){
+		return;
+	}
+
 	void AWGController::pushWaveforms(vector<Waveform> waveforms) {
 		// if (hasStartedStreaming) {
 		// 	queueLock.lock();

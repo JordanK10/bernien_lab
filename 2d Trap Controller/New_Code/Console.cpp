@@ -41,7 +41,6 @@ double timeElapsed() {
 	return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_timer).count();
 }
 
-
 vector<string> takeInput() {
 	string input(readline("#: "));
 	add_history(input.c_str());
@@ -178,14 +177,11 @@ void pickRearrangementMode(enum rearrange_mode &mode, int &modeArgument) {
 	}
 }
 
-
 void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGController &awgController,
 							  double moveDuration, string starting_configuration, string ending_configuration) {
 									return;
 	cout << "Summoning Maxwell's demon..." << endl;
 	cout << "Rearranging from " << starting_configuration << " configuration to " << ending_configuration << " in ";
-	// Throws a weird error....
-	//cout << fixed << std::setprecision(1) << moveDuration << " ms." << endl;
 
 	enum rearrange_mode mode;
 	int modeArgument;
@@ -198,48 +194,15 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 	// 	return;
 	// }
 
-
-	string lineDisplayText;
-
-
-	if (mode == REARRANGE_MODE_FIXED_ARRAY_WITH_NEARBY_RESERVOIR) {
-		int reservoirSeparation = promptForInteger("reservoir separation from array");
-
-		trapControllerHandler.reservoirSeparation = reservoirSeparation;
-	}// else if (mode == REARRANGE_MODE_CLUSTERS || mode == REARRANGE_MODE_OPTIMIZED_CLUSTERS) {
-	// 	vector<int> pattern = promptForIntegerSequence("cluster size (or pattern)");
-	// 	int separation = promptForInteger("separation between clusters");
-	// 	trapController.calculateClusterProperties(pattern, separation);
-	// }
-
-	// Waveform slowRearrangement;
-	// if (mode == REARRANGE_MODE_SLOW_VIDEO) {
-	// 	slowRearrangement.initializeFromBinaryFile("../TrapController/WaveformGeneration/slow_rearrangement_0.5s");
-	// }
-
-
-
-	// Start sending waveform to SDR.
+	// Start sending waveform to AWG.
 	vector<Waveform> startingWaveform = trapControllerHandler.staticStartingWaveform;
 	vector<Waveform> endingWaveform = trapControllerHandler.staticEndingWaveform;
-
 
 	CameraServer cameraServer;
 	cameraServer.startServer();
 
+
 	while (true) {
-		cout << endl << endl;
-
-		cout << "Waiting for connection from CameraController..." << endl;
-		int successFindingCamerController = cameraServer.acceptConnection();
-
-		if (!successFindingCamerController) {
-			cout << "Error: Failure starting server!" << endl;
-			cout << "***Aborting sequence***" << endl;
-			return;
-		}
-
-		cout << "Received connection. Preparing for rearrangement..." << endl;
 
 
 		// Record durations.
@@ -247,9 +210,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 		vector<bool> underflowRecords;
 
 
-
-		//
-		// sdrController.pushWaveform(startingWaveform);
+		awgController.pushWaveform(startingWaveform);
 
 
 		int numRearrangementsPerformed = 0;
@@ -258,21 +219,20 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			// awgController.pushWaveform(startingWaveform);
 
 			// Find atoms in new picture on camera:
-			vector<bool> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapControllerHandler.trapFrequencies().size());
+			vector<vector<bool>> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapControllerHandler.trapFrequencies().size(),trapControllerHandler.tchLen);
 			if (atomsPresent.size() == 0) {
 				break;
 			}
 
 			numRearrangementsPerformed++;
 
-			// // Adwin Control
-			// resetSendTrigger();
 			trapControllerHandler.resetForRearrangement();
 
 			has_underflow = false;
 
 			startTimer();
 
+			vector <RearrangementMove> moves = trapControllerHandler.generateRearrangementMoves(atomsPresent,mode);
 
 			// Rearrange traps:
 			vector<Waveform *> rearrangementWaveforms = trapControllerHandler.rearrangeTraps(atomsPresent, mode, modeArgument);
@@ -294,8 +254,6 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			// Record metadata
 			double duration = timeElapsed();
 
-			// //Adwin control
-			// sendTrigger();
 
 			//cout << "Duration from trigger -> trigger: " << duration << " ms" << endl;
 			durations.push_back(duration);
@@ -303,11 +261,14 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 
 			cout << "Performed rearrangement " << numRearrangementsPerformed << ": ";
 			for (int i = 0; i < atomsPresent.size(); i++) {
-				if (atomsPresent[i]) {
-					cout << "1";
-				} else {
-					cout << "0";
+				for (int j = 0; j < atomsPresent.size(); j++){
+					if (atomsPresent[i][j]) {
+						cout << "1";
+					} else {
+						cout << "0";
+					}
 				}
+				cout << endl;
 			}
 			cout << endl;
 		}

@@ -286,7 +286,15 @@ void TrapController::printAvailableDefaultTrapConfigurations() {
 	}
 }
 
-vector<Waveform *> TrapControllerHandler::rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument) {
+vector<RearrangementMove> generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode){
+
+  vector<RearrangementMove> moveList;
+
+  while
+
+}
+
+vector<Waveform *> TrapControllerHandler::rearrangeTraps(vector<vector<bool>> atomsPresent, enum rearrange_mode mode, int modeArgument) {
 /* The main object to determine how we piece together the rearrangement waveforms
 is the "destination" vector, which defines the destination for each trap (or -1
 if the trap should disappear). The "mode" argument defines how we will create
