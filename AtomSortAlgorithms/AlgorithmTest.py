@@ -1,4 +1,6 @@
 import BalanceCompressAlgorithm
+import MakeRectArray
+import RectangularBC
 import Snake
 import Hungarian
 import MakeBoolArray
@@ -6,22 +8,25 @@ import datetime
 import xlsxwriter
 import matplotlib
 from Animator import Animator
+from Animator2 import Animator2
 
 # these are the 'settings'
 
-title = "practice"
+title = "RectangularBC"
 ArrayDim = 10
 TargetDim = 'max'
 trials = 1
 LoadProbability = .6
-algorithm = 1
+algorithm = 3
 RecordData = False
 MakeAnimation = True
+Sites = 100
 
 # Algorithm number's:
 # 1 -> Balance&Compress
 # 2 -> Hungarian
 # 3 -> snake
+# 4 -> RectangularBC
 
 
 
@@ -37,9 +42,9 @@ DummyVar = True
 i = 0
 while i < trials:
     Array = MakeBoolArray.MakeBoolArray(ArrayDim,LoadProbability)
-
-    k = 0
+    Array2 = MakeRectArray.MakeRectArray(Sites,LoadProbability)
     j = 0
+    k = 0
     while j < ArrayDim:
         while k < ArrayDim:
             DummyVar = Array[j][k]
@@ -50,27 +55,45 @@ while i < trials:
         k = 0
         j += 1
 
+
     if algorithm == 1:
         placeholder = BalanceCompressAlgorithm.BalanceCompress(Array, ArrayDim,TargetDim)
     if algorithm == 2:
         placeholder = Hungarian.Hungarian(Array,ArrayDim,TargetDim)
     if algorithm == 3:
         placeholder = Snake.snake(Array,ArrayDim,TargetDim)
+    if algorithm == 4:
+        StaticArray = []
+        H = len(Array2)
+        W = len(Array2[0])
+        j = 0
+        k = 0
+        while j < H:
+            while k < W:
+                DummyVar = Array2[j][k]
+                DummyRow.append(DummyVar)
+                k += 1
+            StaticArray.append(DummyRow)
+            DummyRow = []
+            k = 0
+            j += 1
+        placeholder = RectangularBC.BalanceCompress2(Array2)
+        rowmoves = placeholder[3]
        
     time.append(placeholder[0].microseconds + placeholder[0].seconds*(10**6))
     moves.append(placeholder[1])
     fidelity.append(placeholder[2])
+
     i += 1
 
-for i in range(ArrayDim):
-    for j in range(ArrayDim):
-        if Array[i][j] == True:
-            print 1,
-        else:
-            print 0,
-    print "\n"
-    
-print moves
+timetotal = 0
+movetotal = 0
+for i in range(len(time)):
+    timetotal += time[i]
+    movetotal += len(moves[i])
+
+timeavg = float(timetotal/trials) 
+moveavg = float(movetotal/trials)
 
 if RecordData == True:
     i = 0
@@ -97,9 +120,16 @@ if RecordData == True:
         j = 0
     workbook.close()
 
-if MakeAnimation == True:
+if MakeAnimation == True and algorithm == 4:
     moves = moves[0]
-    Animator(StaticArray,moves,ArrayDim)
+    k = len(moves)
+    moves.append(moves[k-1])
+    Animator2(StaticArray,moves)
 
+if MakeAnimation == True and algorithm != 4:
+    moves = moves[0]
+    k = len(moves)
+    moves.append(moves[k-1])
+    Animator(StaticArray,moves,ArrayDim)
 
 
