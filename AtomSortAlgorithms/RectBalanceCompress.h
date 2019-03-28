@@ -1,5 +1,5 @@
-#ifndef RECTBC_H
-#define RECTBC_H
+#ifndef RECTBALANCECOMPRESS_H
+#define RECTBALANCECOMPRESS_H
 
 #include <vector>
 #include <tuple>
@@ -9,13 +9,12 @@
 
 using namespace std;
 
-
-class RectBC
+class RectBalanceCompress
 {
     public:
-        RectBC(int Sites, float Prob);
+        RectBalanceCompress(int Sites, float Prob);
         vector<vector<bool>> Array;
-        tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int> > BalanceCompress(vector<vector<bool>> Array);
+        tuple<double, vector<vector<vector<int>>>,vector<int>,vector<vector<vector<int>>>,vector<vector<vector<int>>>, bool> BalanceCompress(vector<vector<bool>> Array);
 
     private:
         vector<vector<bool>> MakeRectArray(int Sites, float Prob);
@@ -32,4 +31,4 @@ class RectBC
         vector<vector<vector<int>>> Interpolate(vector<int> movefrom, vector<int> moveto, int center);
 };
 
-#endif // RECTBC_H
+#endif // RECTBALANCECOMPRESS_H

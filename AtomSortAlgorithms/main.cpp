@@ -1,69 +1,83 @@
 #include <iostream>
 #include <vector>
-#include <random>
-#include <cstdlib>
-#include <cmath>
-#include <tuple>
-#include <ctime>
-#include <chrono>
-#include <unistd.h>
-#include <string>
-#include "BalanceCompressAlgorithm.h"
-#include "Hungarian.h"
-#include "RectBC.h"
+#include "RectBalanceCompress.h"
+#include "BalanceCompress.h"
 #include "Snake.h"
+#include "Hungarian.h"
 
 using namespace std;
 
 int main()
 {
-int Algorithm = 4;
+/*
+1 -> RectBC
+2 -> BC
+3 -> Snake
+4 -> Hungarian
+*/
+int Algorithm = 2;
 int ArrayDim = 10;
-int TargetDim = 6;
+int TargetDim = 0;
 int Sites = 100;
+float LoadProbability = 0.6;
 
-
-BalanceCompressAlgorithm obj1;
-Hungarian obj2;
-RectBC obj3;
-Snake obj4;
-
-
-float duration;
+double duration;
 bool check;
-vector<vector<vector<int>>> results;
 vector<vector<vector<int>>> moves;
 vector<int> rows;
 vector<vector<vector<int>>> rowmoves;
-
-vector<vector<bool>> Array = obj1.MakeBoolArray(ArrayDim,.6);
-vector<vector<bool>> RArray = obj3.MakeRectArray(Sites,.6);
+vector<vector<vector<int>>> bankmoves;
 
 if(Algorithm == 1){
-    tie(duration, moves,rows, check) = obj1.BalanceCompress(Array, ArrayDim, TargetDim);
+RectBalanceCompress RBC_Obj(Sites,LoadProbability);
+tie(duration, moves, rows, rowmoves, bankmoves, check) = RBC_Obj.BalanceCompress(RBC_Obj.Array);
 }
-//if(Algorithm == 2){
-//    obj2.compute(Array, TargetDim);
-//}
+if(Algorithm == 2){
+BalanceCompress BC_Obj(ArrayDim, LoadProbability);
+tie(duration, moves,rows,rowmoves, check) = BC_Obj.BalanceCompressAlg(BC_Obj.Array);
+}
 if(Algorithm == 3){
-    tie(duration,moves,rows,rowmoves,check) = obj3.BalanceCompress(RArray);
+Snake S_Obj(ArrayDim, LoadProbability);
+tie(duration ,moves, check) = S_Obj.SnakeAlg(S_Obj.Array);
 }
 if(Algorithm == 4){
-    tie(duration ,moves, check) = obj4.SnakeAlg(Array, ArrayDim, TargetDim);
+Hungarian H_Obj(ArrayDim, LoadProbability);
+tie(duration, moves, check) = H_Obj.compute(H_Obj.Array);
 }
 
 
 cout << "Fidelity: " << check << endl;
-cout << "Duration: " << duration << endl;
-cout << moves.size() << " Moves:" << endl;
+cout << "Duration: " << duration << " nanoseconds" <<endl;
+cout << moves.size() + rows.size() + bankmoves.size() << " Moves" << endl;
+cout << endl;
 int n = moves.size();
+cout << "Balance Moves: " << endl;
 for(int i = 0;i<n;i++){
     cout << "(" << moves[i][0][0] << ", " << moves[i][0][1] << ") -> (" << moves[i][1][0] << ", " << moves[i][1][1] << ")" << endl;
 }
-if(Algorithm == 1 || Algorithm == 3){
+cout << endl;
+
+if(Algorithm == 1 || Algorithm == 2){
+    cout << "Rows: " << endl;
     n = rows.size();
     for(int i = 0; i<n; i++){
-        cout << "Compress Row: " << rows[i] << endl;
+        cout << "Compress Row " << rows[i] << ": ";
+        for(int j = 0;j<rowmoves[i].size();j++){
+            cout << "(" << rowmoves[i][j][0] << " -> " << rowmoves[i][j][1] << ")";
+            if(j!=rowmoves[i].size() - 1){
+                cout << ", ";
+            }
+        }
+        cout << endl;
     }
+}
+
+if(Algorithm == 1){
+cout << endl;
+cout << "Bank Moves: " << endl;
+n = bankmoves.size();
+for(int i = 0;i<n;i++){
+    cout << "(" << bankmoves[i][0][0] << ", " << bankmoves[i][0][1] << ") -> (" << bankmoves[i][1][0] << ", " << bankmoves[i][1][1] << ")" << endl;
+}
 }
 }
