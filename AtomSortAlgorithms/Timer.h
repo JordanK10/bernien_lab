@@ -15,6 +15,7 @@ class Timer
         double duration = 0;
         steady_clock::time_point End;
         steady_clock::time_point start;
+        double calltime = 0;
 };
 
 #endif // TIMER_H

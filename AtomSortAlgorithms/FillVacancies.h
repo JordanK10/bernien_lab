@@ -10,7 +10,8 @@ using namespace std;
 class FillVacancies
 {
     public:
-        tuple<vector<vector<bool>>,vector<vector<vector<int>>>,vector<int>,vector<vector<vector<int>>>> Fill(vector<vector<bool>> Array, vector<vector<int>> bank, vector<vector<int>> vacancies,vector<int> Range);
+        vector<vector<int>> FindVacancies(vector<vector<bool>> Array, vector<int> Range);
+        tuple<vector<vector<bool>>,vector<vector<vector<int>>>,vector<int>,vector<vector<vector<int>>>,vector<vector<int>>> Fill(vector<vector<bool>> Array, vector<vector<int>> bank, vector<vector<int>> vacancies,vector<int> Range);
 
     private:
         vector<vector<bool>> Move(vector<vector<bool>> Array, vector<int> pos1,vector<int> pos2);

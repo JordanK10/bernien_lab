@@ -1,83 +1,75 @@
 #include <iostream>
+#include <random>
 #include <vector>
-#include "RectBalanceCompress.h"
-#include "BalanceCompress.h"
-#include "Snake.h"
-#include "Hungarian.h"
+#include "Timer.h"
+#include <stdlib.h>
+#include "RectBC.h"
+#include "FillVacancies.h"
+#include "Windows.h"
+#include "Decay.h"
+#include <fstream>
+#include <math.h>
 
 using namespace std;
+int main(){
 
-int main()
-{
-/*
-1 -> RectBC
-2 -> BC
-3 -> Snake
-4 -> Hungarian
-*/
-int Algorithm = 2;
-int ArrayDim = 10;
-int TargetDim = 0;
-int Sites = 100;
-float LoadProbability = 0.6;
+double halflife = 100; //seconds
+double Camera_freq = 1; //Hz
+int movetime = 1; //milliseconds
 
-double duration;
-bool check;
+
+vector<vector<bool>> Array;
 vector<vector<vector<int>>> moves;
+vector<vector<int>> bank;
+vector<int> ColRange;
+vector<int> compressedrows;
 vector<int> rows;
 vector<vector<vector<int>>> rowmoves;
-vector<vector<vector<int>>> bankmoves;
+vector<vector<int>> vacant;
 
-if(Algorithm == 1){
-RectBalanceCompress RBC_Obj(Sites,LoadProbability);
-tie(duration, moves, rows, rowmoves, bankmoves, check) = RBC_Obj.BalanceCompress(RBC_Obj.Array);
-}
-if(Algorithm == 2){
-BalanceCompress BC_Obj(ArrayDim, LoadProbability);
-tie(duration, moves,rows,rowmoves, check) = BC_Obj.BalanceCompressAlg(BC_Obj.Array);
-}
-if(Algorithm == 3){
-Snake S_Obj(ArrayDim, LoadProbability);
-tie(duration ,moves, check) = S_Obj.SnakeAlg(S_Obj.Array);
-}
-if(Algorithm == 4){
-Hungarian H_Obj(ArrayDim, LoadProbability);
-tie(duration, moves, check) = H_Obj.compute(H_Obj.Array);
-}
+RectBC obj(100,.6);
+Decay obj3;
+FillVacancies obj2;
 
+halflife *= 1000000000;
+double sleeptime = 1000/Camera_freq;
 
-cout << "Fidelity: " << check << endl;
-cout << "Duration: " << duration << " nanoseconds" <<endl;
-cout << moves.size() + rows.size() + bankmoves.size() << " Moves" << endl;
-cout << endl;
-int n = moves.size();
-cout << "Balance Moves: " << endl;
-for(int i = 0;i<n;i++){
-    cout << "(" << moves[i][0][0] << ", " << moves[i][0][1] << ") -> (" << moves[i][1][0] << ", " << moves[i][1][1] << ")" << endl;
-}
-cout << endl;
+vector<vector<double>> LossTime = obj3.MakeLossTime(14,14,halflife);
+Timer time;
+tie(Array,moves,bank,compressedrows,ColRange) = obj.BalanceCompress(obj.Array);
 
-if(Algorithm == 1 || Algorithm == 2){
-    cout << "Rows: " << endl;
-    n = rows.size();
-    for(int i = 0; i<n; i++){
-        cout << "Compress Row " << rows[i] << ": ";
-        for(int j = 0;j<rowmoves[i].size();j++){
-            cout << "(" << rowmoves[i][j][0] << " -> " << rowmoves[i][j][1] << ")";
-            if(j!=rowmoves[i].size() - 1){
-                cout << ", ";
+int BankSize =  bank.size();
+
+vector<vector<bool>> StaticArray = Array;
+vacant = obj2.FindVacancies(Array,ColRange);
+Sleep((compressedrows.size() + moves.size())*movetime);
+double downtime = time.gettime();
+
+while(1){
+
+    Sleep(sleeptime);
+
+    time.pause();
+    Array = obj3.ArrayDecay(Array,time.gettime(),LossTime);
+    time.restart();
+
+    vacant = obj2.FindVacancies(Array,ColRange);
+
+    if(vacant.size() <= bank.size()){
+        tie(Array, moves, rows, rowmoves, bank) = obj2.Fill(Array,bank,vacant,ColRange);
+        for(int i = 0;i<vacant.size();i ++){
+            LossTime[vacant[i][0]][vacant[i][1]] = halflife;
             }
-        }
-        cout << endl;
+        Sleep((moves.size() + rows.size())*movetime);
+        downtime += (moves.size() + rows.size())*movetime;
+    }else{
+        time.pause();
+        break;
     }
 }
-
-if(Algorithm == 1){
-cout << endl;
-cout << "Bank Moves: " << endl;
-n = bankmoves.size();
-for(int i = 0;i<n;i++){
-    cout << "(" << bankmoves[i][0][0] << ", " << bankmoves[i][0][1] << ") -> (" << bankmoves[i][1][0] << ", " << bankmoves[i][1][1] << ")" << endl;
-}
-}
+cout << "Bank Size: " << BankSize << endl;
+cout << "Expected Time: " << halflife/49/1000000000*(BankSize+1) << " s" << endl;
+cout << "Actual Time: " << time.gettime()/1000000000 << " s" << endl;
+cout << "Array Lifetime: " << halflife/49/1000000000 <<" s" << endl;
+cout << "Downtime: " << downtime/1000000 << " ms" << endl;
 }
