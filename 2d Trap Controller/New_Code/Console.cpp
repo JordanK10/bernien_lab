@@ -1,23 +1,15 @@
 #include "Console.h"
-#include <iostream>
-#include <vector>
-#include <string>
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <math.h>
-#include <csignal>
-#include <algorithm>
+
+extern struct RearrangementMove;
 
 //#include "control_interface.h"
 
-using namespace std;
-
-vector<string> parseCommand(string &cmd) {
+std::vector<string> parseCommand(string &cmd) {
 	if (cmd[cmd.size() - 1] == '\n') {
 		cmd.pop_back();
 	}
 
-	vector<string> tokens;
+	std::vector<string> tokens;
 
 	stringstream ss(cmd);
 	string item;
@@ -41,9 +33,10 @@ double timeElapsed() {
 	return chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_timer).count();
 }
 
-vector<string> takeInput() {
-	string input(readline("#: "));
-	add_history(input.c_str());
+std::vector<string> takeInput() {
+	cout << "#: ";
+	string input;
+	getline(cin,input);
 
 	if (input[input.size() - 1] == '\n') {
 		input.pop_back();
@@ -65,16 +58,17 @@ int promptForInteger(string attr) {
 	return val;
 }
 
-vector<int> promptForIntegerSequence(string attr) {
+std::vector<int> promptForIntegerSequence(string attr) {
 
 	while (true) {
 		cout << "Enter " << attr << ": ";
-		string input(readline(""));
-		vector<string> tokens = parseCommand(input);
+		string input;
+		getline(cin,input);
+		std::vector<string> tokens = parseCommand(input);
 
 		if (tokens.size() > 0) {
 			bool allTokensValid = true;
-			vector<int> intSequence;
+			std::vector<int> intSequence;
 
 			for (int i = 0; i < tokens.size(); i++) {
 				try {
@@ -188,15 +182,15 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 	pickRearrangementMode(mode, modeArgument);
 
 
-	// if (!awgController.isConnected()) {
-	// 	cout << "Error: Not connected to AWG!" << endl;
-	// 	cout << "***Aborting sequence***" << endl;
-	// 	return;
-	// }
+	 if (!awgController.isConnected()) {
+	 	cout << "Error: Not connected to AWG!" << endl;
+	 	cout << "***Aborting sequence***" << endl;
+		return;
+	}
 
 	// Start sending waveform to AWG.
-	vector<Waveform> startingWaveform = trapControllerHandler.staticStartingWaveform;
-	vector<Waveform> endingWaveform = trapControllerHandler.staticEndingWaveform;
+	std::vector<Waveform> startingWaveform = trapControllerHandler.staticStartingWaveform;
+	std::vector<Waveform> endingWaveform = trapControllerHandler.staticEndingWaveform;
 
 	CameraServer cameraServer;
 	cameraServer.startServer();
@@ -206,8 +200,8 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 
 
 		// Record durations.
-		vector<double> durations;
-		vector<bool> underflowRecords;
+		std::vector<double> durations;
+		std::vector<bool> underflowRecords;
 
 
 		awgController.pushWaveform(startingWaveform);
@@ -219,7 +213,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			// awgController.pushWaveform(startingWaveform);
 
 			// Find atoms in new picture on camera:
-			vector<vector<bool>> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapControllerHandler.trapFrequencies().size(),trapControllerHandler.tchLen);
+			std::vector<std::vector<bool>> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapControllerHandler.trapFrequencies().size(),trapControllerHandler.tchLen);
 			if (atomsPresent.size() == 0) {
 				break;
 			}
@@ -228,14 +222,13 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 
 			trapControllerHandler.resetForRearrangement();
 
-			has_underflow = false;
 
 			startTimer();
 
-			vector <RearrangementMove> moves = trapControllerHandler.generateRearrangementMoves(atomsPresent,mode);
+			std::vector <RearrangementMove> moves = trapControllerHandler.generateRearrangementMoves(atomsPresent,mode);
 
 			// Rearrange traps:
-			vector<Waveform *> rearrangementWaveforms = trapControllerHandler.rearrangeTraps(atomsPresent, mode, modeArgument);
+			std::vector<Waveform *> rearrangementWaveforms = trapControllerHandler.rearrangeTraps(atomsPresent, mode, modeArgument);
 
 			// We want to be notified when the last waveform is pushed through to the SDR, so set a notification on the last segment of rearrangement.
 			// Currently not actually implemented.
@@ -257,7 +250,6 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 
 			//cout << "Duration from trigger -> trigger: " << duration << " ms" << endl;
 			durations.push_back(duration);
-			underflowRecords.push_back(has_underflow);
 
 			cout << "Performed rearrangement " << numRearrangementsPerformed << ": ";
 			for (int i = 0; i < atomsPresent.size(); i++) {
@@ -281,7 +273,6 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				numUnderflows++;
 			}
 		}
-		cout << "Number of underflows: " << numUnderflows << " out of " << underflowRecords.size() << " repetitions." << endl;
 
 
 		double avgDuration = 0;
@@ -304,7 +295,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 }
 
 
-void processRunCommand(vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
+void processRunCommand(std::vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
 	if (commandTokens.size() == 1 || commandTokens[1].compare("help") == 0) {
 		printRunHelp();
 	} else if (commandTokens[1].compare("rearrangement") == 0) {
@@ -348,7 +339,7 @@ bool compareTrapFrequencies(Trap i, Trap j) {
 
 
 // Returns whether the waveform is different now.
-bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, StaticController &staticController, AWGController &awgController) {
+bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
 
 	std::vector<std::vector<Trap>> previousTraps;
 	for (int i = 0; i < trapControllerHandler.size; i++){
@@ -360,7 +351,7 @@ bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &tra
 	if (commandTokens.size() == 1 || commandTokens[1].compare("help") == 0) {
 		printTrapHelp();
 	} else if (commandTokens[1].compare("list") == 0) {
-		staticController.printTraps();
+		//printTraps
 	} else if (commandTokens[1].compare("sort") == 0) {
 		for (int i = 0; i < trapControllerHandler.size; i++){
 			sort(trapControllerHandler.tcxList[i].traps.begin(), trapControllerHandler.tcxList[i].traps.end(), compareTrapFrequencies);
@@ -561,7 +552,7 @@ bool processTrapsInput(vector<string> &commandTokens, TrapControllerHandler &tra
 	return waveformShouldChange;
 }
 
-bool process1DInput(vector<string> &commandTokens, TrapController &trapController, AWGController &awgController) {
+bool process1DInput(std::vector<string> &commandTokens, TrapController &trapController, AWGController &awgController) {
 	string mainCommand = commandTokens[0];
 
 	// if (mainCommand.compare("traps") == 0) {
@@ -593,11 +584,11 @@ bool process1DInput(vector<string> &commandTokens, TrapController &trapControlle
 	return false;
 }
 
-bool process2DInput(vector<string> &commandTokens, StaticController &staticController, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
+bool process2DInput(std::vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
 	string mainCommand = commandTokens[0];
 
 	if (mainCommand.compare("traps") == 0) {
-		bool waveformShouldBeRecalculated = processTrapsInput(commandTokens, trapControllerHandler, staticController, awgController);
+		bool waveformShouldBeRecalculated = processTrapsInput(commandTokens, trapControllerHandler, awgController);
 		// if (waveformShouldBeRecalculated && awgController.isConnected()) {
 		// 	awgController.pushWaveform(trapController.generateWaveform());
 		// }
@@ -629,7 +620,7 @@ void run1DConsole(TrapController &trapController, AWGController &awgController) 
 	bool shouldExit = false;
 	while (!shouldExit) {
 		cout << endl;
-		vector<string> commandTokens = takeInput();
+		std::vector<string> commandTokens = takeInput();
 
 		if (commandTokens.size() == 0) {
 			continue;
@@ -639,16 +630,16 @@ void run1DConsole(TrapController &trapController, AWGController &awgController) 
 	}
 }
 
-void run2DConsole(StaticController &staticController, TrapControllerHandler trapControllerHandler, AWGController &awgController) {
+void run2DConsole( TrapControllerHandler trapControllerHandler, AWGController &awgController) {
 	bool shouldExit = false;
 	while (!shouldExit) {
 		cout << endl;
-		vector<string> commandTokens = takeInput();
+		std::vector<string> commandTokens = takeInput();
 
 		if (commandTokens.size() == 0) {
 			continue;
 		}
 		trapControllerHandler.printTraps();
-		shouldExit = process2DInput(commandTokens, staticController, trapControllerHandler, awgController);
+		shouldExit = process2DInput(commandTokens, trapControllerHandler, awgController);
 	}
 }

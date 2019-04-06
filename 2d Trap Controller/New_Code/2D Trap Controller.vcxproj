@@ -101,22 +101,26 @@
     <ClCompile Include="AWGController.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="StaticController.cpp" />
     <ClCompile Include="Trap.cpp" />
     <ClCompile Include="TrapController.cpp" />
     <ClCompile Include="TrapControllerHandler.cpp" />
     <ClCompile Include="Waveform.cpp" />
     <ClCompile Include="WaveTable.cpp" />
+    <ClCompile Include="spcm_lib_card.cpp" />
+    <ClCompile Include="spcm_lib_data.cpp" />
+    <ClCompile Include="spcm_ostools_win.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AWGController.h" />
     <ClInclude Include="Console.h" />
-    <ClInclude Include="StaticController.h" />
     <ClInclude Include="Trap.h" />
     <ClInclude Include="TrapController.h" />
     <ClInclude Include="TrapControllerHandler.h" />
     <ClInclude Include="Waveform.h" />
     <ClInclude Include="WaveTable.h" />
+    <ClCompile Include="spcm_lib_card.h" />
+    <ClCompile Include="spcm_lib_data.h" />
+    <ClCompile Include="spcm_ostools_win.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

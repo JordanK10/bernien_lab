@@ -47,11 +47,10 @@ int main(){
     // }else if(input=='Y'){
 
       //Run 2D Console
-      StaticController staticController(centerFrequency, sampleRate, gain);
       TrapControllerHandler trapControllerHandler(len, wid, centerFrequency-.5*bandwidth, len/bandwidth, centerFrequency-.5*bandwidth, len/bandwidth,  sampleRate, gain);
       AWGController awgController(0,sampleRate,centerFrequency,gain);
 
-      run2DConsole(staticController, trapControllerHandler, awgController);
+      run2DConsole(trapControllerHandler, awgController);
 
 
 

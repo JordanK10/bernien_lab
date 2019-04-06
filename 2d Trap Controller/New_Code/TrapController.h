@@ -8,6 +8,17 @@
 #include "Trap.h"
 #include "Waveform.h"
 
+#include <iomanip>
+#include <thread>
+#include <stdlib.h>
+#include <algorithm>
+#include <stdexcept>
+#include <cmath>
+#include <string>
+#include <iomanip>
+#include <dirent.h>
+#include <fstream>
+
 #include <vector>
 
 #define DEFAULT_WAVEFORM_DURATION 0.001

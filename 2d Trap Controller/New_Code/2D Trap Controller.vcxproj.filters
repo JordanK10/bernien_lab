@@ -24,9 +24,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StaticController.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+
     <ClCompile Include="Trap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -39,7 +37,13 @@
     <ClCompile Include="Waveform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WaveTable.cpp">
+    <ClCompile Include="spcm_lib_card.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spcm_lib_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spcm_ostools_win.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -48,9 +52,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Console.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StaticController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Trap.h">
@@ -66,6 +67,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WaveTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spcm_lib_card.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spcm_lib_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spcm_ostools_win.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

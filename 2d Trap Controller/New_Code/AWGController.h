@@ -1,5 +1,4 @@
 
-
 #ifndef AWG_CONTROLLER_H
 #define AWG_CONTROLLER_H
 
@@ -7,44 +6,64 @@
 #include <queue>
 #include <mutex>
 #include <thread>
+#include <iostream>
+
+// ----- include of common example librarys -----
+#include "../common/spcm_lib_card.h"
+#include "../common/spcm_lib_data.h"
+#include "../common/ostools/spcm_oswrap.h"
+#include "../common/ostools/spcm_ostools.h"
+#include "../sb5_file/sb5_file.h"
+
 
 using namespace std;
 
-extern bool has_underflow;
 extern double AWG_GAIN;
-
 
 class AWGController{
 
 public:
 
-  AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain);
+	AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain);
 
-  void disconnect();
+	void disconnect();
 	void startStreaming();
 
+	bool loadDataBlock(ST_SPCM_CARDINFO *pstCard, int64 llBytesToCalculate, std::vector<int> dataArr);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
 
-  void pushWaveform(std::vector<Waveform> waveform);
+	void pushWaveform(std::vector<Waveform> waveform);
 
 
-  void pushWaveforms(vector<Waveform> waveforms);
-  void pushWaveforms(vector<Waveform *> waveforms);
+	void pushWaveforms(vector<Waveform> waveforms);
+	void pushWaveforms(vector<Waveform *> waveforms);
 
-  bool isConnected();
+	bool isConnected();
 
-  // drv_handle hDrv;
+	// drv_handle hDrv;
 
 
 private:
+
+    char                szBuffer[1024];     // a character buffer for any messages
+  	ST_SPCM_CARDINFO    stCard;             // info structure of my card
+  	void*               pvBuffer = NULL;
+  	uint32              dwErr;
+  	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
+
+    // setup for the FIFO mode (HW buffer size can be programmed starting with firmware V9)
+   	int64        llHWBufSize = MEGA_B(64);
+   	int64        llSWBufSize = MEGA_B(16);
+   	int64        llNotifySize = KILO_B(1024); // the data transfer speed to the card increases with the notify size
+
 
     double sampleRate;
     double centerFreq;
     double gain;
 
-    bool connected;
+    bool connected = false;
     bool shouldDisconnect;
 
 

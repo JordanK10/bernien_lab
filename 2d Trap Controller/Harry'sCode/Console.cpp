@@ -5,8 +5,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include <readline.h>
+#include <history.h>
 #include <math.h>
 #include <csignal>
 #include <algorithm>

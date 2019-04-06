@@ -5,13 +5,13 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <strings.h>
+// #include <strings.h>
 #include <sstream>
-#include <netdb.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
+// #include <netdb.h>
+// #include <sys/time.h>
+// #include <sys/types.h>
+// #include <sys/ioctl.h>
+// #include <unistd.h>
 #include <vector>
 #include <cstdlib>
 #include <signal.h>
@@ -45,12 +45,12 @@ CameraServer::CameraServer()
 
 CameraServer::~CameraServer()
 {
-	close(serverSocket);
-	close(cameraSocket);
+	// close(serverSocket);
+	// close(cameraSocket);
 }
 
 
-
+//
 bool CameraServer::startServer() {
 	cout << "Starting server..." << endl;
 	// serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -59,106 +59,104 @@ bool CameraServer::startServer() {
 		cout << "Unable to open socket!" << endl;
 		return false;
 	}
-
-
-	struct sockaddr_in server_addr;
-
-	bzero((char *) &server_addr, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(PORT);
-
-
-	int yes = 1;
-	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-
-	// int ret = bind(serverSocket, (struct sockaddr *)&server_addr, sizeof(server_addr));
-	int ret = 0;
-	if (ret < 0) {
-		cout << "Unable to bind to socket!" << endl;
-		return false;
-	}
-
-	listen(serverSocket, 1);
-
+//
+// 	struct sockaddr_in server_addr;
+//
+// 	bzero((char *) &server_addr, sizeof(server_addr));
+// 	server_addr.sin_family = AF_INET;
+// 	server_addr.sin_addr.s_addr = INADDR_ANY;
+// 	server_addr.sin_port = htons(PORT);
+//
+//
+// 	int yes = 1;
+// 	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+//
+// 	// int ret = bind(serverSocket, (struct sockaddr *)&server_addr, sizeof(server_addr));
+// 	int ret = 0;
+// 	if (ret < 0) {
+// 		cout << "Unable to bind to socket!" << endl;
+// 		return false;
+// 	}
+//
+// 	listen(serverSocket, 1);
+//
 }
-
-
-void stopHandlingSignal() {
-	struct sigaction sigIntHandler;
-	sigIntHandler.sa_handler = NULL;
-	sigemptyset(&sigIntHandler.sa_mask);
-	sigIntHandler.sa_flags = 0;
-
-	sigaction(SIGINT, &sigIntHandler, NULL);
-}
-
-
-void shutdownServer(int s) {
-	//shutdown(serverSocket);
-	stopHandlingSignal();
-}
-
-
-bool CameraServer::acceptConnection() {
-	struct sockaddr_in client_addr;
-	socklen_t client_addr_len = sizeof(client_addr);
-
-
-	waitingSocket = serverSocket;
-
-	// Establish a sigint handler to cancel accept if necessary.
-	struct sigaction sigIntHandler;
-	sigIntHandler.sa_handler = shutdownServer;
-	sigemptyset(&sigIntHandler.sa_mask);
-	sigIntHandler.sa_flags = 0;
-
-	sigaction(SIGINT, &sigIntHandler, NULL);
-
-	cameraSocket = accept(serverSocket, (struct sockaddr *)&client_addr, &client_addr_len);
-
-	if (cameraSocket < 0) {
-		cout << "Error accepting connection!" << endl;
-		return false;
-	}
-	return true;
-}
-
-
-
-
+//
+//
+// void stopHandlingSignal() {
+// 	struct sigaction sigIntHandler;
+// 	sigIntHandler.sa_handler = NULL;
+// 	sigemptyset(&sigIntHandler.sa_mask);
+// 	sigIntHandler.sa_flags = 0;
+//
+// 	sigaction(SIGINT, &sigIntHandler, NULL);
+// }
+//
+//
+// void shutdownServer(int s) {
+// 	//shutdown(serverSocket);
+// 	stopHandlingSignal();
+// }
+//
+//
+// bool CameraServer::acceptConnection() {
+// 	struct sockaddr_in client_addr;
+// 	socklen_t client_addr_len = sizeof(client_addr);
+//
+//
+// 	waitingSocket = serverSocket;
+//
+// 	// Establish a sigint handler to cancel accept if necessary.
+// 	struct sigaction sigIntHandler;
+// 	sigIntHandler.sa_handler = shutdownServer;
+// 	sigemptyset(&sigIntHandler.sa_mask);
+// 	sigIntHandler.sa_flags = 0;
+//
+// 	sigaction(SIGINT, &sigIntHandler, NULL);
+//
+// 	cameraSocket = accept(serverSocket, (struct sockaddr *)&client_addr, &client_addr_len);
+//
+// 	if (cameraSocket < 0) {
+// 		cout << "Error accepting connection!" << endl;
+// 		return false;
+// 	}
+// 	return true;
+// }
+//
+//
+//
+//
 vector<vector<bool>> CameraServer::receiveIdentifiedAtomList(int numTraps, int rowLen) {
-	char buf[1024];
-	bzero(buf, 1024);
-
-	int numBytes = read(cameraSocket, buf, 1023);
-
-	if (strlen(buf) == 0) {
-		return vector<vector<bool>>();
-	} else if (strcmp(buf, "exit") == 0) {
-		return vector<vector<bool>>();
-	}
-
-
-	stringstream listString(buf);
-
-	int counter = 0;
+	// char buf[1024];
+	//
+	// int numBytes = [100];
+	//
+	// if (strlen(buf) == 0) {
+	// 	return vector<vector<bool>>();
+	// } else if (strcmp(buf, "exit") == 0) {
+	// 	return vector<vector<bool>>();
+	// }
+	//
+	//
+	// stringstream listString(buf);
+	//
+	// int counter = 0;
 
 	vector<vector<bool>> atomsPresent;
-	for (int i = 0; i < numTraps; i++) {
-		if (i != 0 && i%rowLen == 0){
-			counter ++;
-		}
-		int present;
-
-		listString >> present;
-
-		if (present == 1) {
-			atomsPresent[counter].push_back(true);
-		} else {
-			atomsPresent[counter].push_back(false);
-		}
-	}
+	// for (int i = 0; i < numTraps; i++) {
+	// 	if (i != 0 && i%rowLen == 0){
+	// 		counter ++;
+	// 	}
+	// 	int present;
+	//
+	// 	listString >> present;
+	//
+	// 	if (present == 1) {
+	// 		atomsPresent[counter].push_back(true);
+	// 	} else {
+	// 		atomsPresent[counter].push_back(false);
+	// 	}
+	// }
 
 	return atomsPresent;
 }

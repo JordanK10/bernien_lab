@@ -2,15 +2,15 @@
 
 #ifndef CAMERA_SERVER_H
 #define CAMERA_SERVER_H
-
-#include <iostream>
-#include <string>
+//
+// #include <iostream>
+// #include <string>
 #include <vector>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-
-
+// #include <sys/types.h>
+// #include <sys/socket.h>
+// #include <netinet/in.h>
+//
+//
 
 class CameraServer
 {

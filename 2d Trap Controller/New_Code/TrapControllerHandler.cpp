@@ -1,20 +1,8 @@
 
 #include "TrapControllerHandler.h"
 
-#include <iomanip>
-#include <thread>
-#include <stdlib.h>
-#include <algorithm>
-#include <stdexcept>
-#include <cmath>
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <string>
-#include <iomanip>
-#include <dirent.h>
-#include <fstream>
-#include <vector>
 
+struct RearrangementMove;
 
 /* Generate width+length trap controllers. The length primary TCs are centered
 on the width axis, and create a trap per x-increment starting at the
@@ -286,12 +274,14 @@ void TrapController::printAvailableDefaultTrapConfigurations() {
 	}
 }
 
-vector<RearrangementMove> generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode){
+std::vector<RearrangementMove> TrapControllerHandler::generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode){
 
-  vector<RearrangementMove> moveList;
+  std::vector<RearrangementMove> moveList;
 
-  while
+  while(1)
+    break;
 
+  return moveList;
 }
 
 vector<Waveform *> TrapControllerHandler::rearrangeTraps(vector<vector<bool>> atomsPresent, enum rearrange_mode mode, int modeArgument) {

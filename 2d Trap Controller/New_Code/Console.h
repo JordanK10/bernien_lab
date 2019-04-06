@@ -1,11 +1,18 @@
 // Created by H.Levine with Atom Array team, Lukin group (2016).
 
-
 #include "AWGController.h"
 #include "TrapController.h"
 #include "TrapControllerHandler.h"
-#include "StaticController.h"
 #include "CameraServer.h"
+
+#include <malloc.h>
+#include <crtdbg.h>
+#include <vector>
+#include <string>
+#include <math.h>
+#include <csignal>
+
+
 
 /* Console documentation.
  * ----------------------
@@ -35,4 +42,4 @@
  * timeout [new_val]				-		print out current timeout value (if no arg specified), otherwise set timeout value.
 */
 void run1DConsole(TrapController &trapController, AWGController &AWGController);
-void run2DConsole(StaticController &staticController, TrapControllerHandler trapControllerHandler, AWGController &awgController);
+void run2DConsole(TrapControllerHandler trapControllerHandler, AWGController &awgController);
