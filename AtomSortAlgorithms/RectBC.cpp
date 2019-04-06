@@ -389,7 +389,7 @@ vector<int> Range0 = {Range[0],center};
 return make_tuple(Array,RowTotal,Range0,Range1,moves);
 }
 
-tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int>> RectBC::BalanceCompress(vector<vector<bool>> Array){
+tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int>, vector<int>> RectBC::BalanceCompress(vector<vector<bool>> Array){
 
     vector<vector<vector<int>>> moves2;
     int Height = Array.size();
@@ -467,6 +467,6 @@ for(i = 0; i<BankMoves.size(); i++){
     bank.push_back(BankMoves[i][1]);
 }
 
-return make_tuple(Array,moves2,bank,ColRange);
+return make_tuple(Array,moves2,bank,rows,ColRange);
 }
 

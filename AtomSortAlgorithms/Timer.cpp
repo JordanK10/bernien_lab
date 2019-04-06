@@ -23,5 +23,9 @@ double Timer::gettime()
     End = chrono::steady_clock::now();
     duration += chrono::duration_cast<chrono::nanoseconds>(End - start).count();
     start = chrono::steady_clock::now();
+    if(duration > calltime){
+    duration -= calltime;
+    }
     return duration;
+
 }

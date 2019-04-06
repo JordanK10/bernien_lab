@@ -15,7 +15,7 @@ class RectBC
     public:
         RectBC(int Sites, float Prob);
         vector<vector<bool>> Array;
-        tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int> > BalanceCompress(vector<vector<bool>> Array);
+        tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int> , vector<int>> BalanceCompress(vector<vector<bool>> Array);
 
     private:
         vector<vector<bool>> MakeRectArray(int Sites, float Prob);

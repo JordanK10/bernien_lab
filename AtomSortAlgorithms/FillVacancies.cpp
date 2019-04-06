@@ -1,6 +1,19 @@
 #include "FillVacancies.h"
 
 using namespace std;
+vector<vector<int>> FillVacancies::FindVacancies(vector<vector<bool>> Array, vector<int> Range){
+    int Height = Array.size();
+    vector<vector<int>> vacant = {};
+    for(int i = 0; i<Height;i++){
+        for(int j = Range[0];j<=Range[1];j++){
+            if(Array[i][j] == false){
+                vacant.push_back({i,j});
+            }
+        }
+    }
+    return vacant;
+}
+
 
 vector<vector<bool>> FillVacancies::Move(vector<vector<bool>> Array, vector<int> pos1,vector<int> pos2){
     vector<vector<bool>> NewArray = Array;
@@ -23,23 +36,25 @@ tuple<vector<bool>,vector<vector<int>>> FillVacancies::CompressRow(vector<bool> 
         }
     }
     int diff = atoms - suff;
+    int missing = 0;
     if(diff<0){
-        cout << "error! insufficient atoms in row" << endl;
+        missing = -diff;
     }
     vector<vector<int>> moves = {};
     int j = 0;
     int k = 0;
     vector<bool> newRow = {};
     int extras = diff;
-    while(j<diff and j<r1){
+
+
+    while(j<diff && j<r1){
         newRow.push_back(true);
         moves.push_back({pos[k],j});
         j ++;
         k ++;
         extras--;
-
     }
-    while(j<r1){
+    while(j<r1 + missing){
         newRow.push_back(false);
         j++;
     }
@@ -62,7 +77,7 @@ tuple<vector<bool>,vector<vector<int>>> FillVacancies::CompressRow(vector<bool> 
     return make_tuple(newRow,moves);
 }
 
-tuple<vector<vector<bool>>,vector<vector<vector<int>>>,vector<int>,vector<vector<vector<int>>> > FillVacancies::Fill(vector<vector<bool>> Array, vector<vector<int>> bank, vector<vector<int>> vacancies,vector<int> Range)
+tuple<vector<vector<bool>>,vector<vector<vector<int>>>,vector<int>,vector<vector<vector<int>>>,vector<vector<int>> > FillVacancies::Fill(vector<vector<bool>> Array, vector<vector<int>> bank, vector<vector<int>> vacancies,vector<int> Range)
 {
     vector<vector<vector<int>>> moves;
     vector<int> rows;
@@ -75,14 +90,12 @@ tuple<vector<vector<bool>>,vector<vector<vector<int>>>,vector<int>,vector<vector
         rowmoves.push_back({{0}});
     }
 
-    int b = bank.size();
     int v = vacancies.size();
     for(int i = 0;i<v;i++){
         bool done = false;
         int row = vacancies[i][0];
-        for(int j = 0; j<b;j++){
+        for(int j = 0; j<bank.size();j++){
             if(bank[j][0] == row){
-                cout << bank[j][0] << endl;
                 tie(Array[row],rowmoves[row]) = CompressRow(Array[row],Range);
                 rows.push_back(row);
                 bank.erase(bank.begin()+j);
@@ -91,27 +104,41 @@ tuple<vector<vector<bool>>,vector<vector<vector<int>>>,vector<int>,vector<vector
             }
         }
         if(done == false){
-            int bankrow;
-            for(int k = row; k<Height;k++){
-                if(bank[k][0] == k){
-                    done = true;
-                    bankrow = i;
+            for(int k = row;k<Height;k++){
+                for(int l = 0;l<bank.size();l++){
+                    if(bank[l][0] == k){
+                        Array = Move(Array,bank[l],{row,bank[l][1]});
+                        moves.push_back({bank[l],{row,bank[l][1]}});
+                        bank.erase(bank.begin() + l);
+                        done = true;
+                        break;
+                    }
+                }
+                if(done == true){
                     break;
                 }
             }
-        if(done == false){
-            for(int k = row; k>= 0;k--){
-                if(bank[k][0] == k){
-                    bankrow = k;
+            if(done == false){
+                for(int k = row;k>= 0;k--){
+                    for(int l = 0;l<bank.size();l++){
+                        if(bank[l][0] == k){
+                            Array = Move(Array,bank[l],{row,bank[l][1]});
+                            moves.push_back({bank[l],{row,bank[l][1]}});
+                            bank.erase(bank.begin() + l);
+                            done = true;
+                            break;
+                        }
+                    }
+                if(done == true){
                     break;
+                    }
                 }
             }
+
+            tie(Array[row],rowmoves[row]) = CompressRow(Array[row],Range);
+            rows.push_back(row);
         }
-        Array = Move(Array,bank[bankrow],{row,bank[bankrow][1]});
-        moves.push_back({bank[bankrow],{row,bank[bankrow][1]}});
-        tie(Array[row],rowmoves[row]) = CompressRow(Array[row],Range);
-        rows.push_back(row);
-        }
+
     }
-    return make_tuple(Array,moves,rows,rowmoves);
+    return make_tuple(Array,moves,rows,rowmoves,bank);
 }
