@@ -2,16 +2,12 @@
 #define TRAP_CONTROLLER_HANDLER_H
 
 #include "TrapController.h"
+#include "rearrangementmove.h"
 #include <vector>
 
 using namespace std;
+extern struct RearrangementMove;
 
-struct RearrangementMove{
-  std::vector<bool> startingConfig;
-  std::vector<bool> endingConfig;
-  int row;
-  int col;
-};
 
 class TrapControllerHandler {
 
