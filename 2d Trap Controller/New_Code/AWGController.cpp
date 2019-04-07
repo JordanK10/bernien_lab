@@ -85,7 +85,7 @@ loadDataBlock: loads the data from the computed waveform arrays into buffers
 	static int64 g_llOffset = 0;
 	static int64 g_llXDiv = KILO_B(100);
 
-	bool AWGController::loadDataBlock(ST_SPCM_CARDINFO *pstCard, int64 llBytesToCalculate, std::vector<int> dataArr){
+	bool AWGController::loadDataBlock(Waveform dataArr, int channel){
 
 		// ------------------------------------------------------------------------
 		// allocate and setup the fifo buffer and fill it once with data
@@ -96,10 +96,10 @@ loadDataBlock: loads the data from the computed waveform arrays into buffers
 		int64 i;
 		int16* pnData = (int16*) pvBuffer;
 
-		for (i = 0; i < llBytesToCalculate / 2; i++)
-			pnData[i] = (int16)dataArr[i]; //PUT DATA HURRRRRRR
+	//	for (i = 0; i < llBytesToCalculate / 2; i++)
+//			pnData[i] = (int16)dataArr.dataVector[i]; //PUT DATA HURRRRRRR
 
-		g_llOffset += (llBytesToCalculate / pstCard->lBytesPerSample);
+//		g_llOffset += (llBytesToCalculate / stCard.lBytesPerSample);
 
 		return true;
 	}

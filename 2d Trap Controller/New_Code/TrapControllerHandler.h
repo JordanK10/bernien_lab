@@ -51,8 +51,8 @@ public:
   int tchWid;
   int numTokens = 4;
 
-  std::vector<Waveform> staticStartingWaveform;
-	std::vector<Waveform> staticEndingWaveform;
+  Waveform staticYWaveform;
+  Waveform staticXWaveform;
 
   /* DETERMINE LENGTH OF VECTORS */
   int size = 0;

@@ -1,8 +1,14 @@
 #include "Console.h"
 
+//#include "control_interface.h"
+
 extern struct RearrangementMove;
 
-//#include "control_interface.h"
+
+static const int DYNAMIC_AWG_X = 1;
+static const int DYNAMIC_AWG_Y = 2;
+static const int STATIC_AWG_X = 3;
+static const int STATIC_AWG_Y = 4;
 
 std::vector<string> parseCommand(string &cmd) {
 	if (cmd[cmd.size() - 1] == '\n') {
@@ -189,8 +195,9 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 	}
 
 	// Start sending waveform to AWG.
-	std::vector<Waveform> startingWaveform = trapControllerHandler.staticStartingWaveform;
-	std::vector<Waveform> endingWaveform = trapControllerHandler.staticEndingWaveform;
+	Waveform startingXWaveform = trapControllerHandler.staticXWaveform;
+	Waveform startingYWaveform = trapControllerHandler.staticYWaveform;
+
 
 	CameraServer cameraServer;
 	cameraServer.startServer();
@@ -203,14 +210,10 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 		std::vector<double> durations;
 		std::vector<bool> underflowRecords;
 
-
-		awgController.pushWaveform(startingWaveform);
-
-
+		// Keeping track of number of rearrangements	
 		int numRearrangementsPerformed = 0;
 		while (true) {
-			// // Start of sequence: stream static initial waveform.
-			// awgController.pushWaveform(startingWaveform);
+
 
 			// Find atoms in new picture on camera:
 			std::vector<std::vector<bool>> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapControllerHandler.trapFrequencies().size(),trapControllerHandler.tchLen);
@@ -552,38 +555,6 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 	return waveformShouldChange;
 }
 
-bool process1DInput(std::vector<string> &commandTokens, TrapController &trapController, AWGController &awgController) {
-	string mainCommand = commandTokens[0];
-
-	// if (mainCommand.compare("traps") == 0) {
-	// 	bool waveformShouldBeRecalculated = processTrapsInput(commandTokens, trapController, awgController);
-	// 	if (waveformShouldBeRecalculated && awgController.isConnected()) {
-	// 		awgController.pushWaveform(trapController.generateWaveform());
-	// 	}
-	// } else if (mainCommand.compare("awg") == 0) {
-	// 	processawgInput(commandTokens, trapController, awgController);
-	// } else if (mainCommand.compare("run") == 0) {
-	// 	processRunCommand(commandTokens, trapController, awgController);
-	// } else if (mainCommand.compare("adwin") == 0) {
-	// 	processAdwinCommand(commandTokens);
-	// } else if (mainCommand.compare("help") == 0) {
-	// 	cout << "Console help menu:" << endl;
-	// 	cout << "traps [trap command] [arguments]" << endl;
-	// 	cout << "awg [awg command] [arguments]" << endl;
-	// 	cout << "run [run command] [arguments]" << endl;
-	// 	cout << "adwin [adwin command]" << endl;
-	// } else if (mainCommand.compare("exit") == 0) {
-	// 	awgController.disconnect();
-	// 	cout << "Bye!" << endl;
-	// 	return true;
-	// } else {
-	// 	cout << "Command unknown: " << commandTokens[0] << endl;
-	// 	cout << "Type 'help' for more information." << endl;
-	// }
-
-	return false;
-}
-
 bool process2DInput(std::vector<string> &commandTokens, TrapControllerHandler &trapControllerHandler, AWGController &awgController) {
 	string mainCommand = commandTokens[0];
 
@@ -614,20 +585,6 @@ bool process2DInput(std::vector<string> &commandTokens, TrapControllerHandler &t
 	}
 
 	return false;
-}
-
-void run1DConsole(TrapController &trapController, AWGController &awgController) {
-	bool shouldExit = false;
-	while (!shouldExit) {
-		cout << endl;
-		std::vector<string> commandTokens = takeInput();
-
-		if (commandTokens.size() == 0) {
-			continue;
-		}
-
-		shouldExit = process1DInput(commandTokens, trapController, awgController);
-	}
 }
 
 void run2DConsole( TrapControllerHandler trapControllerHandler, AWGController &awgController) {

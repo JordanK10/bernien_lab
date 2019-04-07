@@ -29,7 +29,7 @@ public:
 	void disconnect();
 	void startStreaming();
 
-	bool loadDataBlock(ST_SPCM_CARDINFO *pstCard, int64 llBytesToCalculate, std::vector<int> dataArr);
+	bool loadDataBlock(Waveform dataArr, int channel);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
