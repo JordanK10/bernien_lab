@@ -1,15 +1,9 @@
 #include "Rearrange2d.h"
-
 #include "BalanceCompress.h"
 
 using namespace std;
 
-BalanceCompress::BalanceCompress(int Dim, float Prob)
-{
-    Array = MakeBoolArray(Dim, Prob);
-}
-
-vector<vector<vector<int>>> BalanceCompress::Interpolate(vector<int> movefrom, vector<int> moveto, int center){
+vector<vector<vector<int>>> Interpolate(vector<int> movefrom, vector<int> moveto, int center){
     vector<vector<vector<int>>> moves;
     if(moveto[0] > movefrom[0]){
         for(int i = 0;i<(moveto[0] - center - 1);i++){
@@ -25,7 +19,7 @@ vector<vector<vector<int>>> BalanceCompress::Interpolate(vector<int> movefrom, v
     return moves;
 }
 
-vector<vector<bool>> BalanceCompress::MakeBoolArray(int Dim, float Prob){
+vector<vector<bool>> MakeBoolArray(int Dim, float Prob){
     int i = 0;
     int j = 0;
     vector<vector<bool>> matrix;
@@ -49,7 +43,7 @@ vector<vector<bool>> BalanceCompress::MakeBoolArray(int Dim, float Prob){
     return matrix;
 }
 
-vector<int> BalanceCompress::CenterOfMass(vector<vector<bool>> Array, int Dim){
+vector<int> CenterOfMass(vector<vector<bool>> Array, int Dim){
     int i = 0;
     int j = 0;
     float RowWeight = 0;
@@ -73,7 +67,7 @@ vector<int> BalanceCompress::CenterOfMass(vector<vector<bool>> Array, int Dim){
     return COM;
 }
 
-tuple<vector<bool>,vector<vector<int>>> BalanceCompress::CompressRow(vector<bool> row, int center, int suff){
+tuple<vector<bool>,vector<vector<int>>> CompressRow(vector<bool> row, int center, int suff){
     int dim = row.size();
     float x = suff;
     x/=2;
@@ -136,14 +130,14 @@ tuple<vector<bool>,vector<vector<int>>> BalanceCompress::CompressRow(vector<bool
     return make_tuple(newRow,moves);
 }
 
-vector<vector<bool>> BalanceCompress::Move(vector<vector<bool>> Array, vector<int> pos1,vector<int> pos2){
+vector<vector<bool>> Move(vector<vector<bool>> Array, vector<int> pos1,vector<int> pos2){
     vector<vector<bool>> NewArray = Array;
     NewArray[pos1[0]][pos1[1]] = false;
     NewArray[pos2[0]][pos2[1]] = true;
     return NewArray;
 }
 
-vector<int> BalanceCompress::RowSum(vector<vector<bool>> Array, int dim){
+vector<int> RowSum(vector<vector<bool>> Array, int dim){
     vector<int> RowTotal;
     int dummy = 0;
     int i = 0;
@@ -163,7 +157,7 @@ vector<int> BalanceCompress::RowSum(vector<vector<bool>> Array, int dim){
     return RowTotal;
 }
 
-vector<vector<bool>> BalanceCompress::Transpose(vector<vector<bool>> Array, int dim){
+vector<vector<bool>> Transpose(vector<vector<bool>> Array, int dim){
     int i = 0;
     int j = 0;
     vector<vector<bool>> NewArray;
@@ -181,24 +175,7 @@ vector<vector<bool>> BalanceCompress::Transpose(vector<vector<bool>> Array, int 
     return NewArray;
 }
 
-bool BalanceCompress::Check(vector<vector<bool>> Array, vector<int> RowRange, vector<int> ColRange){
-    int i = RowRange[0];
-    int j = ColRange[0];
-    bool check = true;
-    while(i<RowRange[1]){
-        while(j<ColRange[1]){
-            if(Array[i][j] != true){
-                check = false;
-            }
-            j ++;
-        }
-        j = ColRange[0];
-        i ++;
-    }
-    return check;
-}
-
-tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vector<int>>>> BalanceCompress::Balance(vector<vector<bool>> Array, vector<int> Range, vector<int> COM, int dim, int SufficientAtoms, vector<int> RowTotal){
+tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vector<int>>>> Balance(vector<vector<bool>> Array, vector<int> Range, vector<int> COM, int dim, int SufficientAtoms, vector<int> RowTotal){
     vector<vector<vector<int>>> moves;
     int center;
     if((Range[1] - Range[0])%2 == 0){
@@ -315,9 +292,8 @@ vector<int> Range0 = {Range[0],center};
 return make_tuple(Array,RowTotal,Range0,Range1,moves);
 }
 
-tuple<float, vector<vector<vector<int>>>,vector<int>, vector<vector<vector<int>>>, bool> BalanceCompress::BalanceCompressAlg(vector<vector<bool>> Array, int TargetDim){
+tuple<vector<vector<vector<int>>>,vector<int>, vector<vector<vector<int>>>> BalanceCompressAlg(vector<vector<bool>> Array, int TargetDim){
     vector<vector<vector<int>>> moves2;
-    auto start = chrono::steady_clock::now();
 
     int ArrayDim = Array.size();
 
@@ -404,8 +380,5 @@ tuple<float, vector<vector<vector<int>>>,vector<int>, vector<vector<vector<int>>
         i++;
     }
 
-auto End = chrono::steady_clock::now();
-float duration = chrono::duration_cast<chrono::microseconds>(End - start).count();
-bool check = Check(Array,RowRange[0],ColRange);
-return make_tuple(duration,moves2,rows, rowmoves, check);
+return make_tuple(moves2,rows, rowmoves);
 }
