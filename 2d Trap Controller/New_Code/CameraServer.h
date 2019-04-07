@@ -8,9 +8,20 @@
 #include <vector>
 // #include <sys/types.h>
 // #include <sys/socket.h>
-// #include <netinet/in.h>
-//
-//
+#include <iomanip>
+#include <iostream>
+#include <string>
+// #include <strings.h>
+#include <sstream>
+// #include <netdb.h>
+// #include <sys/time.h>
+// #include <sys/types.h>
+// #include <sys/ioctl.h>
+// #include <unistd.h>
+#include <vector>
+#include <cstdlib>
+#include <signal.h>
+#include <cstring>
 
 class CameraServer
 {

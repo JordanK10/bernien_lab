@@ -210,6 +210,11 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 		std::vector<double> durations;
 		std::vector<bool> underflowRecords;
 
+		// We push the static waveforms to the static traps
+		awgController.loadDataBlock(startingXWaveform,STATIC_AWG_X);
+		awgController.loadDataBlock(startingYWaveform,STATIC_AWG_Y);
+
+
 		// Keeping track of number of rearrangements	
 		int numRearrangementsPerformed = 0;
 		while (true) {
@@ -223,6 +228,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 
 			numRearrangementsPerformed++;
 
+			//Setting for rearrangement
 			trapControllerHandler.resetForRearrangement();
 
 
@@ -233,20 +239,10 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			// Rearrange traps:
 			std::vector<Waveform *> rearrangementWaveforms = trapControllerHandler.rearrangeTraps(atomsPresent, mode, modeArgument);
 
-			// We want to be notified when the last waveform is pushed through to the SDR, so set a notification on the last segment of rearrangement.
-			// Currently not actually implemented.
-			//rearrangementWaveforms[0]->writeToBinaryFile("sample_rearrangement");
-
+			// Push rearrangement waveforms to the AWG 
 			rearrangementWaveforms[0]->shouldNotifyAfterSending = true;
 			awgController.pushWaveforms(rearrangementWaveforms);
 
-			//SlowMo Rearrangement
-			// if (mode == REARRANGE_MODE_SLOW_VIDEO) {
-			// 	awgController.pushWaveform(&slowRearrangement);
-			// 	awgController.pushWaveform(startingWaveform);
-			// }
-
-			//sdrController.waitOnWaveformNotification();
 			// Record metadata
 			double duration = timeElapsed();
 
@@ -254,6 +250,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			//cout << "Duration from trigger -> trigger: " << duration << " ms" << endl;
 			durations.push_back(duration);
 
+			// Printing the final, rearranged atoms
 			cout << "Performed rearrangement " << numRearrangementsPerformed << ": ";
 			for (int i = 0; i < atomsPresent.size(); i++) {
 				for (int j = 0; j < atomsPresent.size(); j++){
