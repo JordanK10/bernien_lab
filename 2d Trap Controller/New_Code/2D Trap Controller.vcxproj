@@ -109,6 +109,8 @@
     <ClCompile Include="spcm_lib_card.cpp" />
     <ClCompile Include="spcm_lib_data.cpp" />
     <ClCompile Include="spcm_ostools_win.cpp" />
+    <ClCompile Include="Rearrange2d.cpp" />
+    <ClCompile Include="AtomSim.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AWGController.h" />
@@ -121,6 +123,8 @@
     <ClCompile Include="spcm_lib_card.h" />
     <ClCompile Include="spcm_lib_data.h" />
     <ClCompile Include="spcm_ostools_win.h" />
+    <ClCompile Include="Rearrange2d.h" />
+    <ClCompile Include="AtomSim.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -46,6 +46,12 @@
     <ClCompile Include="spcm_ostools_win.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Rearrange2d.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AtomSim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AWGController.h">
@@ -78,5 +84,11 @@
     <ClInclude Include="spcm_ostools_win.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClCompile Include="Rearrange2d.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AtomSim.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
