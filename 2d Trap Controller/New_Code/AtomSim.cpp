@@ -1,17 +1,28 @@
-#include "AtomSim.cpp"
+#include "AtomSim.h"
 
-vector<vector<vector<int>>> BalanceCompress::Interpolate(vector<int> movefrom, vector<int> moveto, int center){
-    vector<vector<vector<int>>> moves;
-    if(moveto[0] > movefrom[0]){
-        for(int i = 0;i<(moveto[0] - center - 1);i++){
-            moves.push_back({{moveto[0] -i - 1,moveto[1]},{moveto[0] - i,moveto[1]}});
-        }
-        moves.push_back({movefrom,{center + 1,moveto[1]}});
-    }else{
-        for(int i = 0;i<(center - moveto[0]);i++){
-            moves.push_back({{moveto[0]+i+1,moveto[1]},{moveto[0]+i,moveto[1]}});
-        }
-        moves.push_back({movefrom,{center,moveto[1]}});
-    }
-    return moves;
+using namespace std;
+
+vector<vector<bool>> MakeBoolArray(int Dim, float Prob) {
+	int i = 0;
+	int j = 0;
+	vector<vector<bool>> matrix;
+	vector<bool> row;
+	while (i < Dim) {
+		while (j < Dim) {
+			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+			if (r <= Prob) {
+				row.push_back(true);
+			}
+			else {
+				row.push_back(false);
+			}
+			j++;
+		}
+		i++;
+		j = 0;
+		matrix.push_back(row);
+		row = {};
+
+	}
+	return matrix;
 }

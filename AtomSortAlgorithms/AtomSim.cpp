@@ -1,6 +1,6 @@
 #include "AtomSim.cpp"
 
-vector<vector<bool>> BalanceCompress::MakeBoolArray(int Dim, float Prob){
+vector<vector<bool>> MakeBoolArray(int Dim, float Prob){
     int i = 0;
     int j = 0;
     vector<vector<bool>> matrix;
@@ -21,4 +21,3 @@ vector<vector<bool>> BalanceCompress::MakeBoolArray(int Dim, float Prob){
         row = {};
 
     }
-  

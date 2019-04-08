@@ -9,7 +9,9 @@
 #include <iostream>
 
 // ----- include of common example librarys -----
-#include "../common/spcm_lib_card.h"
+//#include "../common/spcm_lib_card.h"
+#include "spcm_lib_card.h"
+
 #include "../common/spcm_lib_data.h"
 #include "../common/ostools/spcm_oswrap.h"
 #include "../common/ostools/spcm_ostools.h"
@@ -19,6 +21,7 @@
 using namespace std;
 
 extern double AWG_GAIN;
+
 
 class AWGController{
 

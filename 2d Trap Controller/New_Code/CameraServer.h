@@ -23,6 +23,9 @@
 #include <signal.h>
 #include <cstring>
 
+#include "AtomSim.h"
+
+
 class CameraServer
 {
 public:

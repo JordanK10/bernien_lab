@@ -225,6 +225,21 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			if (atomsPresent.size() == 0) {
 				break;
 			}
+			for (int i = 0; i < atomsPresent.size(); i++) {
+				for (int j = 0; j < atomsPresent.size(); j++) {
+					if (atomsPresent[i][j]) {
+						cout << "1";
+					}
+					else {
+						cout << "0";
+					}
+				}
+				cout << endl;
+			}
+			cout << endl;
+
+			int car;
+			cin >> car;
 
 			numRearrangementsPerformed++;
 

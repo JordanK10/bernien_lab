@@ -24,7 +24,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-
     <ClCompile Include="Trap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -52,6 +51,18 @@
     <ClCompile Include="AtomSim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WaveTable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spcm_lib_card.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spcm_lib_data.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spcm_ostools_win.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AWGController.h">
@@ -73,15 +84,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WaveTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="spcm_lib_card.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="spcm_lib_data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="spcm_ostools_win.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClCompile Include="Rearrange2d.h">

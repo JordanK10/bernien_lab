@@ -66,16 +66,28 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 
   //Opens filestream from a given file. First two inputs are L/wW
   ifstream config_file("./DefaultTrapConfigurations/" + filename);
-  config_file >> tchLen;  config_file >> tchWid;
+
+  if (!config_file.is_open()) {
+	  cout << "Unable to open file: " << filename << endl;
+	  printAvailableDefaultTrapConfigurations();
+	  return false;
+  }
+
+  string temp1; string temp2;
+  config_file >> temp1;  config_file >> temp2;
+  tchLen = 0; tchWid = 0;
   int numTokensParsed=0; int numLinesParsed = 0; int numGroupsParsed = 0;
 
   //Generates list of token sets by group size, then sends them to corresponding trap
-  vector<vector<string>> tokenList;
-  tokenList.resize(tchLen, std::vector<string>(numTokens, " "));
-
+  cout << temp1;
+  cout << endl << temp2;
+  cin >> tchLen;
+  vector<vector<string>> tokenList(tchLen);
+  string temp;
   //Inputs trap informationuntill EOF
-  while (config_file >> tokenList[numLinesParsed][numTokensParsed]){
-    numTokensParsed ++;
+  while (config_file >> temp){
+	tokenList[numLinesParsed].push_back(temp);
+	numTokensParsed ++;
     if (numTokensParsed == 4) {
       numTokensParsed = 0;
       numLinesParsed ++;
