@@ -52,5 +52,5 @@ vector<vector<bool>> CameraServer::receiveIdentifiedAtomList(int numTraps, int r
 
 	vector<vector<bool>> atomsPresent;
 
-	return atomsPresent;
+	return MakeBoolArray(5,.8);
 }
