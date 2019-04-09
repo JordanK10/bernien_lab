@@ -1,11 +1,10 @@
 #include "Rearrange2d.h"
-#include "BalanceCompress.h"
-
 #include <vector>
 #include <tuple>
 #include <iostream>
 #include <random>
 #include <math.h>
+#include "rearrangementmove.h"
 
 
 using namespace std;
@@ -54,7 +53,7 @@ vector<bool> CompressRow(vector<bool> row, int center, int suff){
     int dim = row.size();
     float x = suff;
     x/=2;
-    int r1 = (center - x);
+    int r1 = round(center - x);
     int r2 = r1 + suff - 1;
 
     if(r1<0){
@@ -74,11 +73,11 @@ vector<bool> CompressRow(vector<bool> row, int center, int suff){
     }
     int diff = atoms - suff;
 
-    vector<vector<int>> moves = {};
+    vector<vector<int>> moves;
     int j = 0;
-    vector<bool> newRow = {};
+    vector<bool> newRow ;
     int extras = diff;
-    while(j<diff and j<r1){
+    while(j<diff && j<r1){
         newRow.push_back(true);
         j ++;
         extras--;
@@ -144,7 +143,7 @@ vector<vector<bool>> Transpose(vector<vector<bool>> Array){
             j ++;
         }
         NewArray.push_back(row);
-        row = {};
+        row ;
         j = 0;
         i++;
     }
@@ -183,8 +182,8 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vec
 
     while(SuffUpper > Upper || SuffLower > Lower){
         i = center + 1;
-        vector<int> moveto = {};
-        vector<int> movefrom = {};
+        vector<int> moveto ;
+        vector<int> movefrom ;
         int j = 0;
         if(SuffLower < Lower && SuffUpper < Upper){
             break;
@@ -214,8 +213,8 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vec
                 if(moveto.size() == 0 || movefrom.size() == 0){
                         i = center + 1;
                         j ++;
-                        moveto = {};
-                        movefrom = {};
+                        moveto ;
+                        movefrom ;
                     }else{
                         Upper ++;
                         break;
@@ -249,8 +248,8 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vec
                 if(moveto.size() == 0 || movefrom.size() == 0){
                         i = center;
                         j ++;
-                        moveto = {};
-                        movefrom = {};
+                        moveto ;
+                        movefrom ;
                     }else{
                         Lower ++;
                         break;
@@ -283,18 +282,18 @@ return make_tuple(Array,RowTotal,Range0,Range1,moves,cols,oldCols,newCols);
 tuple<vector<int>,vector<vector<bool>>, vector<vector<bool>>,vector<int>,vector<vector<bool>>, vector<vector<bool>>,vector<int>,vector<vector<bool>>, vector<vector<bool>>> BalanceCompressAlg(vector<vector<bool>> Array){
     vector<vector<vector<int>>> moves2;
 
-    vector<vector<bool>> oldRows = {};
-    vector<vector<bool>> newRows = {};
-    vector<vector<bool>> oldCols = {};
-    vector<vector<bool>> newCols = {};
+    vector<vector<bool>> oldRows ;
+    vector<vector<bool>> newRows ;
+    vector<vector<bool>> oldCols ;
+    vector<vector<bool>> newCols ;
     vector<int> cols;
 
-    vector<vector<bool>> initOldCols = {};
-    vector<vector<bool>> initNewCols = {};
+    vector<vector<bool>> initOldCols ;
+    vector<vector<bool>> initNewCols ;
     vector<int> initCols;
 
-    vector<vector<bool>> oldCols1 = {};
-    vector<vector<bool>> newCols1 = {};
+    vector<vector<bool>> oldCols1 ;
+    vector<vector<bool>> newCols1 ;
     vector<int> cols1;
 
 
@@ -306,7 +305,7 @@ tuple<vector<int>,vector<vector<bool>>, vector<vector<bool>>,vector<int>,vector<
 
     int i = 0;
     int atoms = 0;
-    vector<vector<int>> RowRange = {};
+    vector<vector<int>> RowRange ;
 
 
         while(i < ArrayDim){
@@ -374,7 +373,7 @@ tuple<vector<int>,vector<vector<bool>>, vector<vector<bool>>,vector<int>,vector<
     i = 0;
     vector<int> Range1;
     vector<int> Range2;
-    vector<int> BalancedRows = {};
+    vector<int> BalancedRows ;
     vector<vector<vector<int>>> newmoves;
     int k = 0;
 
@@ -391,7 +390,7 @@ tuple<vector<int>,vector<vector<bool>>, vector<vector<bool>>,vector<int>,vector<
         moves2.push_back(newmoves[k]);
         k ++;
     }
-    newmoves = {};
+    newmoves ;
     k = 0;
 
     if(Range1[1] == Range1[0]){
@@ -408,7 +407,7 @@ tuple<vector<int>,vector<vector<bool>>, vector<vector<bool>>,vector<int>,vector<
     }
 
     i = RowRange[0][0];
-    vector<int> rows = {};
+    vector<int> rows;
 
     while(i <= RowRange[0][1]){
         vector<bool> NewRow = CompressRow(Array[i],COM[1],TargetDim);
@@ -421,13 +420,6 @@ tuple<vector<int>,vector<vector<bool>>, vector<vector<bool>>,vector<int>,vector<
 
 return make_tuple(initCols,initOldCols,initNewCols,rows,oldRows,newRows,cols,oldCols,newCols);
 }
-
-struct RearrangementMove {
-            vector<bool> startingConfig;
-            vector<bool> endingConfig;
-            bool row; // 1 if row, 0 if col
-            int dim; // the index of the desired move
-        };
 
 enum rearrange_method {BALANCE_COMPRESS,RECT_BALANCE_COMPRESS, SNAKE, HUNGARIAN};
 
@@ -457,14 +449,12 @@ vector<RearrangementMove> rearrange(vector<vector<bool>> Array, enum rearrange_m
     }
 
     vector<RearrangementMove> moves;
-
     for(int i = 0;i<initCols.size();i++){
         moves.push_back(RearrangementMove());
         moves[i].startingConfig = initOldCols[i];
         moves[i].endingConfig = initNewCols[i];
         moves[i].row = false; // 1 if row, 0 if col
         moves[i].dim = initCols[i]; // the index of the desired move
-
     }
     for(int i =initCols.size();i<(cols.size() + initCols.size());i++){
         moves.push_back(RearrangementMove());
