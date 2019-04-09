@@ -78,7 +78,7 @@ vector<bool> CompressRow(vector<bool> row, int center, int suff){
     int j = 0;
     vector<bool> newRow = {};
     int extras = diff;
-    while(j<diff and j<r1){
+    while(j<diff && j<r1){
         newRow.push_back(true);
         j ++;
         extras--;
