@@ -1,3 +1,8 @@
+#To make from scratch...
+# nmake clean; nmake create_dirs; nmake;
+
+
+
 EXE_FILE = AODctrl.exe
 DIR_INCLUDE = ..\include
 DIR_INT = ..\int
@@ -26,7 +31,7 @@ SRC_FILES = $(DIR_SRC)\main.cpp \
 
 {$(DIR_SRC)}.cpp{$(DIR_INT_X86)}.obj ::
         @echo Compiling...
- cl /c /EHsc /Fo$(DIR_INT_X86)\ /Ispcm_win32_msvcpp.lib  /I$(DIR_INCLUDE) /link ..\..\c_header_win\spcm_win32_bcppb.lib $<
+ cl /c /EHsc /Fo$(DIR_INT_X86)\ /Ispcm_win32_msvcpp.lib  /I$(DIR_INCLUDE)  $<
 
 $(EXE_FILE) : $(DIR_INT_X86)\*.obj
    @echo Linking $(EXE_FILE)...
@@ -46,7 +51,7 @@ clean:
  @if exist $(DIR_INT_X86) rmdir /S /Q $(DIR_INT_X86)
 
 # create directories and build application
-all: clean create_dirs aodctrl
+all: aodctrl
 
 # Linux makefile
 # CC = g++
