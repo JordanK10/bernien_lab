@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-# bind the current directory to `/src` directory inside the docker image.
-# start bash shell in `/src`
-# TODO: would it be desirable to copy user dot files to the image for convenience of using the shell?
-docker run -it -v $PWD:/src biocyberman/valgrind:18.04 bash -c "cd /src; exec \${SHELL:-sh}"
