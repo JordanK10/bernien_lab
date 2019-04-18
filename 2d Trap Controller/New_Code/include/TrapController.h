@@ -59,6 +59,8 @@ public:
 
     void setCenter(double xaxis, double freq);
 
+		Waveform generateWaveform(double duration = DEFAULT_WAVEFORM_DURATION);
+
 		bool loadDefaultTrapConfiguration(std::vector<std::vector<std::string>> tokenList, int groupSize);
 
     std::vector<Trap> traps;

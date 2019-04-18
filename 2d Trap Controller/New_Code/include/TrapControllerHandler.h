@@ -31,6 +31,8 @@ public:
 
   std::vector<Waveform *> rearrangeTraps(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode, int modeArgument=0);
 
+  std::vector<Waveform> generateWaveform();
+
   void resetForRearrangement();
 
   vector<vector<double>> trapFrequencies();

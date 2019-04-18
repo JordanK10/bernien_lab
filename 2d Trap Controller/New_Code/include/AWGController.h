@@ -32,13 +32,12 @@ public:
 	void disconnect();
 	void startStreaming();
 
-	bool loadDataBlock(Waveform dataArr, int channel);
+	bool loadDataBlock(Waveform dataArr, int channel, int64 llBytesToCalculate);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
 
 	void pushWaveform(std::vector<Waveform> waveform);
-
 
 	void pushWaveforms(vector<Waveform> waveforms);
 	void pushWaveforms(vector<Waveform *> waveforms);

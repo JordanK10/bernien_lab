@@ -25,6 +25,9 @@ class Trap {
       	void saveState();
       	void restoreState();
 
+        std::complex<float> nextSample();
+
+
         double getPhase();
 
 

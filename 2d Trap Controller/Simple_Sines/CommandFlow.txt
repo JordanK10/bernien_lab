@@ -1,0 +1,22 @@
+While running 2D Console
+
+Command:
+
+traps
+
+  processTrapsInput
+
+    This does not change! All traps
+
+run
+
+  processRunCommand
+
+
+Static controller contains
+
+2D Static array composed of trap controllers
+    Project to one 2D AOD
+Array of trap controllers --
+
+traps load_default 5_traps.txt

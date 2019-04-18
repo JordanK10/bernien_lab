@@ -6,7 +6,7 @@
 #include <complex.h>
 
 WaveTable::WaveTable(long int sampRate, long int tableFreq) {
-    std::cout << "Initializing wave table..." << std::endl;
+    // std::cout << "Initializing wave table..." << std::endl;
 
     sampleRate = sampRate;
     timeStep = 1.0 / sampRate;
@@ -42,7 +42,7 @@ WaveTable::WaveTable(long int sampRate, long int tableFreq) {
         adiabaticTransitionTable[i] = fractionalChange;
     }
 
-	std::cout << "Done initializing wave table." << std::endl << std::endl;
+	// std::cout << "Done initializing wave table." << std::endl << std::endl;
 }
 
 WaveTable::~WaveTable() {

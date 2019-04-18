@@ -25,6 +25,49 @@ void Trap::setPhase(double newPhase) {
 	phaseIndex = newPhase * waveTable->tableLength;
 }
 
+std::complex<float> Trap::nextSample() {
+	double amplitudeForSample = amplitude;
+	if (isChangingAmplitude) {
+		samplesSinceStartingAmplitudeTransition += 1;
+
+		double fractionalElapsedTime = (double)(samplesSinceStartingAmplitudeTransition) / (waveTable->sampleRate * durationOfAmplitudeTransition);
+
+		if (fractionalElapsedTime >= 1.0) {
+			fractionalElapsedTime = 1.0;
+			isChangingAmplitude = false;
+			amplitude = newAmplitude;
+		}
+
+		amplitudeForSample = waveTable->adiabaticTransition(amplitude, newAmplitude, fractionalElapsedTime);
+	}
+  std::complex<float> sample = (float)amplitudeForSample * waveTable->waveTable[(size_t)phaseIndex];
+
+  if (isChangingFrequency) {
+	samplesSinceStartingFrequencyTransition += 1;
+
+      double fractionalElapsedTime = (double)(samplesSinceStartingFrequencyTransition) / (waveTable->sampleRate * durationOfFrequencyTransition);
+
+      if (fractionalElapsedTime >= 1.0) {
+          fractionalElapsedTime = 1.0;
+          isChangingFrequency = false;
+          frequency = newFrequency;
+      }
+
+      double intermediateFrequency = waveTable->adiabaticTransition(frequency, newFrequency, fractionalElapsedTime);
+	phaseIndex += (long int)(intermediateFrequency / waveTable->tableFrequency);
+  } else {
+      phaseIndex += (long int)(frequency / waveTable->tableFrequency);
+  }
+
+  if (phaseIndex >= (long int)(waveTable->tableLength)) {
+      phaseIndex -= waveTable->tableLength;
+  } else if (phaseIndex < 0) {
+	phaseIndex += waveTable->tableLength;
+  }
+
+  return sample;
+}
+
 //Gets phase
 double Trap::getPhase() {
 	return ((double)phaseIndex) / waveTable->tableLength;

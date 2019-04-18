@@ -40,7 +40,7 @@ void TrapControllerHandler::printAvailableDefaultTrapConfigurations() {
 	struct dirent *epdf;
 
 
-	dir = opendir("./DefaultTrapConfigurations");
+	dir = opendir("../DefaultTrapConfigurations");
 
 	vector<string> filenames;
 
@@ -65,7 +65,7 @@ void TrapControllerHandler::printAvailableDefaultTrapConfigurations() {
 bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 
   //Opens filestream from a given file. First two inputs are L/wW
-  ifstream config_file("./DefaultTrapConfigurations/" + filename);
+  ifstream config_file("../bin/DefaultTrapConfigurations/" + filename);
 
   if (!config_file.is_open()) {
 	  cout << "Unable to open file: " << filename << endl;
@@ -73,15 +73,10 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 	  return false;
   }
 
-  string temp1; string temp2;
-  config_file >> temp1;  config_file >> temp2;
-  tchLen = 0; tchWid = 0;
+  config_file >> tchLen;  config_file >> tchWid;
   int numTokensParsed=0; int numLinesParsed = 0; int numGroupsParsed = 0;
 
   //Generates list of token sets by group size, then sends them to corresponding trap
-  cout << temp1;
-  cout << endl << temp2;
-  cin >> tchLen;
   vector<vector<string>> tokenList(tchLen);
   string temp;
   //Inputs trap informationuntill EOF
@@ -173,6 +168,17 @@ bool TrapControllerHandler::initializeFromStaticWaveform(string trap_configurati
 	}
 }
 
+// Iterates through all trapcontrollers, generating a list of waveforms to
+//  to return
+std::vector<Waveform> TrapControllerHandler::generateWaveform(){
+
+  std::vector<Waveform> wfList;
+
+  for ( int i =0; i < tchLen; i++)
+    wfList.push_back(tcxList[i].generateWaveform());
+
+  return wfList;
+}
 
 bool TrapControllerHandler::loadPrecomputedWaveforms(double moveDuration, string starting_configuration, string ending_configuration) {
 

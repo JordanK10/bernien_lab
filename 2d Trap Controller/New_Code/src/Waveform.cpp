@@ -18,6 +18,13 @@ Waveform::Waveform(string binaryFilename) {
 	initializeFromBinaryFile(binaryFilename);
 }
 
+bool Waveform::fileExists(string filename) {
+	string path(dir);
+	path.append(filename);
+
+	ifstream file(path, ios::in | ios::binary);
+	return file.good();
+}
 
 Waveform::Waveform(std::vector<std::complex<float>> data)
 {
@@ -42,18 +49,17 @@ void Waveform::initializeFromBinaryFile(string binaryFilename) {
 }
 
 bool Waveform::initializeFromStaticWaveform(string trap_configuration_file) {
-	return true;
-	// int length = trap_configuration_file.length();
-	// string waveform_filename = trap_configuration_file.substr(0, length - 4) + "_static"; // Remove .txt, replace with _static.
-	//
-	// string waveform_path = static_waveforms + waveform_filename;
-	//
-	// if (fileExists(waveform_path)) {
-	// 	initializeFromBinaryFile(waveform_path);
-	// 	return true;
-	// } else {
-	// 	return false;
-	// }
+	int length = trap_configuration_file.length();
+	string waveform_filename = trap_configuration_file.substr(0, length - 4) + "_static"; // Remove .txt, replace with _static.
+
+	string waveform_path = static_waveforms + waveform_filename;
+
+	if (fileExists(waveform_path)) {
+		initializeFromBinaryFile(waveform_path);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void Waveform::initializeFromMovingWaveform(double duration,

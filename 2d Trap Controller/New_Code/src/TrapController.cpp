@@ -87,6 +87,24 @@ bool TrapController::loadDefaultTrapConfiguration(std::vector<std::vector<string
 
 }
 
+Waveform TrapController::generateWaveform(double duration) {
+	size_t num_samples = (size_t)(duration * waveTable->sampleRate);
+
+	std::vector<std::complex<float>> waveform;
+	waveform.resize(num_samples);
+
+	for (size_t sample_index = 0; sample_index < num_samples; sample_index++) {
+		std::complex<float> sample = 0;
+		for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
+			sample += traps[trap_index].nextSample();
+		}
+
+		waveform[sample_index] = sample;
+	}
+
+	return Waveform(waveform);
+}
+
 //Checks to see if the traps are acceptable
 bool TrapController::sanitizeTraps(double new_gain,
 	bool shouldPrintTotalPower) {

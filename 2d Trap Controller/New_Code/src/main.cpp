@@ -30,7 +30,7 @@ int main(){
     double centerFreq_MHz = 74;
     double bandwidth = 15;
     double centerFrequency = 77;
-    double gain = 1;
+    double gain = 30;
 
     cout << "Enter center frequency (in MHz): ";
     // cin >> centerFreq_MHz;

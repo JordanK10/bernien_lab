@@ -211,8 +211,8 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 		std::vector<bool> underflowRecords;
 
 		// We push the static waveforms to the static traps
-		awgController.loadDataBlock(startingXWaveform,STATIC_AWG_X);
-		awgController.loadDataBlock(startingYWaveform,STATIC_AWG_Y);
+		// awgController.loadDataBlock(startingXWaveform,STATIC_AWG_X);
+		// awgController.loadDataBlock(startingYWaveform,STATIC_AWG_Y);
 
 
 		// Keeping track of number of rearrangements
@@ -366,7 +366,7 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 	if (commandTokens.size() == 1 || commandTokens[1].compare("help") == 0) {
 		printTrapHelp();
 	} else if (commandTokens[1].compare("list") == 0) {
-		//printTraps
+		trapControllerHandler.printTraps();
 	} else if (commandTokens[1].compare("sort") == 0) {
 		for (int i = 0; i < trapControllerHandler.size; i++){
 			sort(trapControllerHandler.tcxList[i].traps.begin(), trapControllerHandler.tcxList[i].traps.end(), compareTrapFrequencies);
@@ -465,12 +465,13 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				bool loadedPrecomputedStaticWaveform = static_waveform.initializeFromStaticWaveform(configuration_filename);
 
 				// If we loaded the file, then no need to generate a new waveform.
-				// if (loadedPrecomputedStaticWaveform && awgController.isConnected()) {
-				// 	cout << "Loaded pre-computed static waveform." << endl;
-				// 	awgController.pushWaveform(static_waveform);
-				// } else {
-				// 	waveformShouldChange = true;
-				// }
+				if (loadedPrecomputedStaticWaveform && awgController.isConnected()) {
+					cout << "Loaded pre-computed static waveform." << endl;
+					awgController.pushWaveform(static_waveform);
+				} else {
+					cout << "No pre-computed static waveform found" << endl;
+					waveformShouldChange = true;
+				}
 			}
 		}
 		else {
@@ -559,7 +560,6 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		for (int i = 0; i < trapControllerHandler.size; i++){
 				if (!trapControllerHandler.tcxList[i].sanitizeTraps()){
 					trapControllerHandler.tcxList[i].traps = previousTraps[i];
-					waveformShouldChange = false;
 				}
 		}
 	}
@@ -572,9 +572,9 @@ bool process2DInput(std::vector<string> &commandTokens, TrapControllerHandler &t
 
 	if (mainCommand.compare("traps") == 0) {
 		bool waveformShouldBeRecalculated = processTrapsInput(commandTokens, trapControllerHandler, awgController);
-		// if (waveformShouldBeRecalculated && awgController.isConnected()) {
-		// 	awgController.pushWaveform(trapController.generateWaveform());
-		// }
+		if (waveformShouldBeRecalculated && awgController.isConnected()) {
+			awgController.pushWaveforms(trapControllerHandler.generateWaveform());
+		}
 	// } else if (mainCommand.compare("awg") == 0) {
 	// 	processAWGInput(commandTokens, trapController, awgController);
 	} else if (mainCommand.compare("run") == 0) {
@@ -608,7 +608,6 @@ void run2DConsole( TrapControllerHandler trapControllerHandler, AWGController &a
 		if (commandTokens.size() == 0) {
 			continue;
 		}
-		trapControllerHandler.printTraps();
 		shouldExit = process2DInput(commandTokens, trapControllerHandler, awgController);
 	}
 }
