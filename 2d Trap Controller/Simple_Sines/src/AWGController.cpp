@@ -1,44 +1,89 @@
 #include "AWGController.h"
-#include <fstream>
+
 void errorPrint(bool dwErr, string error){
   if (dwErr)
     cout << endl << error  << endl << dwErr << endl;
 }
 
-// Sets up the card for outputting a single wave at a time
-void AWGController::setupSingleWave (ST_SPCM_CARDINFO *pstCard, int32 lReplayMode, int64 llLoops, int clockRate)
-  {
+void vDoCardSetup (ST_SPCM_CARDINFO *pstCard, int32 lReplayMode, int64 llLoops = 0)
+    {
+    int i;
     int64 llChannelMask;
 
-    llChannelMask = ((int64) 1 << pstCard->lMaxChannels) - 1;
+
+    // set mask for maximal channels
+    if (pstCard->lMaxChannels >= 64)
+        llChannelMask = -1; // -1 is all bits set to 1 = 0xffffffffffffffff
+    else
+        llChannelMask = ((int64) 1 << pstCard->lMaxChannels) - 1;
+
 
     // we try to set the samplerate to 1 MHz (M2i) or 50 MHz (M4i) on internal PLL, no clock output
-    bSpcMSetupClockPLL (pstCard, MEGA(clockRate), false);
+    bSpcMSetupClockPLL (pstCard, MEGA(1), false);
 
     printf ("Sampling rate set to %.1lf MHz\n", (double) pstCard->llSetSamplerate / 1000000);
 
-    // with loops == 1: singleshot replay with software trigger
-    // with loops == 0: endless continuous mode with software trigger
 
-    bSpcMSetupModeRepStdLoops  (pstCard, llChannelMask, KILO_B(64), llLoops);
-    bSpcMSetupTrigSoftware (pstCard, true);
+    // setup the replay mode and the trigger
+    switch (lReplayMode)
+        {
+
+        // with loops == 1: singleshot replay with software trigger
+        // with loops == 0: endless continuous mode with software trigger
+        case SPC_REP_STD_SINGLE:
+            bSpcMSetupModeRepStdLoops  (pstCard, llChannelMask, KILO_B(64), llLoops);
+            bSpcMSetupTrigSoftware (pstCard, true);
+
+            // on M2i starting with build 1604 we can use the trigger output as a marker for each loop start
+            // be sure to have the trigger output enabled for this
+            if (pstCard->bM2i)
+                {
+                if ((pstCard->lLibVersion & 0xFFFF) >= 1604)
+                    spcm_dwSetParam_i32 (pstCard->hDrv, SPC_CONTOUTMARK, 1);
+                }
+            else
+                {
+                // all newer replay cards support multi-purpose lines
+                spcm_dwSetParam_i32 (pstCard->hDrv, SPCM_X0_MODE, SPCM_XMODE_CONTOUTMARK); // output continuous marker
+                }
+            break;
+
+        // single restart (one signal on every trigger edge) with ext trigger positive edge
+        case SPC_REP_STD_SINGLERESTART:
+            bSpcMSetupModeRepStdSingleRestart (pstCard, llChannelMask, KILO_B(64), 0);
+            bSpcMSetupTrigExternal (pstCard, SPC_TM_POS, false, 0);
+            break;
+        }
 
 
-    // all newer replay cards support multi-purpose lines
-    spcm_dwSetParam_i32 (pstCard->hDrv, SPCM_X0_MODE, SPCM_XMODE_CONTOUTMARK); // output continuous marker
 
-    // program all output channels to +/- 1 V with no offset
-    for (int i=0; i < pstCard->lMaxChannels; i++)
-        bSpcMSetupAnalogOutputChannel (pstCard, i, 1000, 0, 0);
+    // type dependent card setup
+    switch (pstCard->eCardFunction)
+        {
 
-  }
+        // analog generator card setup
+        case AnalogOut:
 
-bool AWGController::setupFIFO (ST_SPCM_CARDINFO *pstCard)
+            // program all output channels to +/- 1 V with no offset
+            for (i=0; i < pstCard->lMaxChannels; i++)
+                bSpcMSetupAnalogOutputChannel (pstCard, i, 1000, 0, 0);
+            break;
+
+        // digital generator card setup
+        case DigitalOut:
+        case DigitalIO:
+            for (i=0; i < pstCard->uCfg.stDIO.lGroups; i++)
+                bSpcMSetupDigitalOutput (pstCard, i, SPCM_STOPLVL_LOW, 0, 3300);
+            break;
+        }
+    }
+
+bool bDoCardSetup (ST_SPCM_CARDINFO *pstCard)
     {
     int lFilter = 1;
 
     // we try to set the samplerate to 1 MHz (M2i) or 50 MHz (M4i) on internal PLL, no clock output
-    bSpcMSetupClockPLL (pstCard, MEGA(500), false);
+    bSpcMSetupClockPLL (pstCard, MEGA(50), false);
 
     printf ("Sampling rate set to %.1lf MHz\n", (double) pstCard->llSetSamplerate / MEGA(1));
 
@@ -60,7 +105,7 @@ bool AWGController::setupFIFO (ST_SPCM_CARDINFO *pstCard)
     }
 
 
-AWGController::AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain, output_mode mode, int clock_rate) {
+AWGController::AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain) {
 	sampleRate = sample_rate;
 	centerFreq = center_freq;
 	gain = tx_gain;
@@ -76,18 +121,23 @@ AWGController::AWGController(bool shouldConnect, double sample_rate, double cent
 	else{
 		nSpcMErrorMessageStdOut(&stCard, "Error: Could not open card\n", true);
 }
-	if (!stCard.bSetError)
-    if(mode == SINGLE)
-      setupSingleWave (&stCard, SPC_REP_STD_SINGLE, 0, clock_rate/*forever*/);
-    else if(mode == FIFO)
-      setupFIFO(&stCard);
 
+
+	// ------------------------------------------------------------------------
+	// do the card setup, error is routed in the structure so we don't care for the return values
+	if (!stCard.bSetError)
+	{
+     vDoCardSetup (&stCard, SPC_REP_STD_SINGLERESTART, 0/*forever*/);
+		//if (bDoCardSetup(&stCard))
+		//	printf("Error: An error occured in card setup\n");
+	}
 
 	connected = true;
 
-	// // we program the hardware buffer size to reduce the latency
-	// spcm_dwSetParam_i64(stCard.hDrv, SPC_DATA_OUTBUFSIZE, llHWBufSize);
-	// spcm_dwSetParam_i32(stCard.hDrv, SPC_M2CMD, M2CMD_CARD_WRITESETUP);
+
+	// we program the hardware buffer size to reduce the latency
+	spcm_dwSetParam_i64(stCard.hDrv, SPC_DATA_OUTBUFSIZE, llHWBufSize);
+	spcm_dwSetParam_i32(stCard.hDrv, SPC_M2CMD, M2CMD_CARD_WRITESETUP);
 
 }
 
@@ -98,6 +148,12 @@ void AWGController::disconnect() {
 
 	connected = false;
 }
+
+/*
+**************************************************************************
+loadDataBlock: loads the data from the computed waveform arrays into buffers
+**************************************************************************
+*/
 
 static int64 g_llOffset = 0;
 static int64 g_llXDiv = KILO_B(100);
@@ -112,12 +168,11 @@ bool AWGController::loadDataBlock(Waveform dataArr, int channel, int64 llBytesTo
 
   // Populate buffer data
   int64 k;
-  for (int64 i = 0; i < llSWBufSize/2; i++){
-
+	for (int64 i = 0; i < llSWBufSize/2; i++){
     k = i%dataArr.dataVector.size();
-    pnData[i] = (int16)(real(dataArr.dataVector[k])*OUTPUT_GAIN);
-
+    pnData[i] = (int16)(OUTPUT_GAIN*real(dataArr.dataVector[k])); //PUT DATA HURRRRRRR
   }
+  // bSpcMCalcSignal (&stCard, pvBuffer, (uint32) stCard.llSetMemsize, 0, eSine);
 	return true;
 }
 
@@ -155,18 +210,15 @@ void AWGController::pushWaveforms(vector<Waveform> waveforms) {
           nSpcMErrorMessageStdOut (&stCard, szBuffer, false);
           }
       else{
-          spcm_dwSetParam_i32 (stCard.hDrv, SPC_TIMEOUT, 0);
+          spcm_dwSetParam_i32 (stCard.hDrv, SPC_TIMEOUT, 30000);
 
           printf ("... data has been transferred to board memory\n");
           cout << "\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n";
-          spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-          cout << "Type \"s\" to timeout\n";
-          while (cin >> input){
-            if(input == 's'){
+          if (spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY) == ERR_TIMEOUT)
+              {
               spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_STOP);
-              break;
-            }
-          }
+              cout << "timeout\n";
+              }
           }
       }
     else
@@ -190,6 +242,7 @@ void AWGController::pushWaveform(Waveform waveform) {
 	// queueLock.unlock();
 }
 
+
 void AWGController::pushWaveforms(vector<Waveform *> waveform) {
 	// if (waveform.shouldNotifyAfterSending) {
 	// 	notificationHasBeenSent = false;
@@ -201,6 +254,8 @@ void AWGController::pushWaveforms(vector<Waveform *> waveform) {
 	// waveformQueue.push(&localWaveforms.back());
 	// queueLock.unlock();
 }
+
+
 
 bool AWGController::isConnected() {
 	return connected;

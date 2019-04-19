@@ -105,6 +105,7 @@ void printTrapHelp() {
 	cout << "traps add [freq] [amp]" << endl;
 	cout << "traps change [index] [property: freq, amp, phase] [new value]" << endl;
 	cout << "traps delete [index]" << endl;
+	cout << "traps clean" << endl;
 	cout << "traps load_default [default_name: 100(0.49).txt, 70(0.70).txt]" << endl;
 	cout << "traps set_phases [phase arguments]" << endl;
 }
@@ -411,6 +412,12 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		}
 		else {
 			cout << "Usage: delete [trap index]" << endl;
+		}
+	} else if (commandTokens[1].compare("clean") == 0) {
+		for(int i=0; i<trapControllerHandler.tchLen; i++){
+			for(int j=0; j<trapControllerHandler.tcxList[i].traps.size(); j++){
+				trapControllerHandler.tcxList[i].traps.erase(	trapControllerHandler.tcxList[i].traps.begin()+j);
+			}
 		}
 	} else if (commandTokens[1].compare("change") == 0) {
 		if (commandTokens.size() >= 5) {

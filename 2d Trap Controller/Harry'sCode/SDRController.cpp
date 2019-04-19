@@ -100,7 +100,7 @@ void SDRController::initializeUHD() {
 	// create a transmit streamer
 	uhd::stream_args_t stream_args("fc32", "sc16");
 
-	
+
 	stream_args.channels.push_back(0);
 	tx_stream = usrp->get_tx_stream(stream_args);
 
@@ -233,7 +233,7 @@ void SDRController::sendData() {
 	pthread_getschedparam(pthread_self(), &policy, &sch);
 	sch.sched_priority = sched_get_priority_max(SCHED_FIFO);
 	pthread_setschedparam(pthread_self(), SCHED_FIFO, &sch);
-	
+
 	cout << "Set thread priority: " << sch.sched_priority << endl;
 
 	// setup the metadata flags
@@ -248,13 +248,13 @@ void SDRController::sendData() {
 
 	cout << "Starting waveform." << endl;
 
-	
+
 	uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 	//cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(1.0);
 	cmd.stream_now = true;
 	usrp->issue_stream_cmd(cmd);
-	
-	
+
+
 	// Send waveform from queue.
 	// If there is only one element in the queue, then repeat this waveform until new ones are pushed onto the queue.
 	Waveform *waveform = NULL;

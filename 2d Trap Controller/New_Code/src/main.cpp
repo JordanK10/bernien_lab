@@ -31,6 +31,7 @@ int main(){
     double bandwidth = 15;
     double centerFrequency = 77;
     double gain = 30;
+    int clock_rate = 500;
 
     cout << "Enter center frequency (in MHz): ";
     // cin >> centerFreq_MHz;
@@ -48,7 +49,7 @@ int main(){
 
       //Run 2D Console
       TrapControllerHandler trapControllerHandler(len, wid, centerFrequency-.5*bandwidth, len/bandwidth, centerFrequency-.5*bandwidth, len/bandwidth,  sampleRate, gain);
-      AWGController awgController(0,sampleRate,centerFrequency,gain);
+      AWGController awgController(0,sampleRate,centerFrequency,gain,SINGLE, clock_rate);
 
       run2DConsole(trapControllerHandler, awgController);
 
