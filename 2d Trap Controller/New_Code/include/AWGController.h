@@ -85,6 +85,7 @@ private:
 
 		void setupSingleWave (ST_SPCM_CARDINFO *pstCard, int32 lReplayMode, int64 llLoops, int clockRate);
 		bool setupFIFO (ST_SPCM_CARDINFO *pstCard);
+		void errorPrint(bool dwErr, string error);
 };
 
 #endif
