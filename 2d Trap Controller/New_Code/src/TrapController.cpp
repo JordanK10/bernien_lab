@@ -72,7 +72,7 @@ bool TrapController::loadDefaultTrapConfiguration(std::vector<std::vector<string
 			double amplitude = stod(tokens[2]);
 			double phase = stod(tokens[3]);
 
-			addTrap(freqx - xAxisCenterFreq, amplitude, phase);
+			addTrap(freqx, amplitude, phase);
 		} catch (const invalid_argument&) {
 		}
 	}
@@ -118,11 +118,11 @@ bool TrapController::sanitizeTraps(double new_gain,
 			return false;
 		}
 
-		double freq = traps[i].frequency / 1.0E6;
-		if (freq < -51 || freq > 51) {
-			cout << "Trap #" << i << ": frequency " << freq << " out of bounds [-51, 51]" << endl;
-			return false;
-		}
+		// double freq = traps[i].frequency / 1.0E6;
+		// if (freq < -51 || freq > 51) {
+		// 	cout << "Trap #" << i << ": frequency " << freq << " out of bounds [-51, 51]" << endl;
+		// 	return false;
+		// }
 
 		double amp = traps[i].amplitude;
 		if (amp < 0 || amp > 0.5) {

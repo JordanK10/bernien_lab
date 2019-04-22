@@ -48,7 +48,7 @@ bool AWGController::loadDataBlock(Waveform dataArr, int channel, int64 llBytesTo
   // Populate buffer data
   int mult = (llSWBufSize/2)/dataArr.dataVector.size();
   int64 k;
-  for (int64 i = 0; i < dataArr.dataVector.size()*mult-1; i++){
+  for (int64 i = 0; i <llSWBufSize/2; i++){
 
     k = i%dataArr.dataVector.size();
     pnData[i] = (int16)(real(dataArr.dataVector[k])*OUTPUT_GAIN);

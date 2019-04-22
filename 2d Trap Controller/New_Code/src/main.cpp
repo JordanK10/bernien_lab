@@ -26,12 +26,11 @@ int main(){
 
     //Input Center frequency
 
-    double sampleRate = 100E6;
     double centerFreq_MHz = 74;
     double bandwidth = 15;
     double centerFrequency = 77;
     double gain = 30;
-    int clock_rate = 1250;
+    double clock_rate = 1000;
 
     cout << "Enter center frequency (in MHz): ";
     // cin >> centerFreq_MHz;
@@ -48,8 +47,8 @@ int main(){
     // }else if(input=='Y'){
 
       //Run 2D Console
-      TrapControllerHandler trapControllerHandler(len, wid, centerFrequency-.5*bandwidth, len/bandwidth, centerFrequency-.5*bandwidth, len/bandwidth,  sampleRate, gain);
-      AWGController awgController(0,sampleRate,centerFrequency,gain,SINGLE, clock_rate);
+      TrapControllerHandler trapControllerHandler(len, wid, centerFrequency-.5*bandwidth, len/bandwidth, centerFrequency-.5*bandwidth, len/bandwidth,  clock_rate*1E6, gain);
+      AWGController awgController(0,clock_rate*1E6,centerFrequency,gain,SINGLE, clock_rate);
 
       run2DConsole(trapControllerHandler, awgController);
 
