@@ -2,9 +2,9 @@
 
 using namespace std;
 
-RectBC::RectBC(int Sites, float Prob)
+RectBC::RectBC()
 {
-    Array = MakeRectArray(Sites,Prob);
+    srand(time(NULL)*time(NULL));
 }
 
 vector<vector<vector<int>>> RectBC::Interpolate(vector<int> movefrom, vector<int> moveto, int center){
@@ -166,15 +166,16 @@ tuple<vector<bool>,vector<vector<int>>> RectBC::CompressRow(vector<bool> row, in
         }
     }
     int diff = atoms - suff;
+    int missing = 0;
     if(diff<0){
-        cout << "error! insufficient atoms in row" << endl;
+        missing = -diff;
     }
     vector<vector<int>> moves = {};
     int j = 0;
     int k = 0;
     vector<bool> newRow = {};
     int extras = diff;
-    while(j<diff and j<r1){
+    while(j<diff && j<r1){
         newRow.push_back(true);
         moves.push_back({pos[k],j});
         j ++;
@@ -182,7 +183,7 @@ tuple<vector<bool>,vector<vector<int>>> RectBC::CompressRow(vector<bool> row, in
         extras--;
 
     }
-    while(j<r1){
+    while(j<(r1+missing)){
         newRow.push_back(false);
         j++;
     }
@@ -206,9 +207,15 @@ tuple<vector<bool>,vector<vector<int>>> RectBC::CompressRow(vector<bool> row, in
 }
 
 vector<vector<bool>> RectBC::Move(vector<vector<bool>> Array, vector<int> pos1,vector<int> pos2){
+    float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     vector<vector<bool>> NewArray = Array;
-    NewArray[pos1[0]][pos1[1]] = false;
-    NewArray[pos2[0]][pos2[1]] = true;
+    if(r>moveFidelity){
+        NewArray[pos1[0]][pos1[1]] = false;
+        NewArray[pos2[0]][pos2[1]] = false;
+    }else{
+        NewArray[pos1[0]][pos1[1]] = false;
+        NewArray[pos2[0]][pos2[1]] = true;
+    }
     return NewArray;
 }
 
@@ -389,11 +396,12 @@ vector<int> Range0 = {Range[0],center};
 return make_tuple(Array,RowTotal,Range0,Range1,moves);
 }
 
-tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int>, vector<int>> RectBC::BalanceCompress(vector<vector<bool>> Array){
+tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int>, vector<int>,bool> RectBC::BalanceCompress(vector<vector<bool>> Array){
 
     vector<vector<vector<int>>> moves2;
     int Height = Array.size();
     int Width = Array[0].size();
+    bool bad = false;
 
     vector<int> COM = CenterOfMass(Array, Height, Width);
     vector<int> RowTotals = RowSum(Array, Height, Width);
@@ -405,7 +413,9 @@ tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, ve
         }
         atoms += RowTotals[y];
     }
-
+    if(atoms < Height*Height){
+        bad = true;
+    }
     vector<vector<int>> RowRange = {{0,Height - 1}};
     float x = Height;
     x -= 1;
@@ -429,7 +439,7 @@ tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, ve
     vector<int> BalancedRows = {};
     vector<vector<vector<int>>> newmoves;
 
-    while(BalancedRows.size() < Height){
+    while(BalancedRows.size() < Height && bad == false){
     tie(Array,RowTotals,Range1,Range2,newmoves) = Balance(Array,RowRange[i],COM,Height,Width,RowTotals);
     for(int k = 0; k<newmoves.size(); k++){
         moves2.push_back(newmoves[k]);
@@ -467,6 +477,5 @@ for(i = 0; i<BankMoves.size(); i++){
     bank.push_back(BankMoves[i][1]);
 }
 
-return make_tuple(Array,moves2,bank,rows,ColRange);
+return make_tuple(Array,moves2,bank,rows,ColRange,bad);
 }
-

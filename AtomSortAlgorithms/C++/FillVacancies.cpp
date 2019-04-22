@@ -16,9 +16,16 @@ vector<vector<int>> FillVacancies::FindVacancies(vector<vector<bool>> Array, vec
 
 
 vector<vector<bool>> FillVacancies::Move(vector<vector<bool>> Array, vector<int> pos1,vector<int> pos2){
+    srand(time(NULL));
+    float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     vector<vector<bool>> NewArray = Array;
-    NewArray[pos1[0]][pos1[1]] = false;
-    NewArray[pos2[0]][pos2[1]] = true;
+    if(r>moveFidelity){
+        NewArray[pos1[0]][pos1[1]] = false;
+        NewArray[pos2[0]][pos2[1]] = false;
+    }else{
+        NewArray[pos1[0]][pos1[1]] = false;
+        NewArray[pos2[0]][pos2[1]] = true;
+    }
     return NewArray;
 }
 

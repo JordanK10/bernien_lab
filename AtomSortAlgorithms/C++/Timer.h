@@ -10,6 +10,8 @@ class Timer
         void pause();
         void restart();
         double gettime();
+        void zero();
+        double speedup;
 
     private:
         double duration = 0;

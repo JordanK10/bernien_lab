@@ -6,6 +6,7 @@
 #include <random>
 #include <iostream>
 #include <chrono>
+#include <ctime>
 
 using namespace std;
 
@@ -13,12 +14,13 @@ using namespace std;
 class RectBC
 {
     public:
-        RectBC(int Sites, float Prob);
-        vector<vector<bool>> Array;
-        tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int> , vector<int>> BalanceCompress(vector<vector<bool>> Array);
+        RectBC();
+        tuple<vector<vector<bool>>, vector<vector<vector<int>>>, vector<vector<int>>, vector<int> , vector<int>,bool> BalanceCompress(vector<vector<bool>> Array);
+        double moveFidelity;
+        vector<vector<bool>> MakeRectArray(int Sites, float Prob);
 
     private:
-        vector<vector<bool>> MakeRectArray(int Sites, float Prob);
+
         tuple<int,int> ArrayDimensions(int sites, float prob);
         vector<int> CenterOfMass(vector<vector<bool>> Array, int Height, int Width);
         bool Toggle(bool a);

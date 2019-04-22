@@ -2,6 +2,11 @@
 
 using namespace std;
 
+Decay::Decay()
+{
+srand(time(NULL));
+}
+
 vector<vector<double>> Decay::MakeLossTime(int n, int m, double lifetime){
 vector<vector<double>> LossTime = {};
 vector<double> row = {};
@@ -37,4 +42,29 @@ vector<vector<bool>> Decay::ArrayDecay(vector<vector<bool>> Array, double time,v
         }
     }
     return Array;
+}
+
+vector<vector<int>> Decay::BankDecay(vector<vector<int>> Bank, double time,vector<double> BankLossTime)
+{
+    vector<bool> check;
+    vector<vector<int>> newBank;
+    for(int i = 0;i<Bank.size();i++){
+        check.push_back(AtomLoss(time, BankLossTime[i]));
+    }
+    for(int j = 0;j<Bank.size();j++){
+        if(check[j] == true){
+            newBank.push_back(Bank[j]);
+        }
+    }
+    return newBank;
+}
+
+vector<double> Decay::MakeBankLossTime(int n, double lifetime){
+    vector<double> BankLossTime = {};
+    for(int j = 0;j<n;j++){
+        float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        double losstime = -lifetime*log(1 - r);
+        BankLossTime.push_back(losstime);
+    }
+return BankLossTime;
 }
