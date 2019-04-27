@@ -359,7 +359,7 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 
 	std::vector<std::vector<Trap>> previousTraps;
 	for (int i = 0; i < trapControllerHandler.size; i++){
-		std::vector<Trap> traps = trapControllerHandler.tcxList[i].traps;
+		std::vector<Trap> traps = trapControllerHandler.staticHandler[i].traps;
 		previousTraps.push_back(traps);
 	}
 	bool waveformShouldChange = false;
@@ -370,8 +370,8 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		trapControllerHandler.printTraps();
 	} else if (commandTokens[1].compare("sort") == 0) {
 		for (int i = 0; i < trapControllerHandler.size; i++){
-			sort(trapControllerHandler.tcxList[i].traps.begin(), trapControllerHandler.tcxList[i].traps.end(), compareTrapFrequencies);
-			trapControllerHandler.tcxList[i].printTraps();
+			sort(trapControllerHandler.staticHandler[i].traps.begin(), trapControllerHandler.staticHandler[i].traps.end(), compareTrapFrequencies);
+			trapControllerHandler.staticHandler[i].printTraps();
 		}
 	} else if (commandTokens[1].compare("add") == 0) {
 		if (commandTokens.size() >= 4) {
@@ -381,7 +381,7 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				double freqy = stod(commandTokens[4]);
 				int y = stod(commandTokens[5]);
 				double ampl = stod(commandTokens[6]);
-				trapControllerHandler.tcxList[x].addTrap(freqx * 1.0E6, ampl);
+				trapControllerHandler.staticHandler[x].addTrap(freqx * 1.0E6, ampl);
 				trapControllerHandler.tcyList[y].addTrap(freqy * 1.0E6, ampl);
 				waveformShouldChange = true;
 			}
@@ -397,12 +397,12 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 			try {
 				int x = stod(commandTokens[3]);
 				int y = stod(commandTokens[5]);
-				if (x < 0 || y < 0 ||  y >= trapControllerHandler.tcxList[x].traps.size() || x >= trapControllerHandler.tcyList[y].traps.size()) {
+				if (x < 0 || y < 0 ||  y >= trapControllerHandler.staticHandler[x].traps.size() || x >= trapControllerHandler.tcyList[y].traps.size()) {
 					cout << "Index out of range!" << endl;
 				}
 				else {
-					trapControllerHandler.tcxList[x].traps.erase(	trapControllerHandler.tcxList[x].traps.begin() + x);
-					trapControllerHandler.tcyList[y].traps.erase(	trapControllerHandler.tcxList[y].traps.begin() + y);
+					trapControllerHandler.staticHandler[x].traps.erase(	trapControllerHandler.staticHandler[x].traps.begin() + x);
+					trapControllerHandler.tcyList[y].traps.erase(	trapControllerHandler.staticHandler[y].traps.begin() + y);
 					waveformShouldChange = true;
 				}
 			}
@@ -415,8 +415,8 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		}
 	} else if (commandTokens[1].compare("clean") == 0) {
 		for(int i=0; i<trapControllerHandler.tchLen; i++){
-			for(int j=0; j<trapControllerHandler.tcxList[i].traps.size(); j++){
-				trapControllerHandler.tcxList[i].traps.erase(	trapControllerHandler.tcxList[i].traps.begin()+j);
+			for(int j=0; j<trapControllerHandler.staticHandler[i].traps.size(); j++){
+				trapControllerHandler.staticHandler[i].traps.erase(	trapControllerHandler.staticHandler[i].traps.begin()+j);
 			}
 		}
 	} else if (commandTokens[1].compare("change") == 0) {
@@ -428,7 +428,7 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				double newVal = stod(commandTokens[5]);
 
 				bool err = false;
-				if (indx < 0 || indx >= trapControllerHandler.tcxList[indx].traps.size() || indy >= trapControllerHandler.tcyList[indy].traps.size()) {
+				if (indx < 0 || indx >= trapControllerHandler.staticHandler[indx].traps.size() || indy >= trapControllerHandler.tcyList[indy].traps.size()) {
 					cout << "Index out of range!" << endl;
 					err = true;
 				}
@@ -443,13 +443,13 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				else {
 					waveformShouldChange = true;
 					if (prop.compare("freq") == 0) {
-						trapControllerHandler.tcxList[indy].traps[indx].frequency = newVal * 1.0E6;
+						trapControllerHandler.staticHandler[indy].traps[indx].frequency = newVal * 1.0E6;
 					}
 					else if (prop.compare("amp") == 0) {
-						trapControllerHandler.tcxList[indy].traps[indx].amplitude = newVal;
+						trapControllerHandler.staticHandler[indy].traps[indx].amplitude = newVal;
 					}
 					else if (prop.compare("phase") == 0) {
-						trapControllerHandler.tcxList[indy].traps[indx].setPhase(newVal);
+						trapControllerHandler.staticHandler[indy].traps[indx].setPhase(newVal);
 					}
 				}
 			}
@@ -496,9 +496,9 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		else if (commandTokens[2].compare("random") == 0) {
 			waveformShouldChange = true;
 			for (int j = 0; j < trapControllerHandler.size; j++){
-				for (int i = 0; i < trapControllerHandler.tcxList[j].traps.size(); i++) {
+				for (int i = 0; i < trapControllerHandler.staticHandler[j].traps.size(); i++) {
 					double phase = (rand() % 10000) / 10000.0;
-					trapControllerHandler.tcxList[j].traps[i].setPhase(phase);
+					trapControllerHandler.staticHandler[j].traps[i].setPhase(phase);
 				}
 			}
 		}
@@ -565,8 +565,8 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 
 	if (waveformShouldChange) {
 		for (int i = 0; i < trapControllerHandler.size; i++){
-				if (!trapControllerHandler.tcxList[i].sanitizeTraps()){
-					trapControllerHandler.tcxList[i].traps = previousTraps[i];
+				if (!trapControllerHandler.staticHandler[i].sanitizeTraps()){
+					trapControllerHandler.staticHandler[i].traps = previousTraps[i];
 				}
 		}
 	}
@@ -581,6 +581,8 @@ bool process2DInput(std::vector<string> &commandTokens, TrapControllerHandler &t
 		bool waveformShouldBeRecalculated = processTrapsInput(commandTokens, trapControllerHandler, awgController);
 		if (waveformShouldBeRecalculated && awgController.isConnected()) {
 			awgController.pushWaveforms(trapControllerHandler.generateWaveform());
+			// awgController.pushWaveTable(trapControllerHandler.staticHandler[0].getWaveTable());
+
 		}
 	// } else if (mainCommand.compare("awg") == 0) {
 	// 	processAWGInput(commandTokens, trapController, awgController);

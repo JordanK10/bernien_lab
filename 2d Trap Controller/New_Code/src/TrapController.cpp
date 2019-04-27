@@ -3,15 +3,16 @@
 **/
 
 #include "TrapController.h"
-
+#include<iostream>
 
 using namespace std;
 
-TrapController::TrapController(double centerFx, double centerFy, double sampleRate,	double gain, bool axis) {
+TrapController::TrapController(double centerFx, double centerFy, double sampleRate,	double gain, bool axis, int wt_freq) {
 	srand(time(NULL));
 
   //The frequency of the wavetable
-	long int waveTableFreq = 1E3;
+	long int waveTableFreq = wt_freq;
+
 	waveTable = new WaveTable((long int)sampleRate, waveTableFreq);
 
 	majorAxisx = axis;
@@ -125,10 +126,10 @@ bool TrapController::sanitizeTraps(double new_gain,
 		// }
 
 		double amp = traps[i].amplitude;
-		if (amp < 0 || amp > 0.5) {
-			cout << "Trap #" << i << ": amplitude" << amp << " out of bounds [0, 0.5]" << endl;
-			return false;
-		}
+		// if (amp < 0 || amp > 0.5) {
+		// 	cout << "Trap #" << i << ": amplitude" << amp << " out of bounds [0, 0.5]" << endl;
+		// 	return false;
+		// }
 
 		double powerInMode = amp * amp * 5300; // Conversion from amplitude -> RF power
 		totalPower += powerInMode;
@@ -144,15 +145,15 @@ bool TrapController::sanitizeTraps(double new_gain,
 		cout << "Total power: " << totalPower * gainFactor << " mW" << endl;
 	}
 
-	if (totalPower * gainFactor > 1600) { // Upper limit on power we can deliver to the AOD.
-		cout << "Total power " << totalPower * gainFactor << " out of bounds: must be < 1400 mW." << endl;
-		return false;
-	}
+	// if (totalPower * gainFactor > 1600) { // Upper limit on power we can deliver to the AOD.
+	// 	cout << "Total power " << totalPower * gainFactor << " out of bounds: must be < 1400 mW." << endl;
+	// 	return false;
+	// }
 
-	if (totalAmplitude > 0.99) { // Upper limit on total amplitude.
-		cout << "Total amplitude " << totalAmplitude << " out of bounds: must be <= 0.99" << endl;
-		return false;
-	}
+	// if (totalAmplitude > 0.99) { // Upper limit on total amplitude.
+	// 	cout << "Total amplitude " << totalAmplitude << " out of bounds: must be <= 0.99" << endl;
+	// 	return false;
+	// }
 
 	return true;
 }
@@ -194,4 +195,8 @@ it will be computed.
 	vector<int> destinations;
 	vector <Waveform *> blank;
 	return blank;
+}
+
+std::vector<std::complex<float>> TrapController::getWaveTable(){
+	return waveTable->waveTable;
 }

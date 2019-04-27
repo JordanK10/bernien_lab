@@ -1,23 +1,23 @@
 #include "AWGController.h"
 #include <fstream>
 
-AWGController::AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain, output_mode mode, int clock_rate)
+
+AWGController::AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain, output_mode mode, int sw_buf)
 {
-  sampleRate = sample_rate;
+  llSWBufSize = sw_buf;
+  sampleRate = MEGA(sample_rate/(MEGA(1)));
 	centerFreq = center_freq;
 	gain = tx_gain;
-
 	if (bSpcMInitCardByIdx(&stCard, 0))
 	{
 		printf(pszSpcMPrintDocumentationLink(&stCard, szBuffer, sizeof(szBuffer)));
 		printf(pszSpcMPrintCardInfo(&stCard, szBuffer, sizeof(szBuffer)));
 
     // // we program the hardware buffer size to reduce the latency
-  	spcm_dwSetParam_i64(stCard.hDrv, SPC_DATA_OUTBUFSIZE, llHWBufSize);
+     spcm_dwSetParam_i64(stCard.hDrv, SPC_DATA_OUTBUFSIZE, llHWBufSize);
   	spcm_dwSetParam_i32(stCard.hDrv, SPC_M2CMD, M2CMD_CARD_WRITESETUP);
-
     if(mode == SINGLE)
-      setupSingleWave (&stCard, SPC_REP_STD_SINGLE, 0, clock_rate/*forever*/);
+      setupSingleWave (&stCard, SPC_REP_STD_SINGLE, 0, sampleRate/*forever*/);
     else if(mode == FIFO)
       setupFIFO(&stCard);
     connected = true;
@@ -37,27 +37,86 @@ void AWGController::disconnect() {
 static int64 g_llOffset = 0;
 static int64 g_llXDiv = KILO_B(100);
 
-bool AWGController::loadDataBlock(Waveform dataArr, int channel, int64 llBytesToCalculate){
+bool AWGController::loadDataBlock(vector<complex<float>> dataArr, int channel, int64 llBytesToCalculate){
 
-  int OUTPUT_GAIN = 800000;
-  cout << "hello \n";
+  int16 OUTPUT_GAIN = 3276;
 
   // Generate array of pointers to buffer memory
   int16* pnData = (int16*) pvBuffer;
 
-  // Populate buffer data
-  int mult = (llSWBufSize/2)/dataArr.dataVector.size();
-  int64 k;
+  // ofstream mf1;   ofstream mf2;   ofstream mf3;
+  // mf1.open ("real2.txt");
+  // cout << llSWBufSize << " " << dataArr.size();
+
   for (int64 i = 0; i <llSWBufSize/2; i++){
+    pnData[i] = (int16)(real(dataArr[i%dataArr.size()])*int(32762));
 
-    k = i%dataArr.dataVector.size();
-    pnData[i] = (int16)(real(dataArr.dataVector[k])*OUTPUT_GAIN);
-
+    // if(i<(dataArr.size()))
+    //   mf1 << pnData[i]<< endl;
   }
+
+  // mf1.close();
+
 	return true;
 }
 
 void AWGController::pushWaveforms(vector<Waveform> waveforms) {
+
+  if (stCard.bSetError){
+    return;
+  }
+  // ------------------------------------------------------------------------
+	// allocate and setup the fifo buffer and fill it once with data
+	pvBuffer = pvAllocMemPageAligned((uint32)llSWBufSize);
+	if (!pvBuffer){
+		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
+    return;
+  }
+
+  // for (int i = 0; i < waveforms.size(); i++){
+  for (int i = 0; i < 1; i++){
+      loadDataBlock(waveforms[i].dataVector,1,llSWBufSize);
+  }
+
+  if (!stCard.bSetError)
+      {
+      // we define the buffer for transfer and start the DMA transfer
+      printf ("Starting the DMA transfer and waiting until data is in board memory\n");
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0);
+      spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, llSWBufSize);
+      spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+
+      // check for error code
+      if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer))
+          {
+          vFreeMemPageAligned (pvBuffer, llSWBufSize);
+          nSpcMErrorMessageStdOut (&stCard, szBuffer, false);
+          }
+      else{
+          spcm_dwSetParam_i32 (stCard.hDrv, SPC_TIMEOUT, 0);
+
+          printf ("... data has been transferred to board memory\n");
+          cout << "\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n";
+          spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+          cout << "Type \"s\" to timeout\n";
+          while (cin >> input){
+            if(input == 's'){
+              spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_STOP);
+              break;
+            }
+          }
+          }
+      }
+    else
+      cout << "Error \n";
+
+    vFreeMemPageAligned (pvBuffer, (int32)llSWBufSize);
+
+    return;
+
+}
+
+void AWGController::pushWaveTable(vector<complex<float>> waveforms) {
 
   if (stCard.bSetError){
     cout << "Crikey";
@@ -74,13 +133,14 @@ void AWGController::pushWaveforms(vector<Waveform> waveforms) {
 
   // for (int i = 0; i < waveforms.size(); i++){
   for (int i = 0; i < 1; i++){
-      loadDataBlock(waveforms[i],1,llSWBufSize);
+      loadDataBlock(waveforms,1,llSWBufSize);
   }
 
   if (!stCard.bSetError)
       {
       // we define the buffer for transfer and start the DMA transfer
       printf ("Starting the DMA transfer and waiting until data is in board memory\n");
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0);
       spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, llSWBufSize);
       spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
 
@@ -156,8 +216,9 @@ void AWGController::setupSingleWave (ST_SPCM_CARDINFO *pstCard, int32 lReplayMod
     llChannelMask = ((int64) 1 << pstCard->lMaxChannels) - 1;
 
     //Set clockrate
-    bSpcMSetupClockPLL (pstCard, MEGA(clockRate), false);
-    printf ("Sampling rate set to %.1lf MHz\n", (double) pstCard->llSetSamplerate / 1000000);
+    bSpcMSetupClockPLL (pstCard,  clockRate, false);
+    printf ("Attempting to set sampling rate to to %.1lf... \n Sampling rate set to %.1lf MHz\n", (double) clockRate/1000000,
+    (double) pstCard->llSetSamplerate / 1000000);
 
     //Continuous output
     bSpcMSetupModeRepStdLoops  (pstCard, llChannelMask, KILO_B(64), llLoops);

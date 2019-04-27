@@ -21,7 +21,7 @@
 
 #include <vector>
 
-#define DEFAULT_WAVEFORM_DURATION 0.001
+#define DEFAULT_WAVEFORM_DURATION 0.00001
 #define MAX_NUM_TRAPS 101
 
 using namespace std;
@@ -53,7 +53,7 @@ class TrapController {
 
 public:
 
-    TrapController(double centerFx, double centerFy, double sampleRate, double gain, bool axis);
+    TrapController(double centerFx, double centerFy, double sampleRate, double gain, bool axis, int wt_freq);
 
     void addTrap(double freq, double amp, double phase=0);
 
@@ -80,6 +80,9 @@ public:
     double awg_gain;
     double xAxisCenterFreq;
     double yAxisCenterFreq;
+
+		std::vector<std::complex<float>> getWaveTable();
+
 
 		Waveform staticStartingWaveform;
 		Waveform staticEndingWaveform;

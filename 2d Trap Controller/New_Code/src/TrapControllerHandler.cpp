@@ -7,31 +7,29 @@ struct RearrangementMove;
 /* Generate width+length trap controllers. The length primary TCs are centered
 on the width axis, and create a trap per x-increment starting at the
 lowest frequency (x-y axis). Same for width, but along y-x axis */
-TrapControllerHandler::TrapControllerHandler(int len, int wid, double startFx, double fxIncrement, double startFy, double fyIncrement, double sampleRate, double gain){
+TrapControllerHandler::TrapControllerHandler(int len, int wid, double sampleRate, double gain, int wt_freq){
 
   for(int i = 0; i <len; i++){
-    tcxList.push_back(TrapController( (startFx + i*fxIncrement), (startFy+fyIncrement*wid/2), sampleRate, gain, true));
+    staticHandler.push_back(TrapController( i, i, sampleRate, gain, true,wt_freq));
   }
-  for(int i = 0; i <wid; i++){
-    tcyList.push_back(TrapController( (startFx +fyIncrement*len/2), (startFy+i*fyIncrement), sampleRate, gain, false));
-  }
-  size = tcxList.size();
+
+  size = staticHandler.size();
 
 }
 
 vector<vector<double>> TrapControllerHandler::trapFrequencies() {
 
   vector<vector<double>> frequenciesList;
-  for (int i = 0; i < tcxList.size(); i++){
-    frequenciesList.push_back(tcxList[i].trapFrequencies());
+  for (int i = 0; i < staticHandler.size(); i++){
+    frequenciesList.push_back(staticHandler[i].trapFrequencies());
   }
 
 	return frequenciesList;
 }
 
 void TrapControllerHandler::resetForRearrangement() {
-  for (int i = 0; i < tcxList.size(); i++){
-    tcxList[i].resetForRearrangement();
+  for (int i = 0; i < staticHandler.size(); i++){
+    staticHandler[i].resetForRearrangement();
   }
 }
 
@@ -87,7 +85,7 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
       numTokensParsed = 0;
       numLinesParsed ++;
       if (numLinesParsed ==tchLen) {
-        if(!tcxList[numGroupsParsed].loadDefaultTrapConfiguration(tokenList,tchLen))
+        if(!staticHandler[numGroupsParsed].loadDefaultTrapConfiguration(tokenList,tchLen))
           return false;
         numLinesParsed = 0;
         numGroupsParsed ++;
@@ -106,7 +104,7 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 void TrapControllerHandler::printTraps(){
 
   for(int i = 0; i < size; i ++){
-    tcxList[i].printTraps();
+    staticHandler[i].printTraps();
   }
 
 }
@@ -175,7 +173,7 @@ std::vector<Waveform> TrapControllerHandler::generateWaveform(){
   std::vector<Waveform> wfList;
 
   for ( int i =0; i < tchLen; i++)
-    wfList.push_back(tcxList[i].generateWaveform());
+    wfList.push_back(staticHandler[i].generateWaveform());
 
   return wfList;
 }

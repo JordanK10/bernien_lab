@@ -30,17 +30,20 @@ class AWGController{
 
 public:
 
-	AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain, output_mode mode, int clock_rate);
+	AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain, output_mode mode, int sw_buf);
 
 	void disconnect();
 	void startStreaming();
 
-	bool loadDataBlock(Waveform dataArr, int channel, int64 llBytesToCalculate);
+	bool loadDataBlock(std::vector<std::complex<float>> dataArr, int channel, int64 llBytesToCalculate);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
 
 	void pushWaveform(std::vector<Waveform> waveform);
+
+	void pushWaveTable(std::vector<std::complex<float>> waveform);
+
 
 	void pushWaveforms(vector<Waveform> waveforms);
 	void pushWaveforms(vector<Waveform *> waveforms);
@@ -54,14 +57,14 @@ private:
 
     char                szBuffer[1024];     // a character buffer for any messages
   	ST_SPCM_CARDINFO    stCard;             // info structure of my card
-  	void*               pvBuffer = NULL;
+  	void*              pvBuffer = NULL;
   	uint32              dwErr;
   	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
 
     // setup for the FIFO mode (HW buffer size can be programmed starting with firmware V9)
-   	int64        llHWBufSize = MEGA_B(256);
-   	int64        llSWBufSize = MEGA_B(128);
-   	int64        llNotifySize = KILO_B(1024); // the data transfer speed to the card increases with the notify size
+		int64        llHWBufSize = MEGA_B(256);
+   	int64        llSWBufSize;
+   	// int64        llNotifySize = KILO_B(1024); // the data transfer speed to the card increases with the notify size
 
 
     double sampleRate;

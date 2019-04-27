@@ -14,7 +14,7 @@ class TrapControllerHandler {
 public:
 
 
-  TrapControllerHandler(int len, int wid, double startFx, double fxIncrement, double startFy, double fyIncrement, double sampleRate, double gain);
+  TrapControllerHandler(int len, int wid, double cloack_rate, double gain, int wt_freq);
 
   bool loadDefaultTrapConfiguration(std::string filename);
   void printTraps();
@@ -38,7 +38,7 @@ public:
   vector<vector<double>> trapFrequencies();
 
 
-  std::vector<TrapController> tcxList;
+  std::vector<TrapController> staticHandler;
   std::vector<TrapController> tcyList;
 
   std::string lastLoadedConfiguration;
