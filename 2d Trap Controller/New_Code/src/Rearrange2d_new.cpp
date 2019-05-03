@@ -1,10 +1,10 @@
-#include "Rearrange2d.h"
+#include "C:\Users\abpoc\Desktop\bernien_lab\2d Trap Controller\New_Code\include\Rearrange2d.h"
 #include <vector>
 #include <tuple>
 #include <iostream>
 #include <random>
 #include <math.h>
-#include "rearrangementmove.h"
+
 
 
 using namespace std;
@@ -31,7 +31,7 @@ vector<vector<vector<int>>> Interpolate(vector<int> movefrom, vector<int> moveto
 
 vector<bool> ColumnAt(vector<vector<bool>> Array, int dim){
   vector<bool> new_col(Array.size());
-  for(k=0;i<Array.size();k++)
+  for(k=0;k<Array.size();k++)
     new_col[k]=Array[k][dim];
   return new_col;
 }
@@ -99,10 +99,10 @@ vector<vector<bool>> Move(vector<vector<bool>> Array, vector<int> pos1,vector<in
 vector<int> RowSum(vector<vector<bool>> Array, int dimension){
     vector<int> RowTotal(dimension+1);
     int dummy = 0;
-    for(i=1; i < dimension; i++){
+    for(i=0; i < dimension; i++){
         for(j=0; j < dimension; j++){
-            RowTotal[i] += int(Array[i][j]);
-            RowTotal[0] += RowTotal[i];
+            RowTotal[i+1] += int(Array[i][j]);
+            RowTotal[0] += int(Array[i][j]);
         }
     }
     return RowTotal;
@@ -121,9 +121,8 @@ int* CenterOfMass(vector<vector<bool>> Array, int dim){
             }
         }
     }
-    int RT = int(RowWeight /= TotalWeight);
-    int CT = int(ColWeight /= TotalWeight);
-    return {RT,CT};
+    int COM[] = {int(RowWeight /= TotalWeight),int(ColWeight /= TotalWeight)};
+    return COM;
 }
 
 vector<vector<bool>> Transpose(vector<vector<bool>> Array){
@@ -145,13 +144,8 @@ vector<vector<bool>> Transpose(vector<vector<bool>> Array){
     return NewArray;
 }
 
-tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vector<int>>>,vector<int>,vector<vector<bool>>,vector<vector<bool>>> Balance(vector<vector<bool>> Array, vector<int> Range, vector<int> COM, int dim, int SufficientAtoms, vector<int> RowTotal){
-    vector<vector<vector<int>>> moves;
-
-    vector<vector<bool>> oldCols;
-    vector<vector<bool>> newCols;
-    vector<int> cols;
-
+tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<RearrangementMove>> Balance(vector<vector<bool>> Array, vector<int> Range, int dim, int SufficientAtoms, vector<int> RowTotal){
+    vector<RearrangementMove> moves;
 
     int center;
     if((Range[1] - Range[0])%2 == 0){
@@ -162,24 +156,26 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vec
     int SuffLower = (center - Range[0] + 1)*SufficientAtoms;
     int SuffUpper = (Range[1] - center)*SufficientAtoms;
 
-    int k;
-    int i = Range[0];
+
+    i = Range[0];
+    cout << Range[0];
     int Lower = 0;
     int Upper = 0;
     while(i <= center){
-        Lower += RowTotal[i];
+        Lower += RowTotal[i+1];
         i ++;
     }
     while(i <= Range[1]){
-        Upper += RowTotal[i];
+        Upper += RowTotal[i+1];
         i ++;
     }
+    int counter = 0;
 
     while(SuffUpper > Upper || SuffLower > Lower){
         i = center + 1;
-        vector<int> moveto ;
-        vector<int> movefrom ;
-        int j = 0;
+        vector<int> moveto = {};
+        vector<int> movefrom = {};
+        j = 0;
         if(SuffLower < Lower && SuffUpper < Upper){
             break;
             }
@@ -243,8 +239,8 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vec
                 if(moveto.size() == 0 || movefrom.size() == 0){
                         i = center;
                         j ++;
-                        moveto ;
-                        movefrom ;
+                        moveto = {};
+                        movefrom = {};
                     }else{
                         Lower ++;
                         break;
@@ -252,66 +248,70 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>,vector<vector<vec
         }
     }
     if(moveto.size() != 0 || movefrom.size() != 0){
-    vector<vector<bool>> New = Move(Array,movefrom,moveto);
+    moves.push_back(RearrangementMove());
+    moves[counter].dim = movefrom[1];
+    moves[counter].row = false;
+    moves[counter].startingConfig = ColumnAt(Array,movefrom[1]);
+    Array = Move(Array,movefrom,moveto);
+    moves[counter].endingConfig = ColumnAt(Array,movefrom[1]);
+    counter ++;
 
-    oldCols.push_back(Transpose(Array)[movefrom[1]]);
-    newCols.push_back(Transpose(New)[movefrom[1]]);
-    cols.push_back(movefrom[1]);
-
-    Array = New;
-
-    vector<vector<vector<int>>> new_moves = Interpolate(movefrom, moveto,center);
-    for(int i = 0;i<new_moves.size();i++){
-        moves.push_back(new_moves[i]);
-    }
-
-    RowTotal[movefrom[0]] --;
-    RowTotal[moveto[0]] ++;
+    RowTotal[movefrom[0]+1] --;
+    RowTotal[moveto[0]+1] ++;
     }
 }
 vector<int> Range1 = {center + 1,Range[1]};
 vector<int> Range0 = {Range[0],center};
-return make_tuple(Array,RowTotal,Range0,Range1,moves,cols,oldCols,newCols);
+return make_tuple(Array,RowTotal,Range0,Range1,moves);
 }
 
+vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int index)
+{
+    for(i = 0;i<Array.size();i++){
+        Array[i][index] = col[i];
+    }
+    return Array;
+}
+
+void printArray(vector<vector<bool>> Array){
+    for(int i = 0;i<Array.size();i++){
+        for(int j = 0;j<Array[0].size();j++){
+            cout << Array[i][j] << " ";
+        }
+        cout << endl;
+    }
+cout << endl;
+}
 vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array){
 
-  vector<RearrangementMove> init_rows;
+  vector<RearrangementMove> initCols;
   vector<RearrangementMove> rows;
   vector<RearrangementMove> cols;
+  vector<RearrangementMove> tempCols;
 
-
-    vector<vector<vector<int>>> moves2;
-
-    vector<vector<bool>> oldRows ;
-    vector<vector<bool>> newRows ;
-    vector<vector<bool>> oldCols ;
-    vector<vector<bool>> newCols ;
-    vector<int> cols;
-
-    vector<vector<bool>> initOldCols ;
-    vector<vector<bool>> initNewCols ;
-    vector<int> initCols;
-
-    vector<vector<bool>> oldCols1 ;
-    vector<vector<bool>> newCols1 ;
-    vector<int> cols1;
 
     int ArrayDim = Array.size();
+/*
+    int* COM;
+    COM = CenterOfMass(Array, ArrayDim);
+    cout << "nx: "<< *(COM) << endl;
+    cout << "y: " << *(COM + 1) << endl;
 
-    int* COM = CenterOfMass(Array, ArrayDim);
+*/
     vector<int> RowTotals = RowSum(Array, ArrayDim);
 
     int atoms = RowTotals[0];
-    vector<vector<int>> RowRange ;
 
+    int COM[] = {5,5};
 
-    int TargetDim = sqrt(atoms)
+    int TargetDim = sqrt(atoms);
+    cout << atoms;
+    cout << "Tdim: " << TargetDim << endl;
     float x = TargetDim/2;
 
 
         int col_y = COM[1] - x;
-        int col_z = COM[1] + x - 1;
+        int col_z = TargetDim + col_y - 1;
 
         if(col_y < 0){
             col_y = 0;
@@ -322,8 +322,8 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array){
             col_y = ArrayDim - TargetDim;
         }
 
-        row_y = COM[0] - x;
-        row_z = COM[0] + x - 1;
+        int row_y = COM[0] - x;
+        int row_z = TargetDim + row_y - 1;
 
         if(row_y < 0){
             row_y = 0;
@@ -335,72 +335,74 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array){
         }
 
     vector<bool> tempCol;
+    vector<bool> compressedCol;
 
-    for(i=1; i<ArrayDim; i++){
-        tempCol = ColumnAt(Array,i); // Extract desired column
-        init_cols.push_back(tempCol,CompressRow(tempCol,COM[1],TargetDim),0,i); \\Push back column and compressed column
-        RowTotals = RowSum(Array, ArrayDim); // Recalculate row totals
+    cout << row_y << "," << row_z << endl;
+    cout << "ArrayDim" << ArrayDim << endl;
+    int c = 0;
+    for(int kevin=1; kevin<ArrayDim; kevin++){
         atoms = 0;
-        for(j = row_y; j<row_z; j++){
-            atoms += RowTotals[j];
+        for(j = row_y; j<=row_z; j++){
+            atoms += RowTotals[j+1];
         }
         if(atoms>=TargetDim*TargetDim){
             break;
         }
+        tempCol = ColumnAt(Array,kevin); // Extract desired column
+        compressedCol = CompressRow(tempCol,COM[0],TargetDim);
+        initCols.push_back(RearrangementMove());
+        initCols[c].row = false;
+        initCols[c].startingConfig = tempCol;
+        initCols[c].endingConfig = compressedCol;
+        initCols[c].dim = kevin;
+        Array = assignCol(Array,compressedCol,kevin);
+        c ++;
+         // Push back column and compressed column
+        RowTotals = RowSum(Array, ArrayDim); // Recalculate row totals
     }
 
-    i = 0;
+    int s = 0;
     vector<int> Range1;
     vector<int> Range2;
-    vector<int> BalancedRows ;
-    vector<vector<vector<int>>> newmoves;
+    int balancedRows = 0;
     int k = 0;
+    vector<vector<int>> RowRange = {{row_y,row_z}};
 
-    while(BalancedRows.size() < row_z - row_y + 1){
-    tie(Array,RowTotals,Range1,Range2,newmoves,cols1,oldCols1,newCols1) = Balance(Array,[row_y,row_z],COM,ArrayDim,TargetDim,RowTotals);
 
-    for(int l = 0;l<cols1.size();l++){
-        cols.push_back(cols1[l]);
-        oldCols.push_back(oldCols1[l]);
-        newCols.push_back(newCols1[l]);
-    }
+    while(balancedRows < row_z - row_y + 1){
+        cout << "Range: " << RowRange[s][0] << " " << RowRange[s][1] << endl;
 
-    while(k<newmoves.size()){
-        moves2.push_back(newmoves[k]);
-        k ++;
+        tie(Array,RowTotals,Range1,Range2,tempCols) = Balance(Array,RowRange[s],ArrayDim,TargetDim,RowTotals);
+        cols.insert(cols.end(),tempCols.begin(),tempCols.end());
+        if(Range1[1] == Range1[0]){
+            balancedRows ++;
+        }else{
+            RowRange.push_back(Range1);
+        }
+        if(Range2[1] == Range2[0]){
+            balancedRows ++;
+        }else{
+            RowRange.push_back(Range2);
+        }
+        s ++;
     }
-    newmoves ;
-    k = 0;
-    vector<vector<int>> RowRange{{row_y,row_z}};
-    if(Range1[1] == Range1[0]){
-        BalancedRows.push_back(Range1[1]);
-    }else{
-        RowRange.push_back(Range1);
-    }
-    if(Range2[1] == Range2[0]){
-        BalancedRows.push_back(Range2[1]);
-    }else{
-        RowRange.push_back(Range2);
-    }
-    i ++;
-    }
-
+    int counter = 0;
     i = RowRange[0][0];
-    vector<int> rows;
-
     while(i <= RowRange[0][1]){
-        vector<bool> NewRow = CompressRow(Array[i],COM[1],TargetDim);
-        oldRows.push_back(Array[i]);
-        newRows.push_back(NewRow);
-        rows.push_back(i);
-        Array[i] = NewRow;
+        rows.push_back(RearrangementMove());
+        rows[counter].dim = i;
+        rows[counter].row = true;
+        rows[counter].startingConfig = Array[i];
+        rows[counter].endingConfig = CompressRow(Array[i],COM[1],TargetDim);
         i++;
+        counter++;
     }
-
-return make_tuple(initCols,initOldCols,initNewCols,rows,oldRows,newRows,cols,oldCols,newCols);
+    vector<RearrangementMove> r_moves = initCols;
+    r_moves.insert(r_moves.end(),cols.begin(), cols.end());
+    r_moves.insert(r_moves.end(),rows.begin(), rows.end());
+return r_moves;
 }
 
-enum rearrange_method {BALANCE_COMPRESS,RECT_BALANCE_COMPRESS, SNAKE, HUNGARIAN};
 
 vector<RearrangementMove> rearrange(vector<vector<bool>> Array, enum rearrange_method method)
 {
@@ -411,38 +413,8 @@ vector<RearrangementMove> rearrange(vector<vector<bool>> Array, enum rearrange_m
     if(method == RECT_BALANCE_COMPRESS){
       return BalanceCompressAlg(Array);
     }
-    if(method == SNAKE){
-      return BalanceCompressAlg(Array);
-    }
+
     if(method == HUNGARIAN){
       return BalanceCompressAlg(Array);
     }
-
-// tie(initCols,initOldCols,initNewCols,rows,oldRows,newRows,cols,oldCols,newCols) = BalanceCompressAlg(Array);
-
-
-    // vector<RearrangementMove> moves;
-    // for(int i = 0;i<initCols.size();i++){
-    //     moves.push_back(RearrangementMove());
-    //     moves[i].startingConfig = initOldCols[i];
-    //     moves[i].endingConfig = initNewCols[i];
-    //     moves[i].row = false; // 1 if row, 0 if col
-    //     moves[i].dim = initCols[i]; // the index of the desired move
-    // }
-    // for(int i =initCols.size();i<(cols.size() + initCols.size());i++){
-    //     moves.push_back(RearrangementMove());
-    //     moves[i].startingConfig = oldCols[i- initCols.size()];
-    //     moves[i].endingConfig = newCols[i- initCols.size()];
-    //     moves[i].row = false; // 1 if row, 0 if col
-    //     moves[i].dim = cols[i- initCols.size()]; // the index of the desired move
-    // }
-    // for(int i = cols.size() + initCols.size();i<(rows.size() + cols.size()+initCols.size());i++){
-    //     moves.push_back(RearrangementMove());
-    //     moves[i].startingConfig = oldRows[i - cols.size() - initCols.size()];
-    //     moves[i].endingConfig = newRows[i - cols.size()- initCols.size()];
-    //     moves[i].row = true; // 1 if row, 0 if col
-    //     moves[i].dim = rows[i - cols.size()- initCols.size()]; // the index of the desired move
-    // }
-
-
 }
