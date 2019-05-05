@@ -20,14 +20,14 @@ void printArray();
 //////////////////BALANCE_COMPRESS////////////////////////////
 
 
-vector<bool> Rearrange2d_new::ColumnAt(vector<vector<bool>> Array, int dim){
+vector<bool> ColumnAt(vector<vector<bool>> Array, int dim){
   vector<bool> new_col(Array.size());
   for(k=0;k<Array.size();k++)
     new_col[k]=Array[k][dim];
   return new_col;
 }
 
-vector<bool> Rearrange2d_new::CompressRow(vector<bool> row, int left, int right, int atoms){
+vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms){
     int suff = right - left + 1;
     int diff = atoms - suff;
     int extras = diff;
@@ -58,7 +58,7 @@ vector<bool> Rearrange2d_new::CompressRow(vector<bool> row, int left, int right,
     return newRow;
 }
 
-vector<int> Rearrange2d_new::RowSum(vector<vector<bool>> Array){
+vector<int> RowSum(vector<vector<bool>> Array){
     vector<int> RowTotal(Array.size()+1);
     for(i=0; i < Array.size(); i++){
         for(j=0; j < Array[0].size(); j++){
@@ -69,7 +69,7 @@ vector<int> Rearrange2d_new::RowSum(vector<vector<bool>> Array){
     return RowTotal;
 }
 
-tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>> Rearrange2d_new::Balance(vector<vector<bool>> Array, vector<int> Range, int SufficientAtoms, vector<int> RowTotal){
+tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>> Balance(vector<vector<bool>> Array, vector<int> Range, int SufficientAtoms, vector<int> RowTotal){
 
     int dim = Array[0].size();
     int center;
@@ -189,7 +189,7 @@ vector<int> Range0 = {Range[0],center};
 return make_tuple(Array,RowTotal,Range0,Range1);
 }
 
-vector<vector<bool>> Rearrange2d_new::assignCol(vector<vector<bool>> Array, vector<bool> col, int index)
+vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int index)
 {
     for(i = 0;i<Array.size();i++){
         Array[i][index] = col[i];
@@ -197,7 +197,7 @@ vector<vector<bool>> Rearrange2d_new::assignCol(vector<vector<bool>> Array, vect
     return Array;
 }
 
-int* Rearrange2d_new::CenterOfMass(vector<vector<bool>> Array){
+int* CenterOfMass(vector<vector<bool>> Array){
     int dim1 = Array.size();
     int dim2 = Array[0].size();
     float RowWeight = 0;
@@ -220,7 +220,7 @@ int* Rearrange2d_new::CenterOfMass(vector<vector<bool>> Array){
 }
 
 
-vector<RearrangementMove> Rearrange2d_new::BalanceCompressAlg(vector<vector<bool>> Array, int mode){
+vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mode){
 
     int ArrayDim = Array.size();
     vector<int> RowTotals = RowSum(Array);
@@ -439,7 +439,7 @@ return moves;
 
 ///////////////////////////////////END////////////////////////////////
 
-vector<RearrangementMove> Rearrange2d_new::rearrange(vector<vector<bool>> Array, enum rearrange_method method,int mode)
+vector<RearrangementMove> rearrange(vector<vector<bool>> Array, enum rearrange_method method,int mode)
 {
 
     if(method == BALANCE_COMPRESS){
