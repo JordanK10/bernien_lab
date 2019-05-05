@@ -2,19 +2,19 @@
 #define TRAP_CONTROLLER_HANDLER_H
 
 #include "TrapController.h"
-#include "rearrangementmove.h"
+#include "Rearrange2d.h"
 #include <vector>
 
 using namespace std;
-struct RearrangementMove;
 
+struct RearrangementMove;
 
 class TrapControllerHandler {
 
 public:
 
 
-  TrapControllerHandler(int len, int wid, double cloack_rate, double gain, int wt_freq);
+  TrapControllerHandler(int len, double cloack_rate, double gain, int wt_freq);
 
   bool loadDefaultTrapConfiguration(std::string filename);
   void printTraps();
@@ -27,9 +27,11 @@ public:
   void initializeFromBinaryFile(std::string filename);
 	bool initializeFromStaticWaveform(std::string trap_configuration);
 
-  std::vector<RearrangementMove> generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode);
+  bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  std::vector<Waveform *> rearrangeTraps(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode, int modeArgument=0);
+  std::vector<RearrangementMove> generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent,  rearrange_mode mode);
+
+  std::vector<Waveform *> rearrangeTraps(std::vector<std::vector<bool>> atomsPresent,  rearrange_mode mode, int modeArgument=0);
 
   std::vector<Waveform> generateWaveform();
 
@@ -37,12 +39,15 @@ public:
 
   vector<vector<double>> trapFrequencies();
 
+  void saveTraps();
+
 
   std::vector<TrapController> staticHandler;
   std::vector<TrapController> tcyList;
 
   std::string lastLoadedConfiguration;
 
+  double awg_gain;
 
   int reservoirSeparation = 20;
   int tchLen;

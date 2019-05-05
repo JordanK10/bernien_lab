@@ -29,7 +29,6 @@ CameraServer::CameraServer()
 
 }
 
-
 CameraServer::~CameraServer()
 {
 	// close(serverSocket);
@@ -51,7 +50,5 @@ bool CameraServer::startServer() {
 
 vector<vector<bool>> CameraServer::receiveIdentifiedAtomList(int numTraps, int rowLen) {
 
-	vector<vector<bool>> atomsPresent;
-
-	return MakeBoolArray(5,.8);
+	return MakeBoolArray(rowLen,.7);
 }

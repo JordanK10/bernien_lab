@@ -30,7 +30,7 @@ class AWGController{
 
 public:
 
-	AWGController(bool shouldConnect, double sample_rate, double center_freq, double tx_gain, output_mode mode, int sw_buf);
+	AWGController(bool shouldConnect, double sample_rate, output_mode mode, int sw_buf);
 
 	void disconnect();
 	void startStreaming();
@@ -44,11 +44,18 @@ public:
 
 	void pushWaveTable(std::vector<std::complex<float>> waveform);
 
+	bool changeMode(output_mode mode);
+
+	int getGain();
+	bool changeGain(int gain);
 
 	void pushWaveforms(vector<Waveform> waveforms);
 	void pushWaveforms(vector<Waveform *> waveforms);
 
 	bool isConnected();
+
+	bool run(int timeout,int channel);
+	void stop();
 
 	// drv_handle hDrv;
 
@@ -64,16 +71,17 @@ private:
     // setup for the FIFO mode (HW buffer size can be programmed starting with firmware V9)
 		int64        llHWBufSize = MEGA_B(256);
    	int64        llSWBufSize;
-   	// int64        llNotifySize = KILO_B(1024); // the data transfer speed to the card increases with the notify size
+   	int64        llNotifySize = KILO_B(1024); // the data transfer speed to the card increases with the notify size
 
 
     double sampleRate;
-    double centerFreq;
-    double gain;
+
+    int gain = 32762;
 
     bool connected = false;
     bool shouldDisconnect;
 
+		char szErrorText[500];
 
     bool hasStartedStreaming = false;
 
@@ -86,8 +94,9 @@ private:
 
 		char input;
 
-		void setupSingleWave (ST_SPCM_CARDINFO *pstCard, int32 lReplayMode, int64 llLoops, int clockRate);
-		bool setupFIFO (ST_SPCM_CARDINFO *pstCard);
+		bool setupSuccess;
+
+		bool setupCard();
 		void errorPrint(bool dwErr, string error);
 };
 

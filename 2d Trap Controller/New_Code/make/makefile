@@ -24,6 +24,7 @@ SRC_FILES = $(DIR_SRC)\main.cpp \
 						$(DIR_SRC)\Console.cpp \
 						$(DIR_SRC)\CameraServer.cpp \
 						$(DIR_SRC)\AtomSim.cpp \
+						$(DIR_SRC)\Rearrange2d.cpp 
 
 {$(DIR_SRC)}.cpp{$(DIR_INT)}\*obj::
 			@echo Compiling...

@@ -29,7 +29,7 @@ https://www.spectrum-instrumentation.com/en/knowledge-base-overview
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
-
+using namespace std;
 
 
 /*
@@ -482,6 +482,9 @@ bool bSpcMCheckSetError (uint32 dwError, ST_SPCM_CARDINFO *pstCardInfo)
         {
         pstCardInfo->bSetError = true;
         spcm_dwGetErrorInfo_i32 (pstCardInfo->hDrv, NULL, NULL, pstCardInfo->szError);
+        cout << pstCardInfo->szError;
+        cout << pstCardInfo->hDrv;
+
         return false;
         }
     return true;
@@ -1267,7 +1270,7 @@ bool bSpcMSetupTrigSoftware (ST_SPCM_CARDINFO *pstCardInfo, bool bTrigOut)
     if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_TRIG_CH_ANDMASK1, 0);
     if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_TRIGGEROUT,       bTrigOut ? 1 : 0);
 
-    return bSpcMCheckSetError (dwError, pstCardInfo);
+    return  bSpcMCheckSetError (dwError, pstCardInfo);
     }
 
 
@@ -1651,26 +1654,31 @@ bool bSpcMSetupAnalogOutputChannel (ST_SPCM_CARDINFO *pstCardInfo, int32 lChanne
     // Check for programmable gain
     if (pstCardInfo->uCfg.stAO.bGainProgrammable)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_AMP0 + lChannel * (SPC_AMP1 - SPC_AMP0), lAmplitude);
-
+    cout << dwError;
     // Check for programmable offset
     if (pstCardInfo->uCfg.stAO.bOffsetProgrammable)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_OFFS0 + lChannel * (SPC_OFFS1 - SPC_OFFS0), lOutputOffset);
+        cout << dwError;
 
     // Check for programmable filters
     if (pstCardInfo->uCfg.stAO.bFilterAvailable)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_FILTER0 + lChannel * (SPC_FILTER1 - SPC_FILTER0), lFilter);
+        cout << dwError;
 
     // Check for programmable stop levels
     if (pstCardInfo->uCfg.stAO.bStopLevelProgrammable)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_CH0_STOPLEVEL + lChannel * (SPC_CH1_STOPLEVEL - SPC_CH0_STOPLEVEL), lStopMode);
+        cout << dwError;
 
     // Check for programmable diffmodes
     if (pstCardInfo->uCfg.stAO.bDiffModeAvailable && !bDoubleOut)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_DIFF0 + lChannel * (SPC_DIFF1 - SPC_DIFF0),  bDifferential ? 1 : 0);
+        cout << dwError;
 
     // Check for programmable doublemodes
     if (pstCardInfo->uCfg.stAO.bDiffModeAvailable && !bDifferential)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_DOUBLEOUT0 + lChannel * (SPC_DOUBLEOUT1 - SPC_DOUBLEOUT0), bDoubleOut ? 1 : 0);
+        cout << dwError;
 
     return bSpcMCheckSetError (dwError, pstCardInfo);
     }

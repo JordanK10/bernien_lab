@@ -26,18 +26,7 @@
 
 using namespace std;
 
-enum rearrange_mode {
-	REARRANGE_MODE_COMPACT_BL,
-	REARRANGE_MODE_COMPACT_TL,
-	REARRANGE_MODE_COMPACT_BR,
-	REARRANGE_MODE_COMPACT_TR,
-	REARRANGE_MODE_FIXED_ARRAY_WITHOUT_RESERVOIR,
-	REARRANGE_MODE_FIXED_ARRAY_WITH_RESERVOIR,
-	REARRANGE_MODE_FIXED_ARRAY_WITH_NEARBY_RESERVOIR,
-	REARRANGE_MODE_CLUSTERS,
-	REARRANGE_MODE_OPTIMIZED_CLUSTERS,
-	REARRANGE_MODE_SLOW_VIDEO
-};
+
 
 static const int numWorkers = 6;
 
@@ -64,6 +53,8 @@ public:
 		bool loadDefaultTrapConfiguration(std::vector<std::vector<std::string>> tokenList, int groupSize);
 
     std::vector<Trap> traps;
+		std::vector<Trap> previousTraps;
+
 
 		bool sanitizeTraps(double new_gain = -1, bool shouldPrintTotalPower=true);
 
@@ -106,6 +97,7 @@ private:
 		Waveform loadedTrapWaveforms[MAX_NUM_TRAPS][MAX_NUM_TRAPS];
 
 
+
   	std::vector<int> periodicClusterPattern;
   	int clusterSeparation;
   	int clusterSize;
@@ -113,10 +105,6 @@ private:
   	int clusterPeriodicity;
   	std::vector<int> clusterTargetIndices;
   	int numClustersToBuild;
-
-
-
-
   };
 
 #endif

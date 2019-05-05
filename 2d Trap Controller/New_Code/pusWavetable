@@ -1,0 +1,57 @@
+
+void AWGController::pushWaveTable(vector<complex<float>> waveforms) {
+
+  if (stCard.bSetError){
+    return;
+  }
+  // ------------------------------------------------------------------------
+	// allocate and setup the fifo buffer and fill it once with data
+	pvBuffer = pvAllocMemPageAligned((uint32)llSWBufSize);
+	if (!pvBuffer){
+    cout << "fail";
+		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
+    return;
+  }
+
+  // for (i = 0; i < waveforms.size(); i++){
+  for (i = 0; i < 1; i++){
+      loadDataBlock(waveforms,1,llSWBufSize);
+  }
+
+  if (!stCard.bSetError)
+      {
+      // we define the buffer for transfer and start the DMA transfer
+      printf ("Starting the DMA transfer and waiting until data is in board memory\n");
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0);
+      spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, llSWBufSize);
+      spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+
+      // check for error code
+      if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer))
+          {
+          vFreeMemPageAligned (pvBuffer, llSWBufSize);
+          nSpcMErrorMessageStdOut (&stCard, szBuffer, false);
+          }
+      else{
+          spcm_dwSetParam_i32 (stCard.hDrv, SPC_TIMEOUT, 0);
+
+          printf ("... data has been transferred to board memory\n");
+          cout << "\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n";
+          spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+          cout << "Type \"s\" to timeout\n";
+          while (cin >> input){
+            if(input == 's'){
+              spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_STOP);
+              break;
+            }
+          }
+          }
+      }
+    else
+      cout << "Error \n";
+    cout << "End\n";
+    vFreeMemPageAligned (pvBuffer, (int32)llSWBufSize);
+
+    return;
+
+}

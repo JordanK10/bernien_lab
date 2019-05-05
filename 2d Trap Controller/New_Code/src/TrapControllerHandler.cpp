@@ -7,14 +7,15 @@ struct RearrangementMove;
 /* Generate width+length trap controllers. The length primary TCs are centered
 on the width axis, and create a trap per x-increment starting at the
 lowest frequency (x-y axis). Same for width, but along y-x axis */
-TrapControllerHandler::TrapControllerHandler(int len, int wid, double sampleRate, double gain, int wt_freq){
+TrapControllerHandler::TrapControllerHandler(int len, double sampleRate, double gain, int wt_freq){
 
   for(int i = 0; i <len; i++){
     staticHandler.push_back(TrapController( i, i, sampleRate, gain, true,wt_freq));
   }
-
   size = staticHandler.size();
 
+  tchLen = 0;
+  tchWid = 0;
 }
 
 vector<vector<double>> TrapControllerHandler::trapFrequencies() {
@@ -30,6 +31,23 @@ vector<vector<double>> TrapControllerHandler::trapFrequencies() {
 void TrapControllerHandler::resetForRearrangement() {
   for (int i = 0; i < staticHandler.size(); i++){
     staticHandler[i].resetForRearrangement();
+  }
+}
+
+bool TrapControllerHandler::sanitizeTraps(double new_gain,
+	bool shouldPrintTotalPower){
+  for (int i = 0; i < size; i++){
+      if (!staticHandler[i].sanitizeTraps(new_gain, shouldPrintTotalPower)){
+        staticHandler[i].traps = staticHandler[i].previousTraps;
+        return false;
+      }
+  }
+  return true;
+}
+
+void TrapControllerHandler::saveTraps(){
+  for(int i = 0; i<staticHandler.size();i++){
+    staticHandler[i].previousTraps = staticHandler[i].traps;
   }
 }
 
@@ -69,6 +87,11 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 	  cout << "Unable to open file: " << filename << endl;
 	  printAvailableDefaultTrapConfigurations();
 	  return false;
+  }
+
+  saveTraps();
+  for(int i =0; i<staticHandler.size(); i++){
+    staticHandler[i].traps.clear();
   }
 
   config_file >> tchLen;  config_file >> tchWid;
@@ -123,7 +146,6 @@ int numTrapsForConfigurationName(string config_name) {
 	return stoi(num_traps_substring);
 }
 
-
 void TrapControllerHandler::initializeFromBinaryFile(string binaryFilename) {
 	string path(dir);
 	path.append(binaryFilename);
@@ -150,7 +172,6 @@ bool fileExists(string filename) {
 	ifstream file(path, ios::in | ios::binary);
 	return file.good();
 }
-
 
 bool TrapControllerHandler::initializeFromStaticWaveform(string trap_configuration_file) {
 	int length = trap_configuration_file.length();
@@ -262,8 +283,6 @@ bool TrapControllerHandler::mostRecentlyLoadedCorrectWaveforms(double duration, 
 	return true;
 }
 
-
-
 void TrapController::printAvailableDefaultTrapConfigurations() {
 	DIR *dir;
 	struct dirent *epdf;
@@ -313,14 +332,6 @@ it will be computed.
 */
 	vector<int> destinations;
 
-	// // Start by counting how many atoms are present.
-	// int numLoaded = 0;
-	// for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 	if (atomsPresent[trap_index]) {
-	// 		numLoaded++;
-	// 	}
-	// }
-  //
 	// if (mode == REARRANGE_MODE_STACK_FROM_LEFT) {
 	// 	// Stack all atoms to the left.
   //
@@ -333,247 +344,8 @@ it will be computed.
 	// 		}
 	// 	}
   //
-	// } else if (mode == REARRANGE_MODE_STACK_FROM_RIGHT) {
-	// 	// Stack all atoms to the right.
-  //
-	// 	int numPresentToRight = numLoaded;
-	// 	for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 		if (atomsPresent[trap_index]) {
-	// 			destinations.push_back(atomsPresent.size() - numPresentToRight--);
-	// 		} else {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	}
-  //
-	// } else if (mode == REARRANGE_MODE_FIXED_ARRAY_WITHOUT_RESERVOIR) {
-	// 	int targetArraySize = modeArgument;
-  //
-	// 	// Stack leftmost "targetArraySize" to the left, and drop the rest of the atoms.
-	// 	int numPresentToLeft = 0;
-	// 	for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 		// If we have not yet come across sufficiently many atoms, then send this one to the left.
-	// 		// Otherwise, just pretend we didn't see it in the first place.
-	// 		if (atomsPresent[trap_index] && numPresentToLeft < targetArraySize) {
-	// 			destinations.push_back(numPresentToLeft++);
-	// 		} else {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	}
-  //
-	// } else if (mode == REARRANGE_MODE_FIXED_ARRAY_WITH_RESERVOIR) {
-	// 	int targetArraySize = modeArgument;
-  //
-	// 	// Stack leftmost "targetArraySize" to the left, and move the rest of the atoms to the right.
-  //
-	// 	int numPresentToLeft = 0;
-	// 	int numPresentToRight = numLoaded;
-  //
-	// 	for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 		// If we have not yet come across sufficiently many atoms, then send this one to the left.
-	// 		// Otherwise, send it to the right.
-	// 		if (atomsPresent[trap_index]) {
-	// 			if (numPresentToLeft < targetArraySize) {
-	// 				destinations.push_back(numPresentToLeft);
-	// 			} else {
-	// 				destinations.push_back(atomsPresent.size() - numPresentToRight);
-	// 			}
-  //
-	// 			numPresentToLeft++;
-	// 			numPresentToRight--;
-	// 		} else {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	}
-	// } else if (mode == REARRANGE_MODE_FIXED_ARRAY_WITH_NEARBY_RESERVOIR) {
-	// 	int targetArraySize = modeArgument;
-  //
-	// 	int numPresentToLeft = 0;
-	// 	for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 		if (atomsPresent[trap_index]) {
-	// 			if (numPresentToLeft < targetArraySize) {
-	// 				destinations.push_back(numPresentToLeft);
-	// 			} else if (numPresentToLeft + reservoirSeparation < atomsPresent.size()) {
-	// 				destinations.push_back(numPresentToLeft + reservoirSeparation);
-	// 			} else {
-	// 				destinations.push_back(-1);
-	// 			}
-  //
-	// 			numPresentToLeft++;
-	// 		} else {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	}
-	// } else if (mode == REARRANGE_MODE_LINE_DISPLAY) {
-	// 	vector<bool> lineToDisplay = lineDisplay.getLine(lineDisplayCounter);
-  //
-	// 	// Calculate how many atoms we need for this line.
-	// 	vector<int> targetIndices;
-	// 	int numAtomsNeeded = 0;
-	// 	for (int i = 0; i < lineToDisplay.size(); i++) {
-	// 		if (lineToDisplay[i]) {
-	// 			numAtomsNeeded++;
-  //
-	// 			targetIndices.push_back(i);
-	// 		}
-	// 	}
-  //
-	// 	// Go through the array and count the first N atoms that are present and send them to the
-	// 	// targeted spots. For the remaining atoms we can pretend we didn't even see them.
-	// 	int numCounted = 0;
-	// 	for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 		if (atomsPresent[trap_index] && numCounted < numAtomsNeeded) {
-	// 			destinations.push_back(targetIndices[numCounted]);
-	// 			numCounted++;
-	// 		} else {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	}
-  //
-	// 	lineDisplayCounter = (lineDisplayCounter + 1) % 6;
-	// } else if (mode == REARRANGE_MODE_CLUSTERS) {
-	// 	if (periodicClusterPattern.size() == 0) {
-	// 		for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	} else {
-	// 		// Calculate how many atoms we need for this line.
-  //
-	// 		int numAtomsNeeded = atomsPerCluster * numClustersToBuild;
-  //
-	// 		// Go through the array and count the first N atoms that are present and send them to the
-	// 		// targeted spots. For the remaining atoms we can pretend we didn't even see them.
-	// 		int numCounted = 0;
-	// 		for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 			if (atomsPresent[trap_index] && numCounted < numAtomsNeeded) {
-	// 				destinations.push_back(clusterTargetIndices[numCounted]);
-	// 				numCounted++;
-	// 			} else {
-	// 				destinations.push_back(-1);
-	// 			}
-	// 		}
-	// 	}
-  //
-	// } else if (mode == REARRANGE_MODE_OPTIMIZED_CLUSTERS) { // Same operation as other cluster mode, but smarter routing.
-	// 	if (periodicClusterPattern.size() == 0) {
-	// 		for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	} else {
-	// 		int numLoadedAtoms = 0;
-	// 		for (int i = 0; i < atomsPresent.size(); i++) {
-	// 			if (atomsPresent[i]) {
-	// 				numLoadedAtoms++;
-	// 			}
-	// 		}
-  //
-	// 		int totalExcessAtoms = numLoadedAtoms - numClustersToBuild * atomsPerCluster;
-	// 		int excessAtomsPerCluster = totalExcessAtoms / numClustersToBuild;
-  //
-	// 		int numAtomsNeeded = atomsPerCluster * numClustersToBuild;
-  //
-	// 		// Go through the array and count the first N atoms that are present and send them to the
-	// 		// targeted spots. For the remaining atoms we can pretend we didn't even see them.
-	// 		int numCounted = 0;
-	// 		int numCountedInCluster = 0;
-	// 		bool skippingExcessAtoms = false;
-	// 		int skippedExcessAtoms = 0;
-  //
-	// 		for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 			if (atomsPresent[trap_index] && numCounted < numAtomsNeeded) {
-	// 				if (skippingExcessAtoms) {
-	// 					destinations.push_back(-1);
-	// 					skippedExcessAtoms++;
-	// 					if (skippedExcessAtoms == excessAtomsPerCluster) {
-	// 						skippingExcessAtoms = false;
-	// 						numCountedInCluster = 0;
-	// 					}
-	// 				} else {
-	// 					destinations.push_back(clusterTargetIndices[numCounted]);
-	// 					numCounted++;
-	// 					numCountedInCluster++;
-  //
-	// 					if (numCountedInCluster == atomsPerCluster) {
-	// 						skippingExcessAtoms = true;
-	// 						skippedExcessAtoms = 0;
-	// 					}
-	// 				}
-  //
-	// 			} else {
-	// 				destinations.push_back(-1);
-	// 			}
-	// 			if (trap_index + 1 > clusterTargetIndices[numCounted]) {
-	// 				// prematurely break skip mode
-	// 				skippingExcessAtoms = false;
-	// 				numCountedInCluster = 0;
-	// 			}
-	// 		}
-	// 		for (int i = 0; i < destinations.size(); i++) {
-	// 			if (destinations[i] != -1) {
-	// 				cout << "destination " << i << ": " << destinations[i] << endl;
-	// 			}
-	// 		}
-	// 	}
-	// } else if (mode == REARRANGE_MODE_SLOW_VIDEO) {
-	// 	vector<int> targetIndices;
-	// 	int numAtomsNeeded = 40;
-  //
-	// 	targetIndices.push_back(2);
-	// 	targetIndices.push_back(4);
-	// 	targetIndices.push_back(7);
-	// 	targetIndices.push_back(8);
-	// 	targetIndices.push_back(9);
-	// 	targetIndices.push_back(11);
-	// 	targetIndices.push_back(12);
-	// 	targetIndices.push_back(13);
-	// 	targetIndices.push_back(14);
-	// 	targetIndices.push_back(16);
-	// 	targetIndices.push_back(24);
-	// 	targetIndices.push_back(27);
-	// 	targetIndices.push_back(29);
-	// 	targetIndices.push_back(32);
-	// 	targetIndices.push_back(34);
-	// 	targetIndices.push_back(35);
-	// 	targetIndices.push_back(36);
-	// 	targetIndices.push_back(40);
-	// 	targetIndices.push_back(42);
-	// 	targetIndices.push_back(46);
-	// 	targetIndices.push_back(48);
-	// 	targetIndices.push_back(50);
-	// 	targetIndices.push_back(55);
-	// 	targetIndices.push_back(57);
-	// 	targetIndices.push_back(58);
-	// 	targetIndices.push_back(59);
-	// 	targetIndices.push_back(61);
-	// 	targetIndices.push_back(64);
-	// 	targetIndices.push_back(68);
-	// 	targetIndices.push_back(73);
-	// 	targetIndices.push_back(79);
-	// 	targetIndices.push_back(80);
-	// 	targetIndices.push_back(83);
-	// 	targetIndices.push_back(85);
-	// 	targetIndices.push_back(87);
-	// 	targetIndices.push_back(90);
-	// 	targetIndices.push_back(92);
-	// 	targetIndices.push_back(96);
-	// 	targetIndices.push_back(97);
-	// 	targetIndices.push_back(99);
-  //
-  //
-	// 	// Go through the array and count the first N atoms that are present and send them to the
-	// 	// targeted spots. For the remaining atoms we can pretend we didn't even see them.
-	// 	int numCounted = 0;
-	// 	for (int trap_index = 0; trap_index < atomsPresent.size(); trap_index++) {
-	// 		if (atomsPresent[trap_index] && numCounted < numAtomsNeeded) {
-	// 			destinations.push_back(targetIndices[numCounted]);
-	// 			numCounted++;
-	// 		} else {
-	// 			destinations.push_back(-1);
-	// 		}
-	// 	}
-	// }
-  //
+
 	// return combinePrecomputedWaveforms(destinations);
-	// //return vector<Waveform *>();
   vector <Waveform *> blank;
   return blank;
 }
