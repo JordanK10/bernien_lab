@@ -12,7 +12,6 @@ int j;
 int k;
 int COM[2];
 int g_counter;
-vector<RearrangementMove> moves;
 
 void printArray(vector<vector<bool>> Array){
   int d1 = Array.size();
@@ -45,17 +44,20 @@ vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms){
     int dim = row.size();
     j = 0;
     vector<bool> newRow(row.size());
+
     while(j<diff && j<left){
         newRow[j] = true;
         j ++;
+        atoms--;
         extras--;
     }
     while(j<left){
         newRow[j] = false;
         j++;
     }
-    while(j<=right){
+    while(j<=right && atoms>0){
         newRow[j] = true;
+        atoms --;
         j++;
     }
     while(j<dim-extras){
@@ -91,7 +93,7 @@ vector<int> ColSum(vector<vector<bool>> Array){
   return ColTotals;
 }
 
-vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal){
+vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal,vector<RearrangementMove> &moves){
     int dim = Array[0].size();
     int center;
     if((Range[1] - Range[0])%2 == 0){
@@ -245,6 +247,9 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
     int atoms = RowTotals[0];
     int TargetDim = sqrt(atoms);
 
+    vector<RearrangementMove> moves;
+
+
     int col_y;
     int col_z;
     int row_y;
@@ -356,13 +361,15 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
         col_z = col_y + TargetDim - 1;
     }
 
+
         vector<bool> tempCol;
         vector<bool> compressedCol;
         bool check = false;
 
         vector<int> ColTotals = ColSum(Array);
 
-if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER)){
+
+if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
       for(int kevin=0; kevin<ArrayDim; kevin++){
               atoms = 0;
               for(j = row_y; j<=row_z; j++){
@@ -373,7 +380,7 @@ if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER
                   break;
               }
               tempCol = ColumnAt(Array,kevin); // Extract desired column
-              compressedCol = CompressRow(tempCol,col_y,col_z,ColTotals[kevin]);
+              compressedCol = CompressRow(tempCol,row_y,row_z,ColTotals[kevin+1]);
               moves.push_back(RearrangementMove());
               moves[g_counter].row = false;
               moves[g_counter].startingConfig = tempCol;
@@ -396,9 +403,10 @@ if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER
     int balancedRows = 0;
     vector<vector<int>> RowRange = {{row_y,row_z}};
 
+
     //balance rows until #of balanced rows = target dim
     while(balancedRows < TargetDim){
-        Range1 = Balance(Array,RowRange[s],TargetDim,RowTotals);
+        Range1 = Balance(Array,RowRange[s],TargetDim,RowTotals,moves);
         if(Range1[0][1] == Range1[0][0]){
             balancedRows ++;
         }else{
@@ -411,6 +419,8 @@ if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER
         }
         s ++;
     }
+
+
     i = RowRange[0][0];
     while(i <= RowRange[0][1]){
         moves.push_back(RearrangementMove());

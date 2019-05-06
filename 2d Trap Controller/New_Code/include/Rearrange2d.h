@@ -46,7 +46,7 @@ vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int
 vector<bool> ColumnAt(vector<vector<bool>> Array, int dim);
 vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms);
 vector<int> RowSum(vector<vector<bool>> Array);
-vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal);
+vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal,vector<RearrangementMove> &moves);
 
 int* CenterOfMass(vector<vector<bool>> Array);
 vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mode);
