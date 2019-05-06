@@ -1,4 +1,4 @@
-#include "Rearrange2d_new.h"
+#include "Rearrange2d.h"
 #include <vector>
 #include <tuple>
 #include <iostream>
@@ -14,7 +14,18 @@ int COM[2];
 int g_counter;
 vector<RearrangementMove> moves;
 
-void printArray();
+void printArray(vector<vector<bool>> Array){
+  int d1 = Array.size();
+  int d2 = Array[0].size();
+  cout << endl;
+  for(int s1 = 0;s1<d1;s1++){
+    for(int s2 = 0;s2<d2;s2++){
+        cout << Array[s1][s2] << " ";
+
+    }
+    cout << endl;
+  }
+};
 
 
 //////////////////BALANCE_COMPRESS////////////////////////////
@@ -69,8 +80,18 @@ vector<int> RowSum(vector<vector<bool>> Array){
     return RowTotal;
 }
 
-tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>> Balance(vector<vector<bool>> Array, vector<int> Range, int SufficientAtoms, vector<int> RowTotal){
+vector<int> ColSum(vector<vector<bool>> Array){
+  vector<int> ColTotals(Array[0].size() + 1);
+  for(i = 0;i<Array[0].size();i++){
+    for(j = 0;j<Array.size();j++){
+      ColTotals[i+1] += int(Array[j][i]);
+      ColTotals[0] += int(Array[j][i]);
+    }
+  }
+  return ColTotals;
+}
 
+vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal){
     int dim = Array[0].size();
     int center;
     if((Range[1] - Range[0])%2 == 0){
@@ -94,6 +115,9 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>> Balance(vector<v
         i ++;
     }
 
+    if(SuffUpper + SuffLower > Upper + Lower){
+      cout << "tenemos un problema" << endl;
+    }
     while(SuffUpper > Upper || SuffLower > Lower){
         i = center + 1;
         vector<int> moveto = {};
@@ -184,9 +208,7 @@ tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>> Balance(vector<v
     RowTotal[moveto[0]+1] ++;
     }
 }
-vector<int> Range1 = {center + 1,Range[1]};
-vector<int> Range0 = {Range[0],center};
-return make_tuple(Array,RowTotal,Range0,Range1);
+return {{Range[0],center},{center + 1,Range[1]}};
 }
 
 vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int index)
@@ -226,166 +248,176 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
     vector<int> RowTotals = RowSum(Array);
     int atoms = RowTotals[0];
     int TargetDim = sqrt(atoms);
+
     int col_y;
     int col_z;
     int row_y;
     int row_z;
 
-//default mode set center of mass as center of array
-if(mode == 0){
-    int *COM = CenterOfMass(Array);
+    //default mode set center of mass as center of array
+    if(mode == CENTER_COM){
+        int *COM = CenterOfMass(Array);
 
-    float x = TargetDim/2;
+        float x = TargetDim/2;
 
-        col_y = COM[1] - x;
-        col_z = TargetDim + col_y - 1;
+            col_y = COM[1] - x;
+            col_z = TargetDim + col_y - 1;
 
-        if(col_y < 0){
-            col_y = 0;
-            col_z = TargetDim - 1;
-        }
-        if(col_z >= ArrayDim){
-            col_z = ArrayDim - 1;
-            col_y = ArrayDim - TargetDim;
-        }
+            if(col_y < 0){
+                col_y = 0;
+                col_z = TargetDim - 1;
+            }
+            if(col_z >= ArrayDim){
+                col_z = ArrayDim - 1;
+                col_y = ArrayDim - TargetDim;
+            }
 
-        row_y = COM[0] - x;
-        row_z = TargetDim + row_y - 1;
+            row_y = COM[0] - x;
+            row_z = TargetDim + row_y - 1;
 
-        if(row_y < 0){
-            row_y = 0;
-            row_z = TargetDim - 1;
-        }
-        if(row_z >= ArrayDim){
-            row_z = ArrayDim - 1;
-            row_y = ArrayDim - TargetDim;
-        }
-}
-
-//mode 5 = corner nearest the COM
-if(mode == 5){
-    int *COM = CenterOfMass(Array);
-    if(COM[0] < (ArrayDim - 1)/2){
-        if(COM[1]<(ArrayDim - 1)/2){
-            mode = 1;
-        }else{
-            mode = 2;
-        }
-    }else{
-        if(COM[1]<(ArrayDim - 1)/2){
-            mode = 3;
-        }else{
-            mode = 4;
-        }
-    }
-}
-
-//mode 1 = upper left corner
-if(mode == 1){
-    col_y = 0;
-    col_z = TargetDim - 1;
-    row_y = 0;
-    row_z = TargetDim - 1;
-}
-
-//mode 2 = upper right corner
-if(mode == 2){
-    col_y = ArrayDim - TargetDim;
-    col_z = ArrayDim - 1;
-    row_y = 0;
-    row_z = TargetDim - 1;
-}
-
-//mode 3 = lower left corner
-if(mode == 3){
-    col_y = 0;
-    col_z = TargetDim - 1;
-    row_y = ArrayDim - TargetDim;
-    row_z = ArrayDim - 1;
-}
-
-//mode 4 = lower right corner
-if(mode == 4){
-    col_y = ArrayDim - TargetDim;
-    col_z = ArrayDim - 1;
-    row_y = ArrayDim - TargetDim;
-    row_z = ArrayDim - 1;
-}
-
-if(mode == 6 || mode == 7 || mode == 8){
-    TargetDim = Array.size();
-    row_y = 0;
-    row_z = TargetDim - 1;
-}
-
-//mode 6 = rectangular, push left
-if(mode == 6){
-    col_y = 0;
-    col_z = TargetDim - 1;
-}
-
-// mode 7 = rectangular, push right
-if(mode == 7){
-    col_y = Array[0].size() - TargetDim;
-    col_z = Array[0].size() - 1;
-}
-
-//mode 8 = rectangular, center
-if(mode == 8){
-    int *COM = CenterOfMass(Array);
-    col_y = COM[1] - TargetDim/2;
-    col_z = col_y + TargetDim - 1;
-}
-
-    vector<bool> tempCol;
-    vector<bool> compressedCol;
-    bool check = false;
-for(int kevin=1; kevin<ArrayDim && mode != (6||7||8); kevin++){
-        atoms = 0;
-        for(j = row_y; j<=row_z; j++){
-            atoms += RowTotals[j+1];
-        }
-        if(atoms>=TargetDim*TargetDim){
-            check = true;
-            break;
-        }
-        tempCol = ColumnAt(Array,kevin); // Extract desired column
-        compressedCol = CompressRow(tempCol,col_y,col_z,RowTotals[kevin]);
-        moves.push_back(RearrangementMove());
-        moves[g_counter].row = false;
-        moves[g_counter].startingConfig = tempCol;
-        moves[g_counter].endingConfig = compressedCol;
-        moves[g_counter].dim = kevin;
-        Array = assignCol(Array,compressedCol,kevin);
-        g_counter ++;
-         // Push back column and compressed column
-        RowTotals = RowSum(Array); // Recalculate row totals
+            if(row_y < 0){
+                row_y = 0;
+                row_z = TargetDim - 1;
+            }
+            if(row_z >= ArrayDim){
+                row_z = ArrayDim - 1;
+                row_y = ArrayDim - TargetDim;
+            }
     }
 
-if(check == false && mode != (6||7||8)){
-    col_z --;
-    row_z --;
-    TargetDim --;
-}
+    //mode 5 = corner nearest the COM
+    if(mode == CLOSE_CORNER){
+        int *COM = CenterOfMass(Array);
+        if(COM[0] < (ArrayDim - 1)/2){
+            if(COM[1]<(ArrayDim - 1)/2){
+                mode = UL_CORNER;
+            }else{
+                mode = UR_CORNER;
+            }
+        }else{
+            if(COM[1]<(ArrayDim - 1)/2){
+                mode = LL_CORNER;
+            }else{
+                mode = LR_CORNER;
+            }
+        }
+    }
+
+    //mode 1 = upper left corner
+    if(mode == UL_CORNER){
+        col_y = 0;
+        col_z = TargetDim - 1;
+        row_y = 0;
+        row_z = TargetDim - 1;
+    }
+
+    //mode 2 = upper right corner
+    if(mode == UR_CORNER){
+        col_y = ArrayDim - TargetDim;
+        col_z = ArrayDim - 1;
+        row_y = 0;
+        row_z = TargetDim - 1;
+    }
+
+    //mode 3 = lower left corner
+    if(mode == LL_CORNER){
+        col_y = 0;
+        col_z = TargetDim - 1;
+        row_y = ArrayDim - TargetDim;
+        row_z = ArrayDim - 1;
+    }
+
+    //mode 4 = lower right corner
+    if(mode == LR_CORNER){
+        col_y = ArrayDim - TargetDim;
+        col_z = ArrayDim - 1;
+        row_y = ArrayDim - TargetDim;
+        row_z = ArrayDim - 1;
+    }
+
+    if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
+        TargetDim = Array.size();
+        row_y = 0;
+        row_z = TargetDim - 1;
+    }
+
+    //mode 6 = rectangular, push left
+    if(mode == REC_LEFT){
+        col_y = 0;
+        col_z = TargetDim - 1;
+    }
+
+    // mode 7 = rectangular, push right
+    if(mode == REC_LEFT){
+        col_y = Array[0].size() - TargetDim;
+        col_z = Array[0].size() - 1;
+    }
+
+    //mode 8 = rectangular, center
+    if(mode == REC_CENT){
+        int *COM = CenterOfMass(Array);
+        col_y = COM[1] - TargetDim/2;
+        col_z = col_y + TargetDim - 1;
+    }
+
+    printArray(Array);
+        vector<bool> tempCol;
+        vector<bool> compressedCol;
+        bool check = false;
+
+        vector<int> ColTotals = ColSum(Array);
+
+        cout << "row " << row_y << " " << row_z << endl;
+        cout << "col " << col_y << " " << col_z << endl;
+        cout << TargetDim << endl;
+        cout << ArrayDim << endl;
+if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER)){
+      for(int kevin=0; kevin<ArrayDim; kevin++){
+              atoms = 0;
+              for(j = row_y; j<=row_z; j++){
+                  atoms += RowTotals[j+1];
+              }
+              if(atoms>=TargetDim*TargetDim){
+                  check = true;
+                  break;
+              }
+              tempCol = ColumnAt(Array,kevin); // Extract desired column
+              compressedCol = CompressRow(tempCol,col_y,col_z,ColTotals[kevin]);
+              moves.push_back(RearrangementMove());
+              moves[g_counter].row = false;
+              moves[g_counter].startingConfig = tempCol;
+              moves[g_counter].endingConfig = compressedCol;
+              moves[g_counter].dim = kevin;
+              Array = assignCol(Array,compressedCol,kevin);
+              g_counter ++;
+               // Push back column and compressed column
+              RowTotals = RowSum(Array); // Recalculate row totals
+              printArray(Array);
+          }
+      if(check == false){
+          col_z --;
+          row_z --;
+          TargetDim --;
+      }
+ }
 
     int s = 0;
-    vector<int> Range1;
-    vector<int> Range2;
+    vector<vector<int>> Range1;
     int balancedRows = 0;
     vector<vector<int>> RowRange = {{row_y,row_z}};
 
     //balance rows until #of balanced rows = target dim
     while(balancedRows < TargetDim){
-        tie(Array,RowTotals,Range1,Range2) = Balance(Array,RowRange[s],TargetDim,RowTotals);
-        if(Range1[1] == Range1[0]){
+        Range1 = Balance(Array,RowRange[s],TargetDim,RowTotals);
+        if(Range1[0][1] == Range1[0][0]){
             balancedRows ++;
         }else{
-            RowRange.push_back(Range1);
+            RowRange.push_back(Range1[0]);
         }
-        if(Range2[1] == Range2[0]){
+        if(Range1[1][1] == Range1[1][0]){
             balancedRows ++;
         }else{
-            RowRange.push_back(Range2);
+            RowRange.push_back(Range1[1]);
         }
         s ++;
     }
@@ -396,50 +428,20 @@ if(check == false && mode != (6||7||8)){
         moves[g_counter].row = true;
         moves[g_counter].startingConfig = Array[i];
         moves[g_counter].endingConfig = CompressRow(Array[i],col_y,col_z,RowTotals[i]);
+
+        Array[i] = CompressRow(Array[i],col_y,col_z,RowTotals[i]);
+
         i++;
         g_counter++;
     }
+    printArray(Array);
 
 return moves;
 }
 
 ///////////////////////////HUNGARIAN///////////////////////////////////////
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///////////////////////////////////END////////////////////////////////
-
-vector<RearrangementMove> rearrange(vector<vector<bool>> Array, enum rearrange_method method,int mode)
+vector<RearrangementMove> rearrange(vector<vector<bool>> Array, rearrange_method method,rearrange_mode mode)
 {
 
     if(method == BALANCE_COMPRESS){
@@ -449,4 +451,5 @@ vector<RearrangementMove> rearrange(vector<vector<bool>> Array, enum rearrange_m
     if(method == HUNGARIAN){
       return BalanceCompressAlg(Array,mode);
     }
+
 }
