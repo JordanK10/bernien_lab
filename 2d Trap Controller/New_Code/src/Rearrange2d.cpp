@@ -44,26 +44,26 @@ vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms){
     int extras = diff;
     int dim = row.size();
     j = 0;
-    vector<bool> newRow;
+    vector<bool> newRow(row.size());
     while(j<diff && j<left){
-        newRow.push_back(true);
+        newRow[j] = true;
         j ++;
         extras--;
     }
     while(j<left){
-        newRow.push_back(false);
+        newRow[j] = false;
         j++;
     }
     while(j<=right){
-        newRow.push_back(true);
+        newRow[j] = true;
         j++;
     }
     while(j<dim-extras){
-        newRow.push_back(false);
+        newRow[j] = false;
         j++;
     }
     while(j<dim){
-        newRow.push_back(true);
+        newRow[j] = false;
         j++;
     }
     return newRow;
@@ -120,8 +120,8 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
     }
     while(SuffUpper > Upper || SuffLower > Lower){
         i = center + 1;
-        vector<int> moveto = {};
-        vector<int> movefrom = {};
+        vector<signed int> moveto = {-1,-1};
+        vector<signed int> movefrom = {-1,-1};
         j = 0;
         if(SuffLower < Lower && SuffUpper < Upper){
             break;
@@ -130,29 +130,27 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
             while(j < dim){
                 while(i <= Range[1]){
                     if(Array[i][j] == false){
-                        moveto.push_back(i);
-                        moveto.push_back(j);
+                        moveto = {i,j};
                         k = center;
                         while(k >= Range[0]){
                             if(Array[k][j] == true){
-                                movefrom.push_back(k);
-                                movefrom.push_back(j);
+                                movefrom = {k,j};
                                 break;
                             }
                             k --;
                         }
                     }
-                    if(moveto.size() == 0 || movefrom.size() == 0){
+                    if(moveto[0] == -1 || movefrom[0] == -1){
                         i ++;
                     }else{
                         break;
                     }
                 }
-                if(moveto.size() == 0 || movefrom.size() == 0){
+                if(moveto[0] == -1 || movefrom[0] == -1){
                         i = center + 1;
                         j ++;
-                        moveto = {};
-                        movefrom = {};
+                        moveto = {-1,-1};
+                        movefrom = {-1,-1};
                     }else{
                         Upper ++;
                         break;
@@ -165,36 +163,34 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
             while(j < dim){
                 while(i >= Range[0]){
                     if(Array[i][j] == false){
-                        moveto.push_back(i);
-                        moveto.push_back(j);
+                        moveto = {i,j};
                         k = center + 1;
                         while(k <= Range[1]){
                             if(Array[k][j] == true){
-                                movefrom.push_back(k);
-                                movefrom.push_back(j);
+                                movefrom = {k,j};
                                 break;
                             }
                             k ++;
                         }
                     }
-                    if(moveto.size() == 0 || movefrom.size() == 0){
+                    if(moveto[0] == -1 || movefrom[0] == -1){
                         i --;
                     }else{
                         break;
                     }
                 }
-                if(moveto.size() == 0 || movefrom.size() == 0){
+                if(moveto[0] == -1 || movefrom[0] == -1){
                         i = center;
                         j ++;
-                        moveto = {};
-                        movefrom = {};
+                        moveto = {-1,-1};
+                        movefrom = {-1,-1};
                     }else{
                         Lower ++;
                         break;
                 }
         }
     }
-    if(moveto.size() != 0 || movefrom.size() != 0){
+    if(moveto[0] != -1 || movefrom[0] != -1){
     moves.push_back(RearrangementMove());
     moves[g_counter].dim = movefrom[1];
     moves[g_counter].row = false;
@@ -360,17 +356,12 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
         col_z = col_y + TargetDim - 1;
     }
 
-    printArray(Array);
         vector<bool> tempCol;
         vector<bool> compressedCol;
         bool check = false;
 
         vector<int> ColTotals = ColSum(Array);
 
-        cout << "row " << row_y << " " << row_z << endl;
-        cout << "col " << col_y << " " << col_z << endl;
-        cout << TargetDim << endl;
-        cout << ArrayDim << endl;
 if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER)){
       for(int kevin=0; kevin<ArrayDim; kevin++){
               atoms = 0;
@@ -392,7 +383,6 @@ if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER
               g_counter ++;
                // Push back column and compressed column
               RowTotals = RowSum(Array); // Recalculate row totals
-              printArray(Array);
           }
       if(check == false){
           col_z --;
@@ -402,7 +392,7 @@ if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER
  }
 
     int s = 0;
-    vector<vector<int>> Range1;
+    vector<vector<int>> Range1(2);
     int balancedRows = 0;
     vector<vector<int>> RowRange = {{row_y,row_z}};
 
@@ -434,7 +424,7 @@ if(mode == (CENTER_COM||UL_CORNER||UR_CORNER||LL_CORNER||LR_CORNER||CLOSE_CORNER
         i++;
         g_counter++;
     }
-    printArray(Array);
+
 
 return moves;
 }
