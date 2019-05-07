@@ -247,10 +247,9 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 
 				cout << "Performed rearrangement " << numRearrangementsPerformed << ": \n";
 				cout << moves.size() << " " << endl;
-				cout << endl << endl << endl << z << endl;
 
 			// Rearrange traps:
-			std::vector<Waveform *> rearrangementWaveforms = trapControllerHandler.rearrangeTraps(atomsPresent, mode, modeArgument);
+			std::vector<Waveform *> rearrangementWaveforms = trapControllerHandler.rearrangeTraps(atomsPresent, mode, modeArgument, moves);
 
 			// Printing the final, rearranged atoms
 	//		cout << "\nPerformed rearrangement " << numRearrangementsPerformed << ": \n";
@@ -430,7 +429,6 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				int y = stod(commandTokens[5]);
 				double ampl = stod(commandTokens[6]);
 				trapControllerHandler.staticHandler[x].addTrap(freqx * 1.0E6, ampl);
-				trapControllerHandler.tcyList[y].addTrap(freqy * 1.0E6, ampl);
 				waveformShouldChange = true;
 			}
 			catch (const invalid_argument&) {
@@ -445,12 +443,11 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 			try {
 				int x = stod(commandTokens[3]);
 				int y = stod(commandTokens[5]);
-				if (x < 0 || y < 0 ||  y >= trapControllerHandler.staticHandler[x].traps.size() || x >= trapControllerHandler.tcyList[y].traps.size()) {
+				if (x < 0 || y < 0 ||  y >= trapControllerHandler.staticHandler[x].traps.size()) {
 					cout << "Index out of range!" << endl;
 				}
 				else {
 					trapControllerHandler.staticHandler[x].traps.erase(	trapControllerHandler.staticHandler[x].traps.begin() + x);
-					trapControllerHandler.tcyList[y].traps.erase(	trapControllerHandler.staticHandler[y].traps.begin() + y);
 					waveformShouldChange = true;
 				}
 			}
@@ -476,7 +473,7 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				double newVal = stod(commandTokens[5]);
 
 				bool err = false;
-				if (indx < 0 || indx >= trapControllerHandler.staticHandler[indx].traps.size() || indy >= trapControllerHandler.tcyList[indy].traps.size()) {
+				if (indx < 0 || indx >= trapControllerHandler.staticHandler[indx].traps.size()) {
 					cout << "Index out of range!" << endl;
 					err = true;
 				}

@@ -195,7 +195,7 @@ std::vector<Waveform> TrapControllerHandler::generateWaveform(){
 
   for ( int i =0; i < tchLen; i++)
     wfList.push_back(staticHandler[i].generateWaveform());
-
+    
   return wfList;
 }
 
@@ -309,16 +309,6 @@ void TrapController::printAvailableDefaultTrapConfigurations() {
 	}
 }
 
-std::vector<RearrangementMove> TrapControllerHandler::generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode){
-
-  std::vector<RearrangementMove> moveList;
-
-  while(1)
-    break;
-
-  return moveList;
-}
-
 vector<Waveform *> TrapControllerHandler::rearrangeTraps(vector<vector<bool>> atomsPresent, enum rearrange_mode mode, int modeArgument) {
 /* The main object to determine how we piece together the rearrangement waveforms
 is the "destination" vector, which defines the destination for each trap (or -1
@@ -348,4 +338,38 @@ it will be computed.
 	// return combinePrecomputedWaveforms(destinations);
   vector <Waveform *> blank;
   return blank;
+}
+
+/* Moving traps: This will be the sum of the "loaded trap" waveforms for each
+moving trap, designated by a start position and end position.
+*/
+std::vector<std::vector<Waveform *>> TrapControllerHandler::combinePrecomputedWaveforms(
+	vector<int> &destinations) {
+
+	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
+
+	thread *workers[numWorkers];
+
+
+	// Moving traps:
+	complex<float> *movingWaveform = rearrangeWaveform.dataVector.data();
+
+	// Add each moving waveform separately.
+	for (int worker = 0; worker < numWorkers; worker++) {
+		workers[worker] = new thread(&TrapController::combineRearrangeWaveform, this, movingWaveform, worker, &destinations, movingWaveformSize);
+	}
+
+	// Wait for all workers to finish combining waveforms.
+	for (int worker = 0; worker < numWorkers; worker++) {
+		workers[worker]->join();
+	}
+	// Done with rearrangement!
+
+
+	vector<Waveform *> waveforms;
+	waveforms.push_back(&rearrangeWaveform);
+	waveforms.push_back(&staticEndingWaveform);
+
+
+	return waveforms;
 }

@@ -4,6 +4,7 @@
 #include "TrapController.h"
 #include "Rearrange2d.h"
 #include <vector>
+#include <thread>
 
 using namespace std;
 
@@ -29,10 +30,8 @@ public:
 
   bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  std::vector<RearrangementMove> generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent,  rearrange_mode mode);
-
   std::vector<Waveform *> rearrangeTraps(std::vector<std::vector<bool>> atomsPresent,  rearrange_mode mode, int modeArgument=0);
-
+  std::vector<std::vector<Waveform *>> TrapControllerHandler::combinePrecomputedWaveforms(vector<int> &destinations);
   std::vector<Waveform> generateWaveform();
 
   void resetForRearrangement();
@@ -43,7 +42,7 @@ public:
 
 
   std::vector<TrapController> staticHandler;
-  std::vector<TrapController> tcyList;
+
 
   std::string lastLoadedConfiguration;
 
@@ -62,7 +61,6 @@ public:
 
 private:
   bool yes;
-
 
   std::vector<int> periodicClusterPattern;
   int clusterSeparation;

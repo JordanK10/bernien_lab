@@ -90,7 +90,7 @@ private:
   	Waveform rearrangeWaveform;
 
   	struct loadedWaveformProperties lastLoadedWaveformProperties;
-  	// Waveform loadedTrapWaveforms[MAX_NUM_TRAPS][MAX_NUM_TRAPS];
+
   	int numStartingTraps;
   	int numEndingTraps;
 

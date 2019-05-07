@@ -102,8 +102,8 @@ Waveform TrapController::generateWaveform(double duration) {
 
 		waveform[sample_index] = sample;
 	}
-
-	return Waveform(waveform);
+	staticStartingWaveform = Waveform(waveform);
+	return staticStartingWaveforms;
 }
 
 //Checks to see if the traps are acceptable
