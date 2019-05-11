@@ -23,10 +23,9 @@ enum rearrange_mode {
 
 enum rearrange_method {
   BALANCE_COMPRESS,
-  HUNGARIAN
+  HUNGARIAN,
+  DROP_IT_LIKE_ITS_HOT
 };
-
-
 
 using namespace std;
 
@@ -72,6 +71,9 @@ int step4(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<boo
 int step5(vector<bool> &row_covered, vector<bool> &col_covered, vector<vector<int>> &marked, vector<vector<int>> &path, int &Z0_c, int &Z0_r);
 int step6(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<bool> &col_covered);
 vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mode);
+
+//Atom Drop Functions
+
 
 
 

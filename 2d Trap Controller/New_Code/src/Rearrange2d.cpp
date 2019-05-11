@@ -11,6 +11,9 @@ int i;
 int j;
 int k;
 int COM[2];
+
+//g_counter is a global counter to keep track of the index of the vector<rearrangementmoves> that we are currently at
+//since most algorithms add moves in a number of different places, and it seemed simpler than passing this back and forth
 int g_counter;
 
 void printArray(vector<vector<bool>> Array){
@@ -30,6 +33,7 @@ void printArray(vector<vector<bool>> Array){
 //////////////////BALANCE_COMPRESS////////////////////////////
 
 
+//Select a column of the array and return it as a vector
 vector<bool> ColumnAt(vector<vector<bool>> Array, int dim){
   vector<bool> new_col(Array.size());
   for(k=0;k<Array.size();k++)
@@ -37,6 +41,7 @@ vector<bool> ColumnAt(vector<vector<bool>> Array, int dim){
   return new_col;
 }
 
+//compress the number atoms in a row into a specified range, leaving the extras on the edges
 vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms){
     int suff = right - left + 1;
     int diff = atoms - suff;
@@ -71,6 +76,7 @@ vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms){
     return newRow;
 }
 
+//sum the atoms in the array by row, 0th index is the total atoms in the array
 vector<int> RowSum(vector<vector<bool>> Array){
     vector<int> RowTotal(Array.size()+1);
     for(i=0; i < Array.size(); i++){
@@ -82,6 +88,7 @@ vector<int> RowSum(vector<vector<bool>> Array){
     return RowTotal;
 }
 
+//same as rowsum but for the columns
 vector<int> ColSum(vector<vector<bool>> Array){
   vector<int> ColTotals(Array[0].size() + 1);
   for(i = 0;i<Array[0].size();i++){
@@ -93,9 +100,16 @@ vector<int> ColSum(vector<vector<bool>> Array){
   return ColTotals;
 }
 
+//this takes a range of rows and divides it in half,
+//then moves atoms up and down until sufficient atoms
+//are in each sub-range. returns the new sub-ranges to be balanced
 vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal,vector<RearrangementMove> &moves){
     int dim = Array[0].size();
     int center;
+
+    //find the center of the range to the nearest index, rounded down
+    //to the nearest integer
+
     if((Range[1] - Range[0])%2 == 0){
         center  = (Range[1] - Range[0])/2 + Range[0];
     }else{
@@ -108,6 +122,9 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
     i = Range[0];
     int Lower = 0;
     int Upper = 0;
+
+    //sum the number of atoms in the lower and upper sub-ranges
+
     while(i <= center){
         Lower += RowTotal[i+1];
         i ++;
@@ -117,17 +134,27 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
         i ++;
     }
 
+    //if the total number of atoms is less than the sufficient number needed
+    //we have a problem - were trying to make to large a target array
+
     if(SuffUpper + SuffLower > Upper + Lower){
       cout << "tenemos un problema" << endl;
     }
+
+    //this loop moves atoms up and down until the sufficient number of atoms
+    // is <= the number of atoms in each sub-range
+    //if sufflower<lower, it looks for the first column with an empty site in the bottom half, and a full site
+    //the upper half, beginning with the first col and progressing forward
+    //if suffupper<upper it does the opposite process
+    //i is the row index, j is the col index, k is a second row index used to search loaded sites after an empty has
+    //already been found to move into
+    //movefrom and moveto store the loaded and empty sites, respectively
+
     while(SuffUpper > Upper || SuffLower > Lower){
         i = center + 1;
         vector<signed int> moveto = {-1,-1};
         vector<signed int> movefrom = {-1,-1};
         j = 0;
-        if(SuffLower < Lower && SuffUpper < Upper){
-            break;
-            }
         if(SuffLower < Lower && SuffUpper > Upper){
             while(j < dim){
                 while(i <= Range[1]){
@@ -192,6 +219,10 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
                 }
         }
     }
+
+    //-1,-1 is the base state of movefrom and moveto, so if they do not equal -1, i.e. a move has been identified,
+    //it is pushed to the moves vector, and then the loop repeats to see if a second move is needed for balancing
+
     if(moveto[0] != -1 || movefrom[0] != -1){
     moves.push_back(RearrangementMove());
     moves[g_counter].dim = movefrom[1];
@@ -206,9 +237,12 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
     RowTotal[moveto[0]+1] ++;
     }
 }
+//return the new subranges that have just been balanced, to iterate through this process with them until each subrange is a
+//single row
 return {{Range[0],center},{center + 1,Range[1]}};
 }
 
+//maps col into a specified column of Array
 vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int index)
 {
     for(i = 0;i<Array.size();i++){
@@ -217,6 +251,7 @@ vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int
     return Array;
 }
 
+//finds the center of mass of the array
 int* CenterOfMass(vector<vector<bool>> Array){
     int dim1 = Array.size();
     int dim2 = Array[0].size();
@@ -239,7 +274,7 @@ int* CenterOfMass(vector<vector<bool>> Array){
     return ptr;
 }
 
-
+//master alg for the balance-compress function
 vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mode){
 
     int ArrayDim = Array.size();
@@ -368,39 +403,42 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
 
         vector<int> ColTotals = ColSum(Array);
 
-
-if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
-      for(int kevin=0; kevin<ArrayDim; kevin++){
-              atoms = 0;
-              for(j = row_y; j<=row_z; j++){
-                  atoms += RowTotals[j+1];
-              }
-              if(atoms>=TargetDim*TargetDim){
-                  check = true;
-                  break;
-              }
-              tempCol = ColumnAt(Array,kevin); // Extract desired column
-              compressedCol = CompressRow(tempCol,row_y,row_z,ColTotals[kevin+1]);
-              moves.push_back(RearrangementMove());
-              moves[g_counter].row = false;
-              moves[g_counter].startingConfig = tempCol;
-              moves[g_counter].endingConfig = compressedCol;
-              moves[g_counter].dim = kevin;
-              Array = assignCol(Array,compressedCol,kevin);
-              g_counter ++;
-               // Push back column and compressed column
-              RowTotals = RowSum(Array); // Recalculate row totals
-          }
-      if(check == false){
-          col_z --;
-          row_z --;
-          TargetDim --;
-      }
- }
+    //this iterates through all the columns, compressing them until there are enough atoms in the spcified row range to
+    //run the balance function. This only happens for a standard, and not rectangular, BC since the rectangular row range
+    //is the whole hight of the array
+    if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
+        for(int kevin=0; kevin<ArrayDim; kevin++){
+            atoms = 0;
+            for(j = row_y; j<=row_z; j++){
+                atoms += RowTotals[j+1];
+            }
+            if(atoms>=TargetDim*TargetDim){
+                check = true;
+                break;
+            }
+            tempCol = ColumnAt(Array,kevin); // Extract desired column
+            compressedCol = CompressRow(tempCol,row_y,row_z,ColTotals[kevin+1]);
+            moves.push_back(RearrangementMove());
+            moves[g_counter].row = false;
+            moves[g_counter].startingConfig = tempCol;
+            moves[g_counter].endingConfig = compressedCol;
+            moves[g_counter].dim = kevin;
+            Array = assignCol(Array,compressedCol,kevin);
+            g_counter ++;
+            // Push back column and compressed column
+            RowTotals = RowSum(Array); // Recalculate row totals
+        }
+        if(check == false){
+            col_z --;
+            row_z --;
+            TargetDim --;
+        }
+    }
 
     int s = 0;
     vector<vector<int>> Range1(2);
     int balancedRows = 0;
+    //initialize the first rowrange to be balanced - the whole array
     vector<vector<int>> RowRange = {{row_y,row_z}};
 
 
@@ -420,7 +458,7 @@ if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||
         s ++;
     }
 
-
+    //compress all the rows, store the moves
     i = RowRange[0][0];
     while(i <= RowRange[0][1]){
         moves.push_back(RearrangementMove());
@@ -442,7 +480,7 @@ return moves;
 ///////////////////////////HUNGARIAN///////////////////////////////////////
 
 
-
+//clears the covered rows and columns
 void clear_covers(vector<bool> &a, vector<bool>&b){
     int n = a.size();
     for(int i = 0; i < n; i ++){
@@ -451,6 +489,7 @@ void clear_covers(vector<bool> &a, vector<bool>&b){
     }
 }
 
+//find a zero that is not in the covered rows/cols
 void find_zero(vector<vector<int>> CostMatrix, vector<bool> row_covered, vector<bool> col_covered,signed int &row,signed int &col){
     row = -1;
     col = -1;
@@ -479,6 +518,7 @@ void find_zero(vector<vector<int>> CostMatrix, vector<bool> row_covered, vector<
     }
 }
 
+//find a marked site in a specified row, return the col
 int find_star_row(vector<vector<int>> marked, int row){
     signed int col = -1;
     int n = marked[0].size();
@@ -491,6 +531,7 @@ int find_star_row(vector<vector<int>> marked, int row){
     return col;
 }
 
+//find a marked site in a specified col, return the row
 int find_star_col(vector<vector<int>> marked, int col){
     signed int row = -1;
     int n = marked.size();
@@ -503,6 +544,7 @@ int find_star_col(vector<vector<int>> marked, int col){
     return row;
 }
 
+//find a primed site in a specified row, return the col
 int find_prime_row(int row, vector<vector<int>> marked){
         signed int col = -1;
         int n = marked.size();
@@ -515,6 +557,7 @@ int find_prime_row(int row, vector<vector<int>> marked){
         return col;
 }
 
+//clear all the primes from the marked matrix
 void erase_primes(vector<vector<int>> &marked){
     int n = marked.size();
     for(int i = 0; i<n; i ++){
@@ -526,6 +569,7 @@ void erase_primes(vector<vector<int>> &marked){
     }
 }
 
+//convert a path through marked to its opposite value 1->0, and 0->1
 void convert_path(int counter, vector<vector<int>> path, vector<vector<int>> &marked){
     for(int i = 0; i<counter + 1; i++){
         if(marked[path[i][0]][path[i][1]] == 1){
@@ -536,6 +580,7 @@ void convert_path(int counter, vector<vector<int>> path, vector<vector<int>> &ma
     }
 }
 
+//find the smallest value not in the marked rows and cols of the cost matrix
 int find_smallest(vector<vector<int>> CostMatrix, vector<bool> row_covered, vector<bool> col_covered){
     int n = CostMatrix.size();
     int minval = n*n;
@@ -550,6 +595,8 @@ int find_smallest(vector<vector<int>> CostMatrix, vector<bool> row_covered, vect
     }
     return minval;
 }
+
+//define distance on the array
 int metric(vector<int> pos1, vector<int> pos2,int dim){
     signed int x = pos1[0] - pos2[0];
     signed int y = pos1[1] - pos2[1];
@@ -567,6 +614,10 @@ int metric(vector<int> pos1, vector<int> pos2,int dim){
     return distance;
 }
 
+
+//converts a target array and initial array into a cost matrix, using the defined metric function
+//returns the new cost matrix, the list of initial positions, and the numbver of extra atoms
+//plan to break this up to avoid the tuple
 tuple<vector<vector<int>>,vector<vector<int>>, int> ToCostMatrix(vector<vector<bool>> InitArray, vector<vector<int>> TargetArray, int Dim1){
     vector<vector<int>> InitPositions = {};
     int NumberOfPositions = TargetArray.size();
@@ -616,6 +667,7 @@ tuple<vector<vector<int>>,vector<vector<int>>, int> ToCostMatrix(vector<vector<b
     return make_tuple(CostMatrix, InitPositions, difference);
 }
 
+//creates a list of target array sites based upon the row and col ranges specified by the mode
 vector<vector<int>> ToTargetArray(int dim, int r0,int r1, int c0 ,int c1){
     vector<vector<int>> TargetArray = {};
     int i = r0;
@@ -631,6 +683,7 @@ vector<vector<int>> ToTargetArray(int dim, int r0,int r1, int c0 ,int c1){
     return TargetArray;
 }
 
+//this converts the list of highlighted sites in the cost matrix into moves
 vector<vector<vector<int>>> interpret_results(vector<vector<int>> InitPositions, vector<vector<int>> TargetArray, vector<vector<int>> results){
     int n = results.size();
     int t = TargetArray.size();
@@ -647,6 +700,13 @@ vector<vector<vector<int>>> interpret_results(vector<vector<int>> InitPositions,
     return moves;
 }
 
+//this orders the moves so that we are always moving from loaded positions into empty ones
+//it prevents the possibility that we we have a case of:
+//  0110
+//if we want to move 2->3 and 3->4, the end goal is:
+//  0011
+//but if we do 2->3 first, we will have two atoms in the same trap at one point in time, ejecting both
+// this would be bad, so the moves are ordered
 vector<vector<vector<int>>> order(vector<vector<vector<int>>> moves, vector<vector<bool>> Array){
         int i = 0;
         int n = moves.size();
@@ -688,6 +748,7 @@ vector<vector<vector<int>>> order(vector<vector<vector<int>>> moves, vector<vect
     return properorder;
 }
 
+//return the lowest value in a vector
 int minfind(vector<int> a){
     int n = a.size();
     int minval = a[0];
@@ -699,6 +760,9 @@ int minfind(vector<int> a){
     return minval;
 }
 
+// first step of the hungarian:
+//find the lowest entry in each row, and subtract it from that row
+// goto step 2
 int step1(vector<vector<int>> &CostMatrix){
     int minval;
     int n = CostMatrix.size();
@@ -711,6 +775,10 @@ int step1(vector<vector<int>> &CostMatrix){
     return 2;
 }
 
+//step 2:
+//mark every zero not in a covered col or row, and then cover that col and row
+//clear covers afterwards
+// goto step 3
 int step2(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<bool> &col_covered, vector<vector<int>> &marked){
     int n = CostMatrix.size();
     for(int i = 0; i<n; i++){
@@ -727,6 +795,10 @@ int step2(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<boo
     return 3;
 }
 
+//step 3:
+//cover all the rows with a marked site
+//if there are n cols, we have 0s in the costmatrix, and we are done
+//otherwise, go to step 4
 int step3(vector<vector<int>> &CostMatrix, vector<bool> &col_covered, vector<vector<int>> &marked){
     int step;
     int n = CostMatrix.size();
@@ -747,6 +819,13 @@ int step3(vector<vector<int>> &CostMatrix, vector<bool> &col_covered, vector<vec
     return step;
 }
 
+
+//step 4:
+//find zeros in the costmatrix not in the covered cols/rows, and store in row/col
+//if there are none, proceed to step 6
+//otherwise star the zero and find a star in the row
+//cover thisrow and uncover the col
+//go to step 5
 int step4(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<bool> &col_covered, vector<vector<int>> &marked, int &Z0_c, int &Z0_r){
     int step = 0;
     bool done = false;
@@ -776,6 +855,16 @@ int step4(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<boo
     return step;
 }
 
+//step 5:
+//build a path through marked of starred rows/cols
+//then convert the path
+//the goal of step 3,4,5 is to cover all the zeros of the costmatrrix with the fewest lines possible
+//i.e., if we have the matrix:
+// 2 0 2
+// 1 1 1
+// 0 1 1
+// this can be covered with a vertical line through the first col and a horizontal line through the first row
+// this is 2 lines < 3 = dim of the array, so the algorithm is not done
 int step5(vector<bool> &row_covered, vector<bool> &col_covered, vector<vector<int>> &marked, vector<vector<int>> &path, int &Z0_c, int &Z0_r){
     int counter = 0;
     path[counter][0] = Z0_r;
@@ -804,7 +893,12 @@ int step5(vector<bool> &row_covered, vector<bool> &col_covered, vector<vector<in
     erase_primes(marked);
     return 3;
 }
-
+//step 6:
+//adjust the cost matrix by subtracting the min val from all uncovered sites
+// this in  effect, tells us we have find the first x best choices to minimize cost,
+// and were going to start again with the sub matrix created by removing all the already determined rows/cols
+// the minval is subtracted from this submatrix so that we are able to start with one zero, while keeping the
+//relative differences intact.
 int step6(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<bool> &col_covered){
     int minval = find_smallest(CostMatrix, row_covered, col_covered);
     int n = CostMatrix.size();
@@ -821,6 +915,8 @@ int step6(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<boo
     return 4;
 }
 
+
+//master function of the hungarian algorithm
 vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mode){
 
     int ArrayDim = Matrix.size();
@@ -836,7 +932,10 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
     TargetDim = sqrt(atoms);
 
     int col_y,col_z,row_y,row_z;
-
+    //modes are the same as BC, and relatively intuitive
+    //this only works on square matrices
+    //for now
+    // in theory, it can work on any
     if(mode == CENTER_COM){
         int *COM = CenterOfMass(Matrix);
 
@@ -922,6 +1021,12 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
     vector<vector<int>> InitPositions;
     int diff;
 
+    //create the cost matrix
+    //this is a matrix storing the value of the distance from each initial site to each
+    //ending site
+    //Because the number of these is usually different, the cost matrix stars rectangular
+    //and then gets padded with rows of zeros until it is square (because the hungarian only works on squares)
+
     tie(CostMatrix,InitPositions, diff) = ToCostMatrix(Matrix,TargetArray,ArrayDim);
     int n = CostMatrix.size();
     vector<bool> row_covered(n);
@@ -930,9 +1035,12 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
     int Z0_c = 0;
     vector<vector<int>> marked;
     vector<vector<int>> path;
+    //clear covers initializes them with zero values.
     clear_covers(row_covered,col_covered);
     int i = 0;
     vector<int> row;
+    //create a marked array the size of the cost matrix starting with zero vals
+    //in the future, 1 will be marked, 2 will be starred
     for(i = 0; i < n; i++){
         row.push_back(0);
     }
@@ -940,6 +1048,9 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
         marked.push_back(row);
     }
     row = {};
+    //same for the path, but n^2 in size now, since there are n^2 possible lattice sites
+    //this is super overkill, the path will never get this long, but oh well better safe than sorry
+    // actually I should look at this later for optimization, I think the theoretical limit is CostMatrix.size() in length
     for(i = 0; i < n*2; i++){
         row.push_back(0);
     }
@@ -949,6 +1060,10 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
     bool done = false;
     int step = 1;
     vector<vector<int>> results = {};
+    //step = 0 means the algorithm has finished
+    // the switch runs through until it is done,
+    //depending on the step return, the flow of which can
+    //be found in the description of each step
     while(step != 0){
         switch(step){
             case 1: step = step1(CostMatrix);
@@ -966,6 +1081,8 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
         }
     }
 
+    //results are stored as marked sites
+    //these get converted to a list of indices signaling a desired move
     for(i = 0; i < n; i++){
         for(int j = 0; j<n;j++){
             if(marked[i][j] == 1){
@@ -974,9 +1091,21 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
         }
     }
 
+    //interprets and order the results of the hungarian into moves
     vector<vector<vector<int>>> moves = interpret_results(InitPositions, TargetArray, results);
     vector<vector<vector<int>>> ordered_moves = order(moves, Matrix);
 
+    //convert the moves into vector<rearrangementmoves>
+    //moves staying in one col/row are simple
+    //moves that are diagonal are split into two moves
+    //it shouldn't ever matter which way you go, since if there was
+    //an atom in the site directly next to you, it would be more efficient to move that one
+    //i.e. suppose you have:
+    // 1 1 0
+    // 0 0 0
+    // 0 0 1
+    // you will never have a move from the upper corner into the center, since it is a shorter distance
+    //to move the upper middle there, and the algorithm minimizes distance
     int moveNumber = ordered_moves.size();
     int counter  = 0;
     vector<RearrangementMove> rearrange_moves;
@@ -1028,19 +1157,176 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
 }
 
 
+/////////////////////////Atom Drop Method///////////////////////////////////
+
+
+//go works simply as a part of choose
+//cycling through the set of vals and adding them to the end of the current combination
+//until it is of the correct length
+//this is called recursively, reflecting that combinations run like n!/k!(n-k)!
+void go(int offset, int k,vector<vector<int>> &r,vector<int> &setOfVals,vector<int> &combination) {
+  if (k == 0) {
+    r.push_back(combination);
+    return;
+  }
+  for (int i = offset; i <= setOfVals.size() - k; ++i) {
+    combination.push_back(setOfVals[i]);
+    go(i+1, k-1,r, setOfVals,combination);
+    combination.pop_back();
+  }
+}
+
+//returns all possible combinations of start of length n
+vector<vector<int>> choose(vector<int> start, int n)
+{
+    vector<int> combination;
+    vector<vector<int>> r;
+    go(0,n,r,start,combination);
+    return r;
+}
+
+//appends all the rows and cols with enough atoms
+//returns a bool specifying if the algorithm is possible
+// with the given array and target dim
+bool test(vector<vector<bool>> Array,vector<int> &rows,vector<int> &cols, vector<int> rowTotals, vector<int> colTotals,int n)
+{
+    rows = {};
+    cols = {};
+    for(int s = 0;s<Array.size();s++){
+        if(rowTotals[s+1]>=n){
+            rows.push_back(s);
+        }
+    }
+    for(int s = 0;s<Array.size();s++){
+        if(colTotals[s+1]>=n){
+            cols.push_back(s);
+        }
+    }
+    if(cols.size()<n || rows.size()<n){
+        return false;
+    }else{
+        return true;
+    }
+}
+
+//checks to see if the given rows and cols all intersect at atoms, returns bool
+//if so, yuo have found a perfect, disjoint array
+bool check(vector<vector<bool>> Array,vector<int> rows, vector<int> cols)
+{
+    bool good = true;
+    for(int s = 0;s<rows.size();s++){
+        for(int t = 0;t<cols.size();t++){
+            if(Array[rows[s]][cols[t]] == false){
+                good = false;
+                break;
+            }
+        }
+        if(good == false){
+            break;
+        }
+    }
+    return good;
+}
+
+bool in(vector<int> row, int n)
+{
+    bool yes = false;
+    for(int s = 0;s<row.size();s++){
+        if(row[s] == n){
+            yes = true;
+            break;
+        }
+    }
+    return yes;
+}
+
+//main function
+vector<RearrangementMove> DropItLikeItsHot(vector<vector<bool>> Array){
+    int n = Array.size();
+    vector<int> rowTotals = RowSum(Array);
+    vector<int> colTotals = ColSum(Array);
+    int atoms = rowTotals[0];
+    int targetDim = sqrt(atoms);
+    vector<int> rows;
+    vector<int> cols;
+    vector<int> goodRows;
+    vector<int> goodCols;
+    bool good = false;
+    bool done = false;
+
+    //cycles though until correct rows/cols have been found to create a perfect, disjoint array
+    while(!done){
+        //tests the array with given targetdim, lowers if impossible
+        while(1){
+            good = test(Array,rows,cols,rowTotals,colTotals,targetDim);
+            if(good == true){
+                break;
+            }else{
+                targetDim --;
+            }
+        }
+        vector<vector<int>> rCombs = choose(rows,targetDim);
+        vector<vector<int>> cCombs = choose(cols,targetDim);
+        //checks each row/col combination until it finds a working one,
+        //if one is not found, it lowers the target-dim, and starts again
+        //if this occurs, this is gonna take a while
+        for(int i = 0;i<rCombs.size();i++){
+            for(int j = 0;j<cCombs.size();j++){
+                done = check(Array, rCombs[i],cCombs[j]);
+                if(done == true){
+                    goodRows = rCombs[i];
+                    goodCols = cCombs[j];
+                    break;
+                }
+            }
+            if(done == true){break;}
+        }
+        if(done == false){targetDim --;}
+    }
+    //initialize a nullRow of all zeros
+    vector<bool> nullRow;
+    for(int i = 0;i<Array.size();i++){
+        nullRow.push_back(false);
+    }
+    //push back null rows for every row to be deleted, leaving just the disjoint array
+    vector<RearrangementMove> moves;
+    for(int i = 0;i<Array.size();i++){
+        if(!in(goodRows,i)){
+            moves.push_back(RearrangementMove());
+            moves[g_counter].dim = i;
+            moves[g_counter].row = true;
+            moves[g_counter].startingConfig = Array[i];
+            moves[g_counter].endingConfig = nullRow;
+            g_counter++;
+        }
+        if(!in(goodCols,i)){
+            moves.push_back(RearrangementMove());
+            moves[g_counter].dim = i;
+            moves[g_counter].row = false;
+            moves[g_counter].startingConfig = ColumnAt(Array,i);
+            moves[g_counter].endingConfig = nullRow;
+            g_counter ++;
+        }
+    }
+
+    return moves;
+
+}
+
 
 //////////////////////////END///////////////////////////////////////////////
 
 
 vector<RearrangementMove> rearrange(vector<vector<bool>> Array, rearrange_method method,rearrange_mode mode)
 {
-
     if(method == BALANCE_COMPRESS){
-      return BalanceCompressAlg(Array,mode);
+        return BalanceCompressAlg(Array,mode);
     }
 
     if(method == HUNGARIAN){
-      return compute(Array,mode);
+        return compute(Array,mode);
     }
-
+    if(method == DROP_IT_LIKE_ITS_HOT){
+        return DropItLikeItsHot(Array);
+    }
 }

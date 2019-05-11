@@ -8,5 +8,5 @@ struct RearrangementMove {
 enum rearrange_method{
     HUNGARIAN,
     BALANCE_COMPRESS,
-    RECT_BALANCE_COMPRESS
+    DROP_IT_LIKE_ITS_HOT
 };
