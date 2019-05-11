@@ -16,6 +16,7 @@ int COM[2];
 //since most algorithms add moves in a number of different places, and it seemed simpler than passing this back and forth
 int g_counter;
 
+//just for testing purposes, prints a 2d bool array
 void printArray(vector<vector<bool>> Array){
   int d1 = Array.size();
   int d2 = Array[0].size();
@@ -27,7 +28,7 @@ void printArray(vector<vector<bool>> Array){
     }
     cout << endl;
   }
-};
+}
 
 
 //////////////////BALANCE_COMPRESS////////////////////////////
@@ -616,10 +617,7 @@ int metric(vector<int> pos1, vector<int> pos2,int dim){
 
 
 //converts a target array and initial array into a cost matrix, using the defined metric function
-//returns the new cost matrix, the list of initial positions, and the numbver of extra atoms
-//plan to break this up to avoid the tuple
-tuple<vector<vector<int>>,vector<vector<int>>, int> ToCostMatrix(vector<vector<bool>> InitArray, vector<vector<int>> TargetArray, int Dim1){
-    vector<vector<int>> InitPositions = {};
+void ToCostMatrix(vector<vector<bool>> InitArray, vector<vector<int>> TargetArray, int Dim1,vector<vector<int>> &InitPositions,vector<vector<int>> &CostMatrix){    vector<vector<int>> InitPositions = {};
     int NumberOfPositions = TargetArray.size();
     int i = 0;
     int j = 0;
@@ -638,7 +636,6 @@ tuple<vector<vector<int>>,vector<vector<int>>, int> ToCostMatrix(vector<vector<b
     i = 0;
     j = 0;
     vector<int> row = {};
-    vector<vector<int>> CostMatrix = {};
     int difference = atoms - NumberOfPositions;
     if(difference>=0){
         while(i<NumberOfPositions){
@@ -1019,7 +1016,6 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
     vector<vector<int>> TargetArray = ToTargetArray(TargetDim, row_y,row_z,col_y,col_z);
     vector<vector<int>> CostMatrix;
     vector<vector<int>> InitPositions;
-    int diff;
 
     //create the cost matrix
     //this is a matrix storing the value of the distance from each initial site to each
@@ -1027,7 +1023,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mod
     //Because the number of these is usually different, the cost matrix stars rectangular
     //and then gets padded with rows of zeros until it is square (because the hungarian only works on squares)
 
-    tie(CostMatrix,InitPositions, diff) = ToCostMatrix(Matrix,TargetArray,ArrayDim);
+    ToCostMatrix(Matrix,TargetArray,ArrayDim,InitPositions,CostMatrix);
     int n = CostMatrix.size();
     vector<bool> row_covered(n);
     vector<bool> col_covered(n);

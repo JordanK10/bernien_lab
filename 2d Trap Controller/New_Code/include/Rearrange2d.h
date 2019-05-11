@@ -37,7 +37,7 @@ struct RearrangementMove {
 };
 
 //Common Functions
-
+void printArray(vector<vector<bool>> Array);
 vector<RearrangementMove> rearrange(vector<vector<bool>> Array, rearrange_method method,rearrange_mode mode = CENTER_COM);
 vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int index);
 vector<bool> ColumnAt(vector<vector<bool>> Array, int dim);
@@ -59,7 +59,7 @@ void erase_primes(vector<vector<int>> &marked);
 void convert_path(int counter, vector<vector<int>> path, vector<vector<int>> &marked);
 int find_smallest(vector<vector<int>> CostMatrix, vector<bool> row_covered, vector<bool> col_covered);
 int metric(vector<int> pos1, vector<int> pos2,int dim);
-tuple<vector<vector<int>>,vector<vector<int>>, int> ToCostMatrix(vector<vector<bool>> InitArray, vector<vector<int>> TargetArray, int Dim1);
+void ToCostMatrix(vector<vector<bool>> InitArray, vector<vector<int>> TargetArray, int Dim1,vector<vector<int>> &InitPositions,vector<vector<int>> &CostMatrix);
 vector<vector<int>> ToTargetArray(int dim, int r0,int r1, int c0 ,int c1);
 vector<vector<vector<int>>> interpret_results(vector<vector<int>> InitPositions, vector<vector<int>> TargetArray, vector<vector<int>> results);
 vector<vector<vector<int>>> order(vector<vector<vector<int>>> moves, vector<vector<bool>> Array);
@@ -73,8 +73,12 @@ int step6(vector<vector<int>> &CostMatrix, vector<bool> &row_covered, vector<boo
 vector<RearrangementMove> compute(vector<vector<bool>> Matrix,rearrange_mode mode);
 
 //Atom Drop Functions
-
-
+void go(int offset, int k,vector<vector<int>> &r,vector<int> &setOfVals,vector<int> &combination);
+vector<vector<int>> choose(vector<int> start, int n);
+bool test(vector<vector<bool>> Array,vector<int> &rows,vector<int> &cols, vector<int> rowTotals, vector<int> colTotals,int n);
+bool check(vector<vector<bool>> Array,vector<int> rows, vector<int> cols);
+bool in(vector<int> row, int n);
+vector<RearrangementMove> DropItLikeItsHot(vector<vector<bool>> Array);
 
 
 #endif // REARRANGE2D_NEW_H
