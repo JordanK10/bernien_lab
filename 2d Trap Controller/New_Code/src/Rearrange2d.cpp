@@ -244,7 +244,7 @@ int* CenterOfMass(vector<vector<bool>> Array){
 }
 
 
-vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mode){
+vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, rearrange_mode mode){
 
     int ArrayDim = Array.size();
     vector<int> RowTotals = RowSum(Array);
@@ -361,15 +361,11 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
         col_z = col_y + TargetDim - 1;
     }
 
-    printArray(Array);
-        vector<bool> tempCol;
-        vector<bool> compressedCol;
-        bool check = false;
+    vector<bool> tempCol;
+    vector<bool> compressedCol;
+    bool check = false;
 
-        vector<int> ColTotals = ColSum(Array);
-
-        cout << "row " << row_y << " " << row_z << endl;
-        cout << "col " << col_y << " " << col_z << endl;
+    vector<int> ColTotals = ColSum(Array);
 
     if(mode != (REC_LEFT || REC_RIGHT || REC_CENT)){
       for(int kevin=0; kevin<ArrayDim; kevin++){
@@ -392,8 +388,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
               g_counter ++;
                // Push back column and compressed column
               RowTotals = RowSum(Array); // Recalculate row totals
-              cout << "kevin " << kevin << endl;
-              printArray(Array);
+
           }
       if(check == false){
           col_z --;
@@ -436,7 +431,6 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mod
         i++;
         g_counter++;
     }
-    printArray(Array);
 
 return moves;
 }
@@ -454,5 +448,5 @@ vector<RearrangementMove> rearrange(vector<vector<bool>> Array, rearrange_method
     if(method == HUNGARIAN){
       return BalanceCompressAlg(Array,mode);
     }
-
+    cout << "Invalid Mode\n";
 }

@@ -19,16 +19,19 @@
 #include <dirent.h>
 #include <fstream>
 
+
+
 #include <vector>
 
-#define DEFAULT_WAVEFORM_DURATION 0.00001
+// #define DEFAULT_WAVEFORM_DURATION 0.00001
+#define DEFAULT_WAVEFORM_DURATION 0.0000003
 #define MAX_NUM_TRAPS 101
 
 using namespace std;
 
 
 
-static const int numWorkers = 6;
+static const int numWorkers = 1;
 
 
 struct loadedWaveformProperties {
@@ -42,7 +45,7 @@ class TrapController {
 
 public:
 
-    TrapController(double centerFx, double centerFy, double sampleRate, double gain, bool axis, int wt_freq);
+    TrapController( double sampleRate, double gain, bool axis, int wt_freq);
 
     void addTrap(double freq, double amp, double phase=0);
 
@@ -55,6 +58,14 @@ public:
     std::vector<Trap> traps;
 		std::vector<Trap> previousTraps;
 
+		bool mostRecentlyLoadedCorrectWaveforms(double duration, std::string starting_configuration, std::string ending_configuration);
+
+		bool loadPrecomputedWaveforms(double moveDuration, std::string starting_configuration, std::string ending_configuration);
+
+		std::vector<Waveform *> combinePrecomputedWaveform(std::vector<bool> &initial, std::vector<bool> &destinations);
+
+		void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<bool> *destinations, const size_t movingWaveformSize);
+
 
 		bool sanitizeTraps(double new_gain = -1, bool shouldPrintTotalPower=true);
 
@@ -66,20 +77,21 @@ public:
 
 		void printAvailableDefaultTrapConfigurations();
 
-		vector<Waveform *> rearrangeTraps(std::vector<bool> atomsPresent, enum rearrange_mode mode, int modeArgument);
-
     double awg_gain;
     double xAxisCenterFreq;
     double yAxisCenterFreq;
 
 		std::vector<std::complex<float>> getWaveTable();
 
-
 		Waveform staticStartingWaveform;
 		Waveform staticEndingWaveform;
 
+		void setAxisFile(string filename, string axis);
+
+		string staticWaveform;
+
 private:
-  	void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<int> *destinations, const size_t movingWaveformSize);
+
 
     bool majorAxisx;
 
@@ -94,16 +106,17 @@ private:
   	int numStartingTraps;
   	int numEndingTraps;
 
+
 		Waveform loadedTrapWaveforms[MAX_NUM_TRAPS][MAX_NUM_TRAPS];
 
 
 
-  	std::vector<int> periodicClusterPattern;
+  	std::vector<bool> periodicClusterPattern;
   	int clusterSeparation;
   	int clusterSize;
   	int atomsPerCluster;
   	int clusterPeriodicity;
-  	std::vector<int> clusterTargetIndices;
+  	std::vector<bool> clusterTargetIndices;
   	int numClustersToBuild;
   };
 

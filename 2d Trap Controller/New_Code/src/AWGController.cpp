@@ -63,14 +63,31 @@ void AWGController::disconnect() {
 static int64 g_llOffset = 0;
 static int64 g_llXDiv = KILO_B(100);
 
-bool AWGController::loadDataBlock(vector<complex<float>> dataArr, int channel, int64 llBytesToCalculate){
+bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 llBytesToCalculate){
 
   // Generate array of pointers to buffer memory
   int16* pnData = (int16*) pvBuffer;
+  cout << "\n" << gain << "\n";
 
-  for (int64 i = 0; i <llSWBufSize/2; i++)
-    pnData[i] = (int16)(real(dataArr[i%dataArr.size()])*gain);
-
+  vector<complex<float>> dataVecX = waveforms[0].dataVector;
+  vector<complex<float>> dataVecY = waveforms[1].dataVector;
+  cout << endl;
+  if(twoChen){
+    for (int64 i = 0; i <llSWBufSize/4; i++){
+      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain);
+      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain);
+      // if (i<dataVecX.size())
+      //   cout << pnData[i*2] << endl;
+    }
+  }
+  else{
+    for (int64 i = 0; i <llSWBufSize/2; i++){
+      pnData[i] = (int16)(real(dataVecX[i%dataVecX.size()])*gain);
+    }
+  }
+  // for int64 i=0; i<llSWBufSize/4;i++){
+  //   cout << pnData[i*2] << endl;
+  // }
 	return true;
 }
 
@@ -84,7 +101,7 @@ bool AWGController::changeGain(int g){
   return true;
 }
 
-void AWGController::pushWaveforms(vector<Waveform> waveforms) {
+void AWGController::pushStaticWaveforms(vector<Waveform> waveforms) {
   // if (stCard.bSetError){
   //   return;
   // }
@@ -97,15 +114,24 @@ void AWGController::pushWaveforms(vector<Waveform> waveforms) {
   }
 
   // for (i = 0; i < waveforms.size(); i++){
-  for (int i = 0; i < 1; i++){
-      loadDataBlock(waveforms[i].dataVector,1,llSWBufSize);
-  }
+  loadStaticDataBlock(waveforms,1,llSWBufSize);
 
   if (!stCard.bSetError)
       {
       // we define the buffer for transfer and start the DMA transfer
       printf ("Starting the DMA transfer and waiting until data is in board memory\n");
-      spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0);
+
+      if(twoChen)
+        spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0 | CHANNEL1 );
+      else
+        spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0 );
+
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_AMP0,2000);
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_AMP1,2000);
+
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER0,0);
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER1,0);
+
       spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, llSWBufSize);
       spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
 

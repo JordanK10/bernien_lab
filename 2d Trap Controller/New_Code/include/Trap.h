@@ -8,6 +8,7 @@
 #include "WaveTable.h"
 #include <iostream>
 #include <complex.h>
+#include "math.h"
 #include <ostream>
 #include <string>
 
@@ -17,6 +18,8 @@ class Trap {
         Trap(WaveTable *, double freq, double amplit, double phase=0);
         double frequency;
       	double amplitude;
+        double phase;
+
         void setPhase(double);
 
         void changeToFrequency(double newFrequency, double duration);
@@ -47,6 +50,7 @@ class Trap {
     	size_t samplesSinceStartingAmplitudeTransition;
     	double durationOfAmplitudeTransition;
 
+      float fpi = 3.1415926535897;
 
     	double savedFrequency;
     	double savedAmplitude;

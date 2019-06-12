@@ -35,7 +35,7 @@ public:
 	void disconnect();
 	void startStreaming();
 
-	bool loadDataBlock(std::vector<std::complex<float>> dataArr, int channel, int64 llBytesToCalculate);
+	bool loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 llBytesToCalculate);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
@@ -49,7 +49,7 @@ public:
 	int getGain();
 	bool changeGain(int gain);
 
-	void pushWaveforms(vector<Waveform> waveforms);
+	void pushStaticWaveforms(vector<Waveform> waveforms);
 	void pushWaveforms(vector<Waveform *> waveforms);
 
 	bool isConnected();
@@ -69,14 +69,15 @@ private:
   	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
 
     // setup for the FIFO mode (HW buffer size can be programmed starting with firmware V9)
-		int64        llHWBufSize = MEGA_B(256);
+		int64        llHWBufSize = MEGA_B(4);
    	int64        llSWBufSize;
-   	int64        llNotifySize = KILO_B(1024); // the data transfer speed to the card increases with the notify size
+   	int64        llNotifySize = KILO_B(2); // the data transfer speed to the card increases with the notify size
 
+		bool twoChen = true;
 
     double sampleRate;
 
-    int gain = 32762;
+    int gain = 32761;
 
     bool connected = false;
     bool shouldDisconnect;

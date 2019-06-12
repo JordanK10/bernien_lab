@@ -5,10 +5,15 @@
 #include "Rearrange2d.h"
 #include <vector>
 #include <thread>
-
+#include <iostream>
 using namespace std;
 
-struct RearrangementMove;
+struct StaticHandler{
+  TrapController* x = NULL;
+  TrapController* y = NULL;
+};
+
+string dimensionFormat(string str, string ins);
 
 class TrapControllerHandler {
 
@@ -22,17 +27,16 @@ public:
 
   void printAvailableDefaultTrapConfigurations();
 
-
-  bool loadPrecomputedWaveforms(double moveDuration, string starting_configuration, string ending_configuration);
-  bool mostRecentlyLoadedCorrectWaveforms(double duration, string starting_configuration, string ending_configuration);
+  bool loadPrecomputedWaveforms(double moveDuration,string startConfig, string endConfig);
+  bool mostRecentlyLoadedCorrectWaveforms(double duration, std::vector<RearrangementMove> moves);
   void initializeFromBinaryFile(std::string filename);
 	bool initializeFromStaticWaveform(std::string trap_configuration);
 
   bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  std::vector<Waveform *> rearrangeTraps(std::vector<std::vector<bool>> atomsPresent,  rearrange_mode mode, int modeArgument=0);
-  std::vector<std::vector<Waveform *>> TrapControllerHandler::combinePrecomputedWaveforms(vector<int> &destinations);
-  std::vector<Waveform> generateWaveform();
+  std::vector<std::vector<Waveform *>> rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM);
+  std::vector<std::vector<Waveform *>> TrapControllerHandler::combinePrecomputedWaveforms(vector<bool> &destinations);
+  std::vector<Waveform> generateStaticWaveform();
 
   void resetForRearrangement();
 
@@ -40,9 +44,11 @@ public:
 
   void saveTraps();
 
+  void combineRearrangeWaveform();
 
-  std::vector<TrapController> staticHandler;
+  StaticHandler statHandler;
 
+  static const int numWorkers = 1;
 
   std::string lastLoadedConfiguration;
 
@@ -62,12 +68,14 @@ public:
 private:
   bool yes;
 
-  std::vector<int> periodicClusterPattern;
+  std::vector<Waveform>* rearrangedWaveforms;
+
+  std::vector<bool> periodicClusterPattern;
   int clusterSeparation;
   int clusterSize;
   int atomsPerCluster;
   int clusterPeriodicity;
-  std::vector<int> clusterTargetIndices;
+  std::vector<bool> clusterTargetIndices;
   int numClustersToBuild;
 
 };

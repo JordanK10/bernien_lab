@@ -7,9 +7,11 @@
 #include <vector>
 #include <complex>
 #include <string>
+#include <windows.h>
 
-static const std::string dir = "/home/control/Desktop/TrapWaveforms/";
-static const std::string static_waveforms = "static_waveforms/";
+
+static const std::string dir = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d Trap Controller\\New_Code\\bin\\DynamicWaveforms\\";
+static const std::string static_waveforms = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d Trap Controller\\New_Code\\bin\\StaticWaveforms\\";
 
 
 class Waveform
@@ -36,6 +38,8 @@ public:
 									  std::string starting_configuration, std::string ending_configuration,
 									  int starting_index, int ending_index);
 
+	bool row;
+	int dim;
 };
 
 #endif

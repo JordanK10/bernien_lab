@@ -49,7 +49,7 @@ vector<int> RowSum(vector<vector<bool>> Array);
 tuple<vector<vector<bool>>,vector<int>,vector<int>,vector<int>> Balance(vector<vector<bool>> Array, vector<int> Range, int SufficientAtoms, vector<int> RowTotal);
 
 int* CenterOfMass(vector<vector<bool>> Array);
-vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, int mode);
+vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> Array, rearrange_mode mode);
 
 
 

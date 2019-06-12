@@ -17,15 +17,15 @@ int main(){
     // cout << "Width? ";
 
     int sw_buf_size = pow(4,6);
-    int wt_freq = 1000;
-    int cycles = 4000;
+    int wt_freq = 100;
+    int cycles = 400;
     int clock_rate = MEGA(sw_buf_size*wt_freq/cycles); //Use mathematica to find parameter combination that is integer
     double bandwidth = 15;
     int gain = 1;
 
-
       TrapControllerHandler trapControllerHandler(tc_num, clock_rate, gain, KILO(wt_freq));
-      AWGController awgController(0,clock_rate,SINGLE,KILO(sw_buf_size*40));
+      AWGController awgController(0,clock_rate,SINGLE,KILO(sw_buf_size));
+
       if (awgController.isConnected())
         run2DConsole(trapControllerHandler, awgController);
 
