@@ -5,17 +5,20 @@
 #include "WaveTable.h"
 #include <complex.h>
 
+#include <iostream>
+
+using namespace std;
+
 WaveTable::WaveTable(long int sampRate, long int tableFreq) {
     // std::cout << "Initializing wave table..." << std::endl;
-
     sampleRate = sampRate;
     timeStep = 1.0 / sampRate;
     tableLength = sampRate / tableFreq;
     tableFrequency = tableFreq;
 
-
 	// Wave Table
 	waveTable.resize(tableLength);
+
 
 	std::complex<float> imag(0, 1.0);
 	double coeff = 2 * 3.1415926535 / tableLength;

@@ -12,47 +12,22 @@ static bool connectToAWG = false;
 
 int main(){
 
-    //Determine if we need to run protocol for 1D or 2D
-    char input = 'Y';
-    // cout << "2D operation? (Y/N)";
-    // cin >> input;
-    // cout << "Length? ";
-    int len = 5;
+    int tc_num = 20;
     // cin >> len;
     // cout << "Width? ";
-    int wid = 5;
-    // cin >> wid;
-    /////////////////////////////
 
-    //Input Center frequency
-
-    double centerFreq_MHz = 74;
+    int sw_buf_size = pow(4,6);
+    int wt_freq = 100;
+    int cycles = 400;
+    int clock_rate = MEGA(sw_buf_size*wt_freq/cycles); //Use mathematica to find parameter combination that is integer
     double bandwidth = 15;
-    double centerFrequency = 77;
-    double gain = 30;
-    double clock_rate = 1000;
+    int gain = 1;
 
-    cout << "Enter center frequency (in MHz): ";
-    // cin >> centerFreq_MHz;
-    centerFrequency = centerFreq_MHz * 1.0E6;
-    //////////////////////////////
+      TrapControllerHandler trapControllerHandler(tc_num, clock_rate, gain, KILO(wt_freq));
+      AWGController awgController(0,clock_rate,SINGLE,KILO(sw_buf_size));
 
-    // if(input=='N'){
-    //
-    //   //Run 1D Console
-    //   TrapController trapController(centerFrequency, sampleRate, gain);
-    //   AWGController awgController(0,sampleRate,centerFrequency,gain);
-    //   run1DConsole(trapController, awgController);
-    //
-    // }else if(input=='Y'){
-
-      //Run 2D Console
-      TrapControllerHandler trapControllerHandler(len, wid, centerFrequency-.5*bandwidth, len/bandwidth, centerFrequency-.5*bandwidth, len/bandwidth,  clock_rate*1E6, gain);
-      AWGController awgController(0,clock_rate*1E6,centerFrequency,gain,SINGLE, clock_rate);
-
-      run2DConsole(trapControllerHandler, awgController);
-
-
+      if (awgController.isConnected())
+        run2DConsole(trapControllerHandler, awgController);
 
       return 0;
 }

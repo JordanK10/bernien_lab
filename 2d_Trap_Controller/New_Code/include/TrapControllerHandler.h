@@ -2,47 +2,57 @@
 #define TRAP_CONTROLLER_HANDLER_H
 
 #include "TrapController.h"
-#include "rearrangementmove.h"
+#include "Rearrange2d.h"
 #include <vector>
-
+#include <thread>
+#include <iostream>
 using namespace std;
-struct RearrangementMove;
 
+struct StaticHandler{
+  TrapController* x = NULL;
+  TrapController* y = NULL;
+};
+
+string dimensionFormat(string str, string ins);
 
 class TrapControllerHandler {
 
 public:
 
 
-  TrapControllerHandler(int len, int wid, double startFx, double fxIncrement, double startFy, double fyIncrement, double sampleRate, double gain);
+  TrapControllerHandler(int len, double cloack_rate, double gain, int wt_freq);
 
   bool loadDefaultTrapConfiguration(std::string filename);
   void printTraps();
 
   void printAvailableDefaultTrapConfigurations();
 
-
-  bool loadPrecomputedWaveforms(double moveDuration, string starting_configuration, string ending_configuration);
-  bool mostRecentlyLoadedCorrectWaveforms(double duration, string starting_configuration, string ending_configuration);
+  bool loadPrecomputedWaveforms(double moveDuration,string startConfig, string endConfig);
+  bool mostRecentlyLoadedCorrectWaveforms(double duration, std::vector<RearrangementMove> moves);
   void initializeFromBinaryFile(std::string filename);
 	bool initializeFromStaticWaveform(std::string trap_configuration);
 
-  std::vector<RearrangementMove> generateRearrangementMoves(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode);
+  bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  std::vector<Waveform *> rearrangeTraps(std::vector<std::vector<bool>> atomsPresent, enum rearrange_mode mode, int modeArgument=0);
-
-  std::vector<Waveform> generateWaveform();
+  std::vector<std::vector<Waveform *>> rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM);
+  std::vector<std::vector<Waveform *>> TrapControllerHandler::combinePrecomputedWaveforms(vector<bool> &destinations);
+  std::vector<Waveform> generateStaticWaveform();
 
   void resetForRearrangement();
 
   vector<vector<double>> trapFrequencies();
 
+  void saveTraps();
 
-  std::vector<TrapController> tcxList;
-  std::vector<TrapController> tcyList;
+  void combineRearrangeWaveform();
+
+  StaticHandler statHandler;
+
+  static const int numWorkers = 1;
 
   std::string lastLoadedConfiguration;
 
+  double awg_gain;
 
   int reservoirSeparation = 20;
   int tchLen;
@@ -58,13 +68,14 @@ public:
 private:
   bool yes;
 
+  std::vector<Waveform>* rearrangedWaveforms;
 
-  std::vector<int> periodicClusterPattern;
+  std::vector<bool> periodicClusterPattern;
   int clusterSeparation;
   int clusterSize;
   int atomsPerCluster;
   int clusterPeriodicity;
-  std::vector<int> clusterTargetIndices;
+  std::vector<bool> clusterTargetIndices;
   int numClustersToBuild;
 
 };

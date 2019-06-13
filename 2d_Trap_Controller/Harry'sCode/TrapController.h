@@ -103,6 +103,7 @@ private:
 	int numStartingTraps;
 	int numEndingTraps;
 
+	std::vector<Traps> previousTraps;
 
 	std::vector<int> periodicClusterPattern;
 	int clusterSeparation;

@@ -4,15 +4,16 @@
 
 #include "Trap.h"
 #include <iomanip>
-
+#include <iostream>
+using namespace std;
 //Declaration for trap. major axis freq,amp handled by Trap/Static controller
-Trap::Trap(WaveTable *wTable, double freq, double amp, double phase) {
+Trap::Trap(WaveTable *wTable, double freq, double amp, double phas) {
     waveTable = wTable;
 
     frequency = freq;
     amplitude = amp;
-
-    setPhase(phase);
+    phase = phas;
+    setPhase(phas);
 
 
     isChangingFrequency = false;
@@ -64,7 +65,6 @@ std::complex<float> Trap::nextSample() {
   } else if (phaseIndex < 0) {
 	phaseIndex += waveTable->tableLength;
   }
-
   return sample;
 }
 

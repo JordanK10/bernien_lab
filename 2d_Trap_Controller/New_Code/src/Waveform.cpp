@@ -19,8 +19,7 @@ Waveform::Waveform(string binaryFilename) {
 }
 
 bool Waveform::fileExists(string filename) {
-	string path(dir);
-	path.append(filename);
+	string path(filename);
 
 	ifstream file(path, ios::in | ios::binary);
 	return file.good();
@@ -51,9 +50,7 @@ void Waveform::initializeFromBinaryFile(string binaryFilename) {
 bool Waveform::initializeFromStaticWaveform(string trap_configuration_file) {
 	int length = trap_configuration_file.length();
 	string waveform_filename = trap_configuration_file.substr(0, length - 4) + "_static"; // Remove .txt, replace with _static.
-
 	string waveform_path = static_waveforms + waveform_filename;
-
 	if (fileExists(waveform_path)) {
 		initializeFromBinaryFile(waveform_path);
 		return true;
@@ -78,8 +75,6 @@ void Waveform::initializeFromMovingWaveform(double duration,
 
 
 	string path = dirStream.str() + fileStream.str();
-	//cout << "moving waveform path: " << path << endl;
-
 	initializeFromBinaryFile(path);
 }
 
