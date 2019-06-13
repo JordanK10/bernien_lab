@@ -55,6 +55,7 @@ public:
 	bool isConnected();
 
 	bool run(int timeout,int channel);
+	void fifoLoop(int loops);
 	void stop();
 
 	// drv_handle hDrv;

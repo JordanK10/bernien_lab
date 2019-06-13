@@ -20,11 +20,10 @@
 #include <fstream>
 
 
-
 #include <vector>
 
-// #define DEFAULT_WAVEFORM_DURATION 0.00001
-#define DEFAULT_WAVEFORM_DURATION 0.0000003
+#define DEFAULT_WAVEFORM_DURATION 0.00001
+// #define DEFAULT_WAVEFORM_DURATION 0.0000003
 #define MAX_NUM_TRAPS 101
 
 using namespace std;

@@ -10,8 +10,8 @@
 #include <windows.h>
 
 
-static const std::string dir = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d Trap Controller\\New_Code\\bin\\DynamicWaveforms\\";
-static const std::string static_waveforms = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d Trap Controller\\New_Code\\bin\\StaticWaveforms\\";
+static const std::string dir = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\DynamicWaveforms\\";
+static const std::string static_waveforms = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\StaticWaveforms\\";
 
 
 class Waveform

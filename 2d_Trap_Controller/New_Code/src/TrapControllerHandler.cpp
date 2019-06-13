@@ -7,7 +7,7 @@ struct RearrangementMove;
 /* Generate width+length trap controllers. The length primary TCs are centered
 on the width axis, and create a trap per x-increment starting at the
 lowest frequency (x-y axis). Same for width, but along y-x axis */
-TrapControllerHandler::TrapControllerHandler(int len, double sampleRate, double gain, int wt_freq){
+TrapControllerHandler::TrapControllerHandler( double sampleRate, double gain, int wt_freq){
 
   statHandler.x = &TrapController(sampleRate, gain, true,wt_freq);
 
@@ -61,7 +61,7 @@ void TrapControllerHandler::printAvailableDefaultTrapConfigurations() {
 	struct dirent *epdf;
 
 
-	dir = opendir("C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d Trap Controller\\New_Code\\bin\\DefaultTrapConfigurations");
+	dir = opendir("C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\DefaultTrapConfigurations");
 
 	vector<string> filenames;
 
@@ -86,7 +86,7 @@ void TrapControllerHandler::printAvailableDefaultTrapConfigurations() {
 bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 
   //Opens filestream from a given file. First two inputs are L/wW
-  ifstream config_file("C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d Trap Controller\\New_Code\\bin\\DefaultTrapConfigurations\\" + filename);
+  ifstream config_file("C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\DefaultTrapConfigurations\\" + filename);
 
   if (!config_file.is_open()) {
 	  cout << "Unable to open file: " << filename << endl;

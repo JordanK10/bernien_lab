@@ -72,12 +72,13 @@ bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel,
   vector<complex<float>> dataVecX = waveforms[0].dataVector;
   vector<complex<float>> dataVecY = waveforms[1].dataVector;
   cout << endl;
+  ofstream myfile;
+  myfile.open ("example.txt");
   if(twoChen){
     for (int64 i = 0; i <llSWBufSize/4; i++){
       pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain);
       pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain);
-      // if (i<dataVecX.size())
-      //   cout << pnData[i*2] << endl;
+      myfile << pnData[i*2] << endl;
     }
   }
   else{
@@ -85,9 +86,8 @@ bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel,
       pnData[i] = (int16)(real(dataVecX[i%dataVecX.size()])*gain);
     }
   }
-  // for int64 i=0; i<llSWBufSize/4;i++){
-  //   cout << pnData[i*2] << endl;
-  // }
+  myfile.close();
+
 	return true;
 }
 
@@ -188,6 +188,14 @@ bool AWGController::run(int timeout, int channel){
   }
   cout << "Running...";
   return true;
+}
+
+//An experimental function to test fifo looping
+void AWGController::fifoLoop(int llLoops){
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_STOP);
+  cout << endl << spcm_dwSetParam_i64 (stCard.hDrv, SPC_LOOPS,llLoops);
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+
 }
 
 void AWGController::stop(){
