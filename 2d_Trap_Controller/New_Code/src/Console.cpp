@@ -371,7 +371,12 @@ void processAWGInput(vector<string> &commandTokens, TrapControllerHandler &trapC
 			awgController.changeMode(FIFO);
 		else if(commandTokens[2].compare("single") == 0)
 			awgController.changeMode(SINGLE);
-	} else if (commandTokens[1].compare("run") == 0) {
+	} else if (commandTokens[1].compare("fifo_test") == 0) {
+		cout << "How many loops? ";
+		string loops; cin >> loops;
+		awgController.fifoLoop(stoi(loops));
+		return;
+	}else if (commandTokens[1].compare("run") == 0) {
 		awgController.run(0,1);
 		return;
 	} else if (commandTokens[1].compare("stop") == 0){

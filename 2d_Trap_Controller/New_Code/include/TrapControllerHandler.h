@@ -20,7 +20,7 @@ class TrapControllerHandler {
 public:
 
 
-  TrapControllerHandler(int len, double cloack_rate, double gain, int wt_freq);
+  TrapControllerHandler(double cloack_rate, double gain, int wt_freq);
 
   bool loadDefaultTrapConfiguration(std::string filename);
   void printTraps();

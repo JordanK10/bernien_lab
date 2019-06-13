@@ -12,10 +12,6 @@ static bool connectToAWG = false;
 
 int main(){
 
-    int tc_num = 20;
-    // cin >> len;
-    // cout << "Width? ";
-
     int sw_buf_size = pow(4,6);
     int wt_freq = 100;
     int cycles = 400;
@@ -23,7 +19,7 @@ int main(){
     double bandwidth = 15;
     int gain = 1;
 
-      TrapControllerHandler trapControllerHandler(tc_num, clock_rate, gain, KILO(wt_freq));
+      TrapControllerHandler trapControllerHandler(clock_rate, gain, KILO(wt_freq));
       AWGController awgController(0,clock_rate,SINGLE,KILO(sw_buf_size));
 
       if (awgController.isConnected())
