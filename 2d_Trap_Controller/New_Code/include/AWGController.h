@@ -3,6 +3,7 @@
 #define AWG_CONTROLLER_H
 
 #define MAX_SEGMENTS 2
+#define USING_EXTERNAL_TRIGGER  0
 
 #include "Waveform.h"
 #include <queue>

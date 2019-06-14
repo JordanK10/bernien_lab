@@ -8,7 +8,7 @@ AWGController::AWGController(bool shouldConnect, double sample_rate, output_mode
   sampleRate = MEGA(sample_rate/(MEGA(1)));
 
   // Read out used bytes per sample
-  // spcm_dwGetParam_i32 (stCard.hDrv, SPC_MIINST_BYTESPERSAMPLE, &lBytesPerSample);
+  lBytesPerSample = stCard.lBytesPerSample;
 
   //Initialize card and setup card if successful
   if (bSpcMInitCardByIdx(&stCard, 0)){
