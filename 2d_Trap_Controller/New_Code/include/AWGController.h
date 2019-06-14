@@ -2,6 +2,8 @@
 #ifndef AWG_CONTROLLER_H
 #define AWG_CONTROLLER_H
 
+#define MAX_SEGMENTS 2
+
 #include "Waveform.h"
 #include <queue>
 #include <mutex>
@@ -18,7 +20,8 @@
 
 enum output_mode{
 	FIFO,
-	SINGLE
+	SINGLE,
+	SEQUENCE
 };
 
 using namespace std;
@@ -66,6 +69,7 @@ private:
     char                szBuffer[1024];     // a character buffer for any messages
   	ST_SPCM_CARDINFO    stCard;             // info structure of my card
   	void*              pvBuffer = NULL;
+		void* 						 tempBuffer = NULL;
   	uint32              dwErr;
   	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
 
@@ -73,6 +77,7 @@ private:
 		int64        llHWBufSize = MEGA_B(4);
    	int64        llSWBufSize;
    	int64        llNotifySize = KILO_B(2); // the data transfer speed to the card increases with the notify size
+		int32 			 lBytesPerSample;
 
 		bool twoChen = true;
 
