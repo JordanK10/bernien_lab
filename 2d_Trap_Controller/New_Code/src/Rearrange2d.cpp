@@ -19,9 +19,6 @@ void setTimeOut(){
     cin >> timeOut;
 }
 
-//g_counter is a global counter to keep track of the index of the vector<rearrangementmoves> that we are currently at
-//since most algorithms add moves in a number of different places, and it seemed simpler than passing this back and forth
-
 void printArray(vector<vector<bool>> Array){
   int d1 = Array.size();
   int d2 = Array[0].size();
