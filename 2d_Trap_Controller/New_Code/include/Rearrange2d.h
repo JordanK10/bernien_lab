@@ -48,7 +48,7 @@ int* CenterOfMass(vector<vector<bool>> Array);
 bool eq(vector<bool> starting, vector<bool> ending);
 vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms);
 vector<int> RowSum(vector<vector<bool>> Array);
-vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal,vector<RearrangementMove> &moves);
+vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal);
 vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mode);
 
 //Hungarian Functions
