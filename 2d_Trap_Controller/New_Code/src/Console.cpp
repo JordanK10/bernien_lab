@@ -239,7 +239,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				startTimer();
 
 				// Rearrange traps:
-				vector<vector<Waveform *>> rearrangementWaveforms = trapControllerHandler.rearrangeWaveforms(rearrange(atomsPresent,method),mode);
+				vector<vector<Waveform *>> rearrangementWaveforms = trapControllerHandler.rearrangeWaveforms(rearrange(atomsPresent,method,mode),mode);
 
 				// Push rearrangement waveforms to the AWG
 				// awgController.pushRearrangeWaveforms(rearrangementWaveforms);

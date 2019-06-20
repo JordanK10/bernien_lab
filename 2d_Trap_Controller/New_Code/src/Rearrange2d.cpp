@@ -292,7 +292,6 @@ int* CenterOfMass(vector<vector<bool>> Array){
 
 //master alg for the balance-compress function
 vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mode){
-
     vector<RearrangementMove> moves;
     int ArrayDim = Array.size();
     vector<int> RowTotals = RowSum(Array);
@@ -511,12 +510,16 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         i++;
         g_counter++;
     }
-
+    cout << "mode: " << mode << endl;
     vector<RearrangementMove> bankMoves;
     if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
         bankMoves = rectBank(Array);
     }else{
+      if(mode != CENTER_COM){
         bankMoves = bank(Array);
+      }else{
+        cout << "Cannot Bank Centered Array" << endl;
+      }
     }
     moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
 return moves;
@@ -1490,16 +1493,6 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
     }
 
     while(1){
-        if(corner == 1 || corner == 2){
-            if(i == RowRange2){
-                break;
-            }
-        }
-        if(corner == 3 || corner == 4){
-            if(i == RowRange1){
-                break;
-            }
-        }
         path.push_back({i,j});
         if(corner == 1 || corner == 3){
             if(toggle){
@@ -1559,6 +1552,16 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             j--;
             i++;
         }
+        if(corner == 1 || corner == 2){
+            if(i == RowRange2){
+                break;
+            }
+        }
+        if(corner == 3 || corner == 4){
+            if(i == RowRange1){
+                break;
+            }
+        }
     }
 
     if(corner == 1){
@@ -1594,9 +1597,15 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
     }
 
 
+    cout << "path" << endl;
+    for(int i = 0; i<path.size();i++){
+        cout << path[i][0] << " " << path[i][1] << endl;
+
+    }
+
     positions = {};
     for(int s = 0; s<path.size();s++){
-        if(Array[path[s][0]][path[s][1]] && path[s][0]<Array.size() && path[s][1] < Array[0].size()){
+        if(Array[path[s][0]][path[s][1]]){
             positions.push_back(path[s]);
         }
     }

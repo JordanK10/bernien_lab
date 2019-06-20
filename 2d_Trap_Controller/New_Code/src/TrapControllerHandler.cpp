@@ -266,16 +266,21 @@ bool TrapControllerHandler::loadPrecomputedWaveforms(double moveDuration, string
 
 vector<vector<Waveform *>> TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, rearrange_mode mode) {
 
+int atoms  = 0;
 	vector<vector<Waveform *>> waveforms;
   for(int i=0; i<moves.size();i++){
     for(int j=0;j<moves[i].startingConfig.size();j++){
       cout << moves[i].startingConfig[j];
+      if(moves[i].startingConfig[j]){atoms ++;}
     }
-    cout << endl;
+    cout <<"\t" << atoms << endl;
+    atoms = 0;
     for(int j=0;j<moves[i].endingConfig.size();j++){
       cout << moves[i].endingConfig[j];
+      if(moves[i].endingConfig[j]){atoms ++;}
     }
-    cout << endl <<endl;
+    cout <<"\t" << atoms << endl << endl;
+    atoms = 0;
   }
   for(int i=0; i<moves.size();i++){
     if(moves[i].row){ //this is a row operation
