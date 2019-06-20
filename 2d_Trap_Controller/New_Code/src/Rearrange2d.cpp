@@ -26,7 +26,6 @@ void printArray(vector<vector<bool>> Array){
   for(int s1 = 0;s1<d1;s1++){
     for(int s2 = 0;s2<d2;s2++){
         cout << Array[s1][s2] << " ";
-
     }
     cout << endl;
   }
@@ -110,7 +109,7 @@ vector<int> ColSum(vector<vector<bool>> Array){
 //this takes a range of rows and divides it in half,
 //then moves atoms up and down until sufficient atoms
 //are in each sub-range. returns the new sub-ranges to be balanced
-vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal,vector<RearrangementMove> &moves){
+vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal){
     int dim = Array[0].size();
     int center;
 
@@ -486,7 +485,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
 
     //balance rows until #of balanced rows = target dim
     while(balancedRows < TargetDim){
-        Range1 = Balance(Array,RowRange[s],TargetDim,RowTotals,moves);
+        Range1 = Balance(Array,RowRange[s],TargetDim,RowTotals);
         if(Range1[0][1] == Range1[0][0]){
             balancedRows ++;
         }else{
@@ -509,6 +508,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
             moves[g_counter].dim = s;
             moves[g_counter].row = false;
             moves[g_counter].endingConfig = ending;
+            g_counter ++;
         }
     }
 
@@ -531,13 +531,14 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
         bankMoves = rectBank(Array);
     }else{
-      if(mode != CENTER_COM){
-        bankMoves = bank(Array);
-      }else{
-        cout << "Cannot Bank Centered Array" << endl;
+        if(mode != CENTER_COM){
+            bankMoves = bank(Array);
+        }else{
+            cout << "Cannot Bank Centered Array" << endl;
       }
     }
     moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
+
 return moves;
 }
 
@@ -1651,7 +1652,6 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
         }
         if(ordered_moves[i][0][1] != ordered_moves[i][1][1] && ordered_moves[i][0][0] != ordered_moves[i][1][0]){
                 //diagonal move to be split up
-
             //col move first
             if(Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] == false){
                 moves.push_back(RearrangementMove());
@@ -1676,7 +1676,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
                 //row first
                 moves.push_back(RearrangementMove());
                 moves[counter].row = true;
-                moves[counter].dim = ordered_moves[i][0][1];
+                moves[counter].dim = ordered_moves[i][0][0];
                 moves[counter].startingConfig = Array[ordered_moves[i][0][0]];
                 Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
                 Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = true;
@@ -1790,7 +1790,6 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
         }
         if(moves[i][0][1] != moves[i][1][1] && moves[i][0][0] != moves[i][1][0]){
                 //diagonal move to be split up
-
             if(Array[moves[i][0][0]][moves[i][1][1]] == false){
                 rearrange_moves.push_back(RearrangementMove());
                 rearrange_moves[counter].row = true;
