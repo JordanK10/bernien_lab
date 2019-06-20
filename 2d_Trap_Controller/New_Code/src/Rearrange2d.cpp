@@ -1,6 +1,5 @@
 #include "Rearrange2d.h"
 
-
 using namespace std;
 
 int i;
@@ -22,7 +21,6 @@ void setTimeOut(){
 
 //g_counter is a global counter to keep track of the index of the vector<rearrangementmoves> that we are currently at
 //since most algorithms add moves in a number of different places, and it seemed simpler than passing this back and forth
-int g_counter;
 
 void printArray(vector<vector<bool>> Array){
   int d1 = Array.size();
@@ -236,15 +234,8 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
     //it is pushed to the moves vector, and then the loop repeats to see if a second move is needed for balancing
 
     if(moveto[0] != -1 || movefrom[0] != -1){
-    moves.push_back(RearrangementMove());
-    moves[g_counter].dim = movefrom[1];
-    moves[g_counter].row = false;
-    moves[g_counter].startingConfig = ColumnAt(Array,movefrom[1]);
     Array[movefrom[0]][movefrom[1]] = false;
     Array[moveto[0]][moveto[1]] = true;
-    moves[g_counter].endingConfig = ColumnAt(Array,movefrom[1]);
-    g_counter ++;
-
     RowTotal[movefrom[0]+1] --;
     RowTotal[moveto[0]+1] ++;
     }
@@ -291,8 +282,26 @@ int* CenterOfMass(vector<vector<bool>> Array){
     return ptr;
 }
 
+bool eq(vector<bool> starting, vector<bool> ending){
+    bool done = true;
+    int s = starting.size();
+    int e = ending.size();
+    if(s != e){
+        return false;
+    }
+    for(int t = 0; t<s; t++){
+        if(starting[t] != ending[t]){
+            done = false;
+            break;
+        }
+    }
+    return done;
+}
+
 //master alg for the balance-compress function
 vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mode){
+    int g_counter = 0;
+    vector<vector<bool>> startArray = Array;
     vector<RearrangementMove> moves;
     int ArrayDim = Array.size();
     vector<int> RowTotals = RowSum(Array);
@@ -439,13 +448,8 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
             }
             tempCol = ColumnAt(Array,kevin); // Extract desired column
             compressedCol = CompressRow(tempCol,row_y,row_z,ColTotals[kevin+1]);
-            moves.push_back(RearrangementMove());
-            moves[g_counter].row = false;
-            moves[g_counter].startingConfig = tempCol;
-            moves[g_counter].endingConfig = compressedCol;
-            moves[g_counter].dim = kevin;
             Array = assignCol(Array,compressedCol,kevin);
-            g_counter ++;
+
             // Push back column and compressed column
             RowTotals = RowSum(Array); // Recalculate row totals
         }
@@ -478,6 +482,8 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     int s = 0;
     vector<vector<int>> Range1(2);
     int balancedRows = 0;
+
+
     //initialize the first rowrange to be balanced - the whole array
     vector<vector<int>> RowRange = {{row_y,row_z}};
 
@@ -497,6 +503,19 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         s ++;
     }
 
+    for(int s = 0;s<Array[0].size();s++){
+        vector<bool> start = ColumnAt(startArray,s);
+        vector<bool> ending = ColumnAt(Array,s);
+        if(!eq(start,ending)){
+            moves.push_back(RearrangementMove());
+            moves[g_counter].startingConfig = start;
+            moves[g_counter].dim = s;
+            moves[g_counter].row = false;
+            moves[g_counter].endingConfig = ending;
+        }
+    }
+
+
     //compress all the rows, store the moves
     i = RowRange[0][0];
     while(i <= RowRange[0][1]){
@@ -511,7 +530,6 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         i++;
         g_counter++;
     }
-    cout << "mode: " << mode << endl;
     vector<RearrangementMove> bankMoves;
     if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
         bankMoves = rectBank(Array);
@@ -1321,6 +1339,7 @@ bool in(vector<int> row, int n)
 
 //main function
 vector<RearrangementMove> DropItLikeItsHot(vector<vector<bool>> &Array){
+    int g_counter = 0;
     int n = Array.size();
     vector<int> rowTotals = RowSum(Array);
     vector<int> colTotals = ColSum(Array);
@@ -1597,109 +1616,14 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
         }
     }
 
-    /*
-    positions = {};
-    for(int s = 0; s<path.size();s++){
-        if(Array[path[s][0]][path[s][1]]){
-            positions.push_back(path[s]);
-        }
-    }
 
-    int extras = positions.size();
-    vector<vector<int>> targetPos;
-    toggle = false;
-    if(corner == 1){
-        j = 0;
-        i = Array.size() - 1;
-    }
-    if(corner == 2){
-        i = Array.size() - 1;
-        j = Array[0].size() - 1;
-    }
-    if(corner == 3){
-        i = 0;
-        j = 0;
-    }
-    if(corner == 4){
-        i = 0;
-        j = Array[0].size()-1;
-    }
-
-    while(extras>0){
-        extras --;
-
-        targetPos.push_back({i,j});
-        if(corner == 1 || corner == 3){
-            if(toggle){
-                j--;
-            }else{
-                j++;
-            }
-        }
-        if(corner == 2 || corner == 4){
-            if(toggle){
-                j++;
-            }else{
-                j--;
-            }
-        }
-
-        if(corner == 1 && j>ColRange2){
-            toggle = true;
-            i--;
-            j--;
-        }
-        if(corner == 1 && j<0){
-            toggle = false;
-            j++;
-            i--;
-        }
-
-        if(corner == 2 && j<ColRange1){
-            toggle = true;
-            i--;
-            j++;
-        }
-        if(corner == 2 && j>ColRange2){
-            toggle = false;
-            j--;
-            i--;
-        }
-
-        if(corner == 3 && j<ColRange1){
-            toggle = false;
-            i++;
-            j++;
-        }
-        if(corner == 3 && j>ColRange2){
-            toggle = true;
-            j--;
-            i++;
-        }
-
-        if(corner == 4 && j<ColRange1){
-            toggle = true;
-            i++;
-            j++;
-        }
-        if(corner == 4 && j>ColRange2){
-            toggle = false;
-            j--;
-            i++;
-        }
-    }
-    */
     vector<vector<vector<int>>> ordered_moves;
 
-    /*
-    for(int s = 0;s<positions.size();s++){
-        ordered_moves.push_back({positions[s],targetPos[s]});
-    }
-    */
     int j = 0;
     for(int i = 0;i<path.size();i++){
         if(Array[path[i][0]][path[i][1]]){
             ordered_moves.push_back({path[i],path[j]});
+            bankLocations.push_back(path[j]);
             j++;
         }
     }

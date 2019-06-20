@@ -1,5 +1,5 @@
-#ifndef REARRANGE2D_NEW_H
-#define REARRANGE2D_NEW_H
+#ifndef REARRANGE2D_H
+#define REARRANGE2D_H
 
 #include <vector>
 #include <tuple>
@@ -45,6 +45,7 @@ vector<bool> ColumnAt(vector<vector<bool>> Array, int dim);
 int* CenterOfMass(vector<vector<bool>> Array);
 
 //Balance-Compress Functions
+bool eq(vector<bool> starting, vector<bool> ending);
 vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms);
 vector<int> RowSum(vector<vector<bool>> Array);
 vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal,vector<RearrangementMove> &moves);
@@ -89,4 +90,4 @@ int findNearestBank(vector<vector<bool>> Array, vector<int> vacancy);
 vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array);
 vector<RearrangementMove> rectBank(vector<vector<bool>> &Array);
 bool Toggle(bool a);
-#endif // REARRANGE2D_NEW_H
+#endif // REARRANGE2D_H
