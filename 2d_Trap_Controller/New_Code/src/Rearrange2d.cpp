@@ -1,5 +1,6 @@
 #include "Rearrange2d.h"
 
+
 using namespace std;
 
 int i;
@@ -1509,7 +1510,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             }
         }
 
-        if(corner == 1 && j>Array[0].size() - 1){
+        if(corner == 1 && j>ColRange2){
             toggle = true;
             i--;
             j--;
@@ -1520,7 +1521,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             i--;
         }
 
-        if(corner == 2 && j<0){
+        if(corner == 2 && j<ColRange1){
             toggle = true;
             i--;
             j++;
@@ -1536,13 +1537,13 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             i++;
             j++;
         }
-        if(corner == 3 && j>Array[0].size() - 1){
+        if(corner == 3 && j>ColRange2){
             toggle = true;
             j--;
             i++;
         }
 
-        if(corner == 4 && j<0){
+        if(corner == 4 && j<ColRange1){
             toggle = true;
             i++;
             j++;
@@ -1566,23 +1567,23 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
 
     if(corner == 1){
         for(int s = ColRange2 + 1;s<Array[0].size();s++){
-            for(int t = RowRange2;t>=0;t--){
+            for(int t = Array.size()-1;t>=0;t--){
                 path.push_back({t,s});
             }
         }
     }
 
     if(corner == 2){
-        for(int s = ColRange1 - 1;s>=0;s--){
-            for(int t = RowRange2;t>=0;t--){
+        for(int s = ColRange1-1;s>=0;s--){
+            for(int t = Array.size() - 1;t>=0;t--){
                 path.push_back({t,s});
             }
         }
     }
 
      if(corner == 3){
-        for(int s = ColRange2 + 1;s<Array[0].size();s++){
-            for(int t = RowRange1;t<Array.size();t++){
+        for(int s = ColRange2+1;s<Array[0].size();s++){
+            for(int t = 0;t<Array.size();t++){
                 path.push_back({t,s});
             }
         }
@@ -1590,19 +1591,13 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
 
     if(corner == 4){
         for(int s = ColRange1 - 1;s>=0;s--){
-            for(int t = RowRange1;t<Array.size();t++){
+            for(int t = 0;t<Array.size();t++){
                 path.push_back({t,s});
             }
         }
     }
 
-
-    cout << "path" << endl;
-    for(int i = 0; i<path.size();i++){
-        cout << path[i][0] << " " << path[i][1] << endl;
-
-    }
-
+    /*
     positions = {};
     for(int s = 0; s<path.size();s++){
         if(Array[path[s][0]][path[s][1]]){
@@ -1693,11 +1688,20 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             i++;
         }
     }
-
+    */
     vector<vector<vector<int>>> ordered_moves;
 
+    /*
     for(int s = 0;s<positions.size();s++){
         ordered_moves.push_back({positions[s],targetPos[s]});
+    }
+    */
+    int j = 0;
+    for(int i = 0;i<path.size();i++){
+        if(Array[path[i][0]][path[i][1]]){
+            ordered_moves.push_back({path[i],path[j]});
+            j++;
+        }
     }
 
     for(i = 0;i<ordered_moves.size();i++){
