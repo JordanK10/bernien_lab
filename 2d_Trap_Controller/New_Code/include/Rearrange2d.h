@@ -87,7 +87,6 @@ void findExtras(vector<vector<bool>> Array, vector<vector<int>> &atoms);
 vector<RearrangementMove> bank(vector<vector<bool>> &Array);
 int findNearestBank(vector<vector<bool>> Array, vector<int> vacancy);
 vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array);
-
-
-
+vector<RearrangementMove> rectBank(vector<vector<bool>> &Array);
+bool Toggle(bool a);
 #endif // REARRANGE2D_NEW_H

@@ -1,5 +1,6 @@
 #include "Rearrange2d.h"
 
+
 using namespace std;
 
 int i;
@@ -12,6 +13,8 @@ int RowRange1;
 int RowRange2;
 int ColRange1;
 int ColRange2;
+
+int moveCheck(vector<bool> starting, vector<bool> ending);
 
 void setTimeOut(){
     cin >> timeOut;
@@ -40,9 +43,13 @@ void printArray(vector<vector<bool>> Array){
 
 //Select a column of the array and return it as a vector
 vector<bool> ColumnAt(vector<vector<bool>> Array, int dim){
-  vector<bool> new_col(Array.size());
-  for(k=0;k<Array.size();k++)
-    new_col[k]=Array[k][dim];
+    vector<bool> new_col;
+    for(k=0;k<Array.size();k++)
+        if(Array[k][dim]){
+            new_col.push_back(true);
+        }else{
+            new_col.push_back(false);
+        }
   return new_col;
 }
 
@@ -70,12 +77,12 @@ vector<bool> CompressRow(vector<bool> row, int left, int right, int atoms){
         atoms --;
         j++;
     }
-    while(j<dim-extras){
+    while(dim - extras>j){
         newRow[j] = false;
         j++;
     }
     while(j<dim){
-        newRow[j] = false;
+        newRow[j] = true;
         j++;
     }
     return newRow;
@@ -250,10 +257,15 @@ return {{Range[0],center},{center + 1,Range[1]}};
 //maps col into a specified column of Array
 vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int index)
 {
-    for(i = 0;i<Array.size();i++){
-        Array[i][index] = col[i];
+    vector<vector<bool>> newArray = Array;
+    for(int t = 0;t<Array.size();t++){
+        if(col[t]){
+            newArray[t][index] = true;
+        }else{
+            newArray[t][index] = false;
+        }
     }
-    return Array;
+    return newArray;
 }
 
 //finds the center of mass of the array
@@ -281,14 +293,18 @@ int* CenterOfMass(vector<vector<bool>> Array){
 
 //master alg for the balance-compress function
 vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mode){
-
+    vector<RearrangementMove> moves;
     int ArrayDim = Array.size();
     vector<int> RowTotals = RowSum(Array);
     int atoms = RowTotals[0];
+    if(mode == REC_CENT || mode == REC_LEFT || mode == REC_RIGHT){
+        if(ArrayDim*ArrayDim>atoms){
+            cout << "array size: " << ArrayDim << endl;
+            cout << "too few: only " << atoms << " atoms." << endl;
+            return moves;
+        }
+    }
     int TargetDim = sqrt(atoms);
-
-    vector<RearrangementMove> moves;
-
 
     int col_y;
     int col_z;
@@ -465,7 +481,6 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     //initialize the first rowrange to be balanced - the whole array
     vector<vector<int>> RowRange = {{row_y,row_z}};
 
-
     //balance rows until #of balanced rows = target dim
     while(balancedRows < TargetDim){
         Range1 = Balance(Array,RowRange[s],TargetDim,RowTotals,moves);
@@ -496,11 +511,18 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         i++;
         g_counter++;
     }
-    printArray(Array);
-    cout << "BANKING....\\n";
-    vector<RearrangementMove> bankMoves = bank(Array);
+    cout << "mode: " << mode << endl;
+    vector<RearrangementMove> bankMoves;
+    if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
+        bankMoves = rectBank(Array);
+    }else{
+      if(mode != CENTER_COM){
+        bankMoves = bank(Array);
+      }else{
+        cout << "Cannot Bank Centered Array" << endl;
+      }
+    }
     moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
-    cout << "END\n";
 return moves;
 }
 
@@ -513,6 +535,17 @@ void clear_covers(vector<bool> &a, vector<bool>&b){
     for(int i = 0; i < n; i ++){
         a[i] = false;
         b[i] = false;
+    }
+}
+
+void seperate(vector<vector<vector<int>>> &moves){
+    int a  = moves.size();
+    for(int s = 0;s<a;s++){
+        if(moves[s][0][0] != moves[s][1][0] || moves[s][0][1] != moves[s][1][1]){
+            vector<int> temp = moves[s][1];
+            moves[s][1] = {moves[s][0][0],moves[s][1][1]};
+            moves.push_back({{moves[s][0][0],moves[s][1][1]},temp});
+        }
     }
 }
 
@@ -759,7 +792,7 @@ vector<vector<vector<int>>> order(vector<vector<vector<int>>> moves, vector<vect
             m = todo1.size();
             for(i = 0;i<m;i++){
                 j = todo1[i];
-                if(Array[moves[j][1][0]][moves[j][1][1]] == false){
+                if(Array[moves[j][1][0]][moves[j][1][1]] == false && Array[moves[j][0][0]][moves[j][0][1]] == true){
                     Array[moves[j][0][0]][moves[j][0][1]] = false;
                     Array[moves[j][1][0]][moves[j][1][1]] = true;
                     properorder.push_back(moves[j]);
@@ -784,6 +817,19 @@ int minfind(vector<int> a){
         }
     }
     return minval;
+}
+
+int minfind1(vector<int> a){
+    int n = a.size();
+    int index = 0;
+    int minval = a[0];
+    for(int i = 0; i < n;i++){
+        if(a[i]<minval){
+            minval = a[i];
+            index = i;
+        }
+    }
+    return index;
 }
 
 // first step of the hungarian:
@@ -1123,6 +1169,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
 
     //interprets and order the results of the hungarian into moves
     vector<vector<vector<int>>> moves = interpret_results(InitPositions, TargetArray, results);
+//    seperate(moves);
     vector<vector<vector<int>>> ordered_moves = order(moves, Matrix);
 
     //convert the moves into vector<rearrangementmoves>
@@ -1148,7 +1195,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Matrix[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
             rearrange_moves[counter].endingConfig = Matrix[ordered_moves[i][0][0]];
-            counter ++;
+            counter++;
         }
         if(ordered_moves[i][0][1] == ordered_moves[i][1][1]){
             rearrange_moves.push_back(RearrangementMove());
@@ -1158,32 +1205,31 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Matrix[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
             rearrange_moves[counter].endingConfig = ColumnAt(Matrix,ordered_moves[i][0][1]);
-            counter ++;
+            counter++;
         }
         if(ordered_moves[i][0][1] != ordered_moves[i][1][1] && ordered_moves[i][0][0] != ordered_moves[i][1][0]){
                 //diagonal move to be split up
                 //col move
 
             rearrange_moves.push_back(RearrangementMove());
-            rearrange_moves[counter].row = false;
+            rearrange_moves[counter].row = true;
             rearrange_moves[counter].dim = ordered_moves[i][0][0];
-            rearrange_moves[counter].startingConfig = ColumnAt(Matrix,ordered_moves[i][0][1]);
+            rearrange_moves[counter].startingConfig = Matrix[ordered_moves[i][0][0]];
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = ColumnAt(Matrix,ordered_moves[i][0][1]);
-            counter ++;
+            rearrange_moves[counter].endingConfig = Matrix[ordered_moves[i][0][0]];
+            counter++;
 
             rearrange_moves.push_back(RearrangementMove());
             rearrange_moves[counter].row = false;
-            rearrange_moves[counter].dim = ordered_moves[i][0][1];
-            rearrange_moves[counter].startingConfig = Matrix[ordered_moves[i][0][0]];
+            rearrange_moves[counter].dim = ordered_moves[i][1][1];
+            rearrange_moves[counter].startingConfig = ColumnAt(Matrix,ordered_moves[i][1][1]);
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = false;
             Matrix[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = Matrix[ordered_moves[i][0][0]];
-            counter ++;
+            rearrange_moves[counter].endingConfig = ColumnAt(Matrix,ordered_moves[i][1][1]);
+            counter++;
         }
     }
-    printArray(Matrix);
     vector<RearrangementMove> bankMoves = bank(Matrix);
     rearrange_moves.insert(rearrange_moves.end(),bankMoves.begin(),bankMoves.end());
     return rearrange_moves;
@@ -1428,41 +1474,143 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
         }
     }
 
-    if(corner == 1 || corner == 2){
-        int t=0;
-        for(int a = 0;a<Array[0].size();a++){
-            t += int(Array[Array.size() - 1][a]);
-        }
-        moves.push_back(RearrangementMove());
-        moves[counter].row = true;
-        moves[counter].dim = Array.size() - 1;
-        moves[counter].startingConfig = Array[Array.size() - 1];
-        Array[Array.size() - 1] = CompressRow(Array[Array.size() - 1], ColRange1, ColRange2, t);
-        moves[counter].endingConfig = Array[Array.size() - 1];
-        counter ++;
-    }
-
-    if(corner == 3 || corner == 4){
-        int t=0;
-        for(int a = 0;a<Array[0].size();a++){
-            t += int(Array[0][a]);
-        }
-        moves.push_back(RearrangementMove());
-        moves[counter].row = true;
-        moves[counter].dim = 0;
-        moves[counter].startingConfig = Array[0];
-        Array[0] = CompressRow(Array[0], ColRange1, ColRange2, t);
-        moves[counter].endingConfig = Array[0];
-        counter ++;
-    }
-
-    findExtras(Array,positions);
-    int extras = positions.size();
-    vector<vector<int>> targetPos;
+    vector<vector<int>> path;
     bool toggle = false;
     if(corner == 1){
         j = 0;
-        i = Array[0].size() - 1;
+        i = Array.size() - 1;
+    }
+    if(corner == 2){
+        i = Array.size() - 1;
+        j = Array[0].size() - 1;
+    }
+    if(corner == 3){
+        i = 0;
+        j = 0;
+    }
+    if(corner == 4){
+        i = 0;
+        j = Array[0].size()-1;
+    }
+
+    while(1){
+        path.push_back({i,j});
+        if(corner == 1 || corner == 3){
+            if(toggle){
+                j--;
+            }else{
+                j++;
+            }
+        }
+        if(corner == 2 || corner == 4){
+            if(toggle){
+                j++;
+            }else{
+                j--;
+            }
+        }
+
+        if(corner == 1 && j>ColRange2){
+            toggle = true;
+            i--;
+            j--;
+        }
+        if(corner == 1 && j<0){
+            toggle = false;
+            j++;
+            i--;
+        }
+
+        if(corner == 2 && j<ColRange1){
+            toggle = true;
+            i--;
+            j++;
+        }
+        if(corner == 2 && j>Array[0].size() - 1){
+            toggle = false;
+            j--;
+            i--;
+        }
+
+        if(corner == 3 && j<0){
+            toggle = false;
+            i++;
+            j++;
+        }
+        if(corner == 3 && j>ColRange2){
+            toggle = true;
+            j--;
+            i++;
+        }
+
+        if(corner == 4 && j<ColRange1){
+            toggle = true;
+            i++;
+            j++;
+        }
+        if(corner == 4 && j>Array[0].size() - 1){
+            toggle = false;
+            j--;
+            i++;
+        }
+        if(corner == 1 || corner == 2){
+            if(i == RowRange2){
+                break;
+            }
+        }
+        if(corner == 3 || corner == 4){
+            if(i == RowRange1){
+                break;
+            }
+        }
+    }
+
+    if(corner == 1){
+        for(int s = ColRange2 + 1;s<Array[0].size();s++){
+            for(int t = Array.size()-1;t>=0;t--){
+                path.push_back({t,s});
+            }
+        }
+    }
+
+    if(corner == 2){
+        for(int s = ColRange1-1;s>=0;s--){
+            for(int t = Array.size() - 1;t>=0;t--){
+                path.push_back({t,s});
+            }
+        }
+    }
+
+     if(corner == 3){
+        for(int s = ColRange2+1;s<Array[0].size();s++){
+            for(int t = 0;t<Array.size();t++){
+                path.push_back({t,s});
+            }
+        }
+    }
+
+    if(corner == 4){
+        for(int s = ColRange1 - 1;s>=0;s--){
+            for(int t = 0;t<Array.size();t++){
+                path.push_back({t,s});
+            }
+        }
+    }
+
+    /*
+    positions = {};
+    for(int s = 0; s<path.size();s++){
+        if(Array[path[s][0]][path[s][1]]){
+            positions.push_back(path[s]);
+        }
+    }
+
+    int extras = positions.size();
+    vector<vector<int>> targetPos;
+    toggle = false;
+    if(corner == 1){
+        j = 0;
+        i = Array.size() - 1;
     }
     if(corner == 2){
         i = Array.size() - 1;
@@ -1540,96 +1688,24 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             i++;
         }
     }
+    */
+    vector<vector<vector<int>>> ordered_moves;
 
-    vector<vector<int>> CostMatrix;
-    ToCostMatrix(Array, targetPos, 0, positions, CostMatrix);
-    bankLocations = targetPos;
-
-    int n = CostMatrix.size();
-    vector<bool> row_covered(n);
-    vector<bool> col_covered(n);
-    int Z0_r = 0;
-    int Z0_c = 0;
-    vector<vector<int>> marked;
-    vector<vector<int>> path;
-    //clear covers initializes them with zero values.
-    clear_covers(row_covered,col_covered);
-    i = 0;
-    vector<int> row;
-    //create a marked Array the size of the cost matrix starting with zero vals
-    //in the future, 1 will be marked, 2 will be starred
-    for(i = 0; i < n; i++){
-        row.push_back(0);
+    /*
+    for(int s = 0;s<positions.size();s++){
+        ordered_moves.push_back({positions[s],targetPos[s]});
     }
-    for(i = 0; i < n; i++){
-        marked.push_back(row);
-    }
-    row = {};
-    //same for the path, but n^2 in size now, since there are n^2 possible lattice sites
-    //this is super overkill, the path will never get this long, but oh well better safe than sorry
-    // actually I should look at this later for optimization, I think the theoretical limit is CostMatrix.size() in length
-    for(i = 0; i < n*2; i++){
-        row.push_back(0);
-    }
-    for(i = 0; i < n*2; i++){
-        path.push_back(row);
-    }
-    int step = 1;
-    vector<vector<int>> results = {};
-    //step = 0 means the algorithm has finished
-    // the switch runs through until it is done,
-    //depending on the step return, the flow of which can
-    //be found in the description of each step
-    while(step != 0){
-        switch(step){
-            case 1: step = step1(CostMatrix);
-                break;
-            case 2: step = step2(CostMatrix,row_covered,col_covered,marked);
-                break;
-            case 3: step = step3(CostMatrix,col_covered,marked);
-                break;
-            case 4: step = step4(CostMatrix,row_covered,col_covered,marked,Z0_c,Z0_r);
-                break;
-            case 5: step = step5(row_covered,col_covered,marked,path,Z0_c,Z0_r);
-                break;
-            case 6: step = step6(CostMatrix,row_covered,col_covered);
-                break;
+    */
+    int j = 0;
+    for(int i = 0;i<path.size();i++){
+        if(Array[path[i][0]][path[i][1]]){
+            ordered_moves.push_back({path[i],path[j]});
+            j++;
         }
     }
 
-
-
-    //results are stored as marked sites
-    //these get converted to a list of indices signaling a desired move
-    for(i = 0; i < n; i++){
-        for(int j = 0; j<n;j++){
-            if(marked[i][j] == 1){
-                results.push_back({i,j});
-            }
-        }
-    }
-
-    //interprets and order the results of the hungarian into moves
-    vector<vector<vector<int>>> moves1 = interpret_results(positions, targetPos, results);
-    vector<vector<vector<int>>> ordered_moves = order(moves1, Array);
-    for(int s = 0;s<ordered_moves.size();s++){
-        Array[ordered_moves[s][0][0]][ordered_moves[s][0][1]] = false;
-        Array[ordered_moves[s][1][0]][ordered_moves[s][1][1]] = true;
-    }
-
-    //convert the moves into vector<rearrangementmoves>
-    //moves staying in one col/row are simple
-    //moves that are diagonal are split into two moves
-    //it shouldn't ever matter which way you go, since if there was
-    //an atom in the site directly next to you, it would be more efficient to move that one
-    //i.e. suppose you have:
-    // 1 1 0
-    // 0 0 0
-    // 0 0 1
-    // you will never have a move from the upper corner into the center, since it is a shorter distance
-    //to move the upper middle there, and the algorithm minimizes distance
-    int moveNumber = ordered_moves.size();
-    for(i = 0;i<moveNumber;i++){
+    for(i = 0;i<ordered_moves.size();i++){
+    if(!Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]]){
         if(ordered_moves[i][0][0] == ordered_moves[i][1][0]){
             moves.push_back(RearrangementMove());
             moves[counter].row = true;
@@ -1639,6 +1715,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
             moves[counter].endingConfig = Array[ordered_moves[i][0][0]];
             counter ++;
+
         }
         if(ordered_moves[i][0][1] == ordered_moves[i][1][1]){
             moves.push_back(RearrangementMove());
@@ -1649,31 +1726,190 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
             moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
             counter ++;
+
         }
         if(ordered_moves[i][0][1] != ordered_moves[i][1][1] && ordered_moves[i][0][0] != ordered_moves[i][1][0]){
                 //diagonal move to be split up
-                //col move
-            moves.push_back(RearrangementMove());
-            moves[counter].row = false;
-            moves[counter].dim = ordered_moves[i][0][1];
-            moves[counter].startingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
-            Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
-            Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] = true;
-            moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
-            counter ++;
 
+            //col move first
+            if(Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] == false){
+                moves.push_back(RearrangementMove());
+                moves[counter].row = false;
+                moves[counter].dim = ordered_moves[i][0][1];
+                moves[counter].startingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
+                Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
+                Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] = true;
+                moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
+                counter ++;
 
-            moves.push_back(RearrangementMove());
-            moves[counter].row = true;
-            moves[counter].dim = ordered_moves[i][0][0];
-            moves[counter].startingConfig = Array[ordered_moves[i][1][0]];
-            Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] = false;
-            Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-            moves[counter].endingConfig = Array[ordered_moves[i][1][0]];
-            counter ++;
+                //row move second
+                moves.push_back(RearrangementMove());
+                moves[counter].row = true;
+                moves[counter].dim = ordered_moves[i][1][0];
+                moves[counter].startingConfig = Array[ordered_moves[i][1][0]];
+                Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] = false;
+                Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
+                moves[counter].endingConfig = Array[ordered_moves[i][1][0]];
+                counter ++;
+            }else{
+                //row first
+                moves.push_back(RearrangementMove());
+                moves[counter].row = true;
+                moves[counter].dim = ordered_moves[i][0][1];
+                moves[counter].startingConfig = Array[ordered_moves[i][0][0]];
+                Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
+                Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = true;
+                moves[counter].endingConfig = Array[ordered_moves[i][0][0]];
+                counter ++;
+
+                //col second
+                moves.push_back(RearrangementMove());
+                moves[counter].row = false;
+                moves[counter].dim = ordered_moves[i][1][1];
+                moves[counter].startingConfig = ColumnAt(Array,ordered_moves[i][1][1]);
+                Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = false;
+                Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
+                moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][1][1]);
+                counter ++;
+            }
         }
     }
+    }
     return moves;
+}
+
+bool Toggle(bool a){
+    bool b;
+    if(a == false){
+        b = true;
+    }else{
+        b = false;
+    }
+    return b;
+}
+
+vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
+    vector<RearrangementMove> rearrange_moves;
+    vector<vector<vector<int>>> moves;
+    int Height = Array.size();
+    vector<vector<int>> path;
+    if(ColRange1 != 0){
+        i = 0;
+        j = 0;
+        bool invert = true;
+        while(i<ColRange1){
+            while(j<Height && j>-1){
+                path.push_back({j,i});
+                if(invert == true){
+                    j ++;
+                }else{
+                    j --;
+                }
+            }
+            i ++;
+            if(invert == true){
+                j --;
+            }else{
+                j ++;
+            }
+            invert = Toggle(invert);
+        }
+    }else{
+        i = Array[0].size()-1;
+        j = 0;
+        bool invert = true;
+        while(i>ColRange2){
+            while(j<Height && j>-1){
+                path.push_back({j,i});
+                if(invert == true){
+                    j ++;
+                }else{
+                    j --;
+                }
+            }
+            i --;
+            if(invert == true){
+                j --;
+            }else{
+                j ++;
+            }
+            invert = Toggle(invert);
+        }
+    }
+    i = 0;
+    j = 0;
+    while(j<path.size()){
+        if(Array[path[j][0]][path[j][1]] == true){
+            moves.push_back({path[j],path[i]});
+            i ++;
+        }
+        j ++;
+    }
+    int counter = 0;
+    for(int i = 0;i<moves.size();i++){
+        if(moves[i][0][0] == moves[i][1][0]){
+            rearrange_moves.push_back(RearrangementMove());
+            rearrange_moves[counter].row = true;
+            rearrange_moves[counter].dim = moves[i][0][0];
+            rearrange_moves[counter].startingConfig = Array[moves[i][0][0]];
+            Array[moves[i][0][0]][moves[i][0][1]] = false;
+            Array[moves[i][1][0]][moves[i][1][1]] = true;
+            rearrange_moves[counter].endingConfig = Array[moves[i][0][0]];
+            counter++;
+        }
+        if(moves[i][0][1] == moves[i][1][1]){
+            rearrange_moves.push_back(RearrangementMove());
+            rearrange_moves[counter].row = false;
+            rearrange_moves[counter].dim = moves[i][0][1];
+            rearrange_moves[counter].startingConfig = ColumnAt(Array,moves[i][0][1]);
+            Array[moves[i][0][0]][moves[i][0][1]] = false;
+            Array[moves[i][1][0]][moves[i][1][1]] = true;
+            rearrange_moves[counter].endingConfig = ColumnAt(Array,moves[i][0][1]);
+            counter++;
+        }
+        if(moves[i][0][1] != moves[i][1][1] && moves[i][0][0] != moves[i][1][0]){
+                //diagonal move to be split up
+
+            if(Array[moves[i][0][0]][moves[i][1][1]] == false){
+                rearrange_moves.push_back(RearrangementMove());
+                rearrange_moves[counter].row = true;
+                rearrange_moves[counter].dim = moves[i][0][0];
+                rearrange_moves[counter].startingConfig = Array[moves[i][0][0]];
+                Array[moves[i][0][0]][moves[i][0][1]] = false;
+                Array[moves[i][0][0]][moves[i][1][1]] = true;
+                rearrange_moves[counter].endingConfig = Array[moves[i][0][0]];
+                counter++;
+
+                rearrange_moves.push_back(RearrangementMove());
+                rearrange_moves[counter].row = false;
+                rearrange_moves[counter].dim = moves[i][1][1];
+                rearrange_moves[counter].startingConfig = ColumnAt(Array,moves[i][1][1]);
+                Array[moves[i][0][0]][moves[i][1][1]] = false;
+                Array[moves[i][1][0]][moves[i][1][1]] = true;
+                rearrange_moves[counter].endingConfig = ColumnAt(Array,moves[i][1][1]);
+                counter++;
+            }else{
+                rearrange_moves.push_back(RearrangementMove());
+                rearrange_moves[counter].row = false;
+                rearrange_moves[counter].dim = moves[i][0][1];
+                rearrange_moves[counter].startingConfig = ColumnAt(Array,moves[i][0][1]);
+                Array[moves[i][0][0]][moves[i][0][1]] = false;
+                Array[moves[i][1][0]][moves[i][0][1]] = true;
+                rearrange_moves[counter].endingConfig = ColumnAt(Array,moves[i][0][1]);
+                counter++;
+
+                rearrange_moves.push_back(RearrangementMove());
+                rearrange_moves[counter].row = true;
+                rearrange_moves[counter].dim = moves[i][1][0];
+                rearrange_moves[counter].startingConfig = Array[moves[i][1][0]];
+                Array[moves[i][1][0]][moves[i][0][1]] = false;
+                Array[moves[i][1][0]][moves[i][1][1]] = true;
+                rearrange_moves[counter].endingConfig = Array[moves[i][1][0]];
+                counter++;
+            }
+        }
+    }
+    return rearrange_moves;
 }
 
 int findNearestBank(vector<vector<bool>> Array, vector<int> vacancy){
