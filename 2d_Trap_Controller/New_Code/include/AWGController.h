@@ -39,7 +39,6 @@ public:
 	void disconnect();
 	void startStreaming();
 
-	bool loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 llBytesToCalculate);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
@@ -70,7 +69,7 @@ private:
     char                szBuffer[1024];     // a character buffer for any messages
   	ST_SPCM_CARDINFO    stCard;             // info structure of my card
   	void*              pvBuffer = NULL;
-		void* 						 tempBuffer = NULL;
+		void* 	  				 tempBuffer = NULL;
   	uint32              dwErr;
   	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
 
@@ -103,9 +102,13 @@ private:
 		char input;
 
 		bool setupSuccess;
+		bool success = true;
 
-		bool setupCard();
+		bool setupCard(output_mode mode);
 		void errorPrint(bool dwErr, string error);
+		bool loadSegmentDataBlock(vector<Waveform> waveforms, int64 llBytesToCalculate, uint32 dwSegmentIndex, uint32 amplitude );
+		void vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepIndex,
+		                      uint32 dwStepNextIndex, uint32 dwSegmentIndex, uint32 dwLoops, uint32 dwFlags);
 };
 
 #endif
