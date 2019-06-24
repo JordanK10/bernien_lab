@@ -10,7 +10,7 @@ AWGController::AWGController(bool shouldConnect, double sample_rate, output_mode
   //Initialize card and setup card if successful
   if (bSpcMInitCardByIdx(&stCard, 0)){
 	  setupCard();
-    changeMode(SINGLE);
+    changeMode(SEQUENCE);
     setupSuccess = true;
   }else{
     cout << "Could not connect";
@@ -44,10 +44,9 @@ bool AWGController::changeMode(output_mode mode){
   if( mode == SINGLE){
     bSpcMSetupModeRepStdLoops  (&stCard, 1, KILO_B(64), 0);
     return spcm_dwSetParam_i32 (stCard.hDrv, SPCM_X0_MODE, SPCM_XMODE_CONTOUTMARK);
-  }else if (mode == FIFO){
-    return bSpcMSetupModeRepFIFOSingle (&stCard, 1, 1024);
-  }
-  else{
+  }else if (mode == SEQUENCE){
+    return bSpcMSetupModeRepSequence(&stCard,2,2);
+  }else{
     printf("Mode selection invalid\n");
     return false;
   }
@@ -63,30 +62,50 @@ void AWGController::disconnect() {
 static int64 g_llOffset = 0;
 static int64 g_llXDiv = KILO_B(100);
 
-bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 llBytesToCalculate){
+bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 segSize, sin_mode wave){
 
   // Generate array of pointers to buffer memory
   int16* pnData = (int16*) pvBuffer;
   cout << "\n" << gain << "\n";
 
+  int scale; int seg;
+  if(wave == SIN2){
+    seg = 1;
+    scale = 1;
+  }else{
+    seg = 0;
+    scale = 0;
+  }
   vector<complex<float>> dataVecX = waveforms[0].dataVector;
   vector<complex<float>> dataVecY = waveforms[1].dataVector;
-  cout << endl;
-  ofstream myfile;
-  myfile.open ("example.txt");
+
   if(twoChen){
-    for (int64 i = 0; i <llSWBufSize/4; i++){
-      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain);
-      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain);
-      myfile << pnData[i*2] << endl;
+    for (int64 i = 0; i <segSize; i++){
+      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain*scale);
+      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain*scale);
     }
   }
   else{
-    for (int64 i = 0; i <llSWBufSize/2; i++){
+    for (int64 i = 0; i <segSize/2; i++){
       pnData[i] = (int16)(real(dataVecX[i%dataVecX.size()])*gain);
     }
   }
-  myfile.close();
+  cout << "Halfway. The Segsize is: " << segSize << endl;
+  // setup
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
+  cout << "Initial value: " <<dwErr << endl;
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, seg);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
+
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  81920);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
+
+  // write data to board (main) sample memory
+  spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, segSize*2);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
+
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
 
 	return true;
 }
@@ -101,21 +120,41 @@ bool AWGController::changeGain(int g){
   return true;
 }
 
+void vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepIndex,
+                      uint32 dwStepNextIndex, uint32 dwSegmentIndex, uint32 dwLoops, uint32 dwFlags)
+    {
+    uint32 dwErr =         0;
+    uint64 qwSequenceEntry = 0;
+
+    // setup register value
+    qwSequenceEntry = (dwFlags & ~SPCSEQ_LOOPMASK) | (dwLoops & SPCSEQ_LOOPMASK);
+    qwSequenceEntry <<= 32;
+    qwSequenceEntry |= ((dwStepNextIndex << 16)& SPCSEQ_NEXTSTEPMASK) | (dwSegmentIndex & SPCSEQ_SEGMENTMASK);
+
+    if (!dwErr) dwErr = spcm_dwSetParam_i64 (pstCard->hDrv, SPC_SEQMODE_STEPMEM0 + dwStepIndex, qwSequenceEntry);
+  }
+
+
 void AWGController::pushStaticWaveforms(vector<Waveform> waveforms) {
   // if (stCard.bSetError){
   //   return;
   // }
   // ------------------------------------------------------------------------
 	// allocate and setup the fifo buffer and fill it once with data
-	pvBuffer = pvAllocMemPageAligned((uint32)llSWBufSize);
+  int dataSize = (int16)(waveforms[0].dataVector.size());
+  cout << dataSize*8 << endl;
+	pvBuffer = pvAllocMemPageAligned((dataSize*8));
 	if (!pvBuffer){
 		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
     return;
   }
-
+  cout << "before\n";
   // for (i = 0; i < waveforms.size(); i++){
-  loadStaticDataBlock(waveforms,1,llSWBufSize);
+  loadStaticDataBlock(waveforms,1,dataSize*2,SIN1);
+  loadStaticDataBlock(waveforms,1,dataSize*2,SIN2);
 
+  cout << "after\n";
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_STARTSTEP, 0);
   if (!stCard.bSetError)
       {
       // we define the buffer for transfer and start the DMA transfer
@@ -132,8 +171,8 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms) {
       spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER0,0);
       spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER1,0);
 
-      spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, llSWBufSize);
-      spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+      vWriteStepEntry (&stCard,  0,  1,  0,      100000000000000,  0);
+      vWriteStepEntry (&stCard,  1,  0,  0,      100000000000000,  0);
 
       // check for error code
       if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer)){

@@ -24,6 +24,11 @@ enum output_mode{
 	SEQUENCE
 };
 
+enum sin_mode{
+	SIN1,
+	SIN2
+};
+
 using namespace std;
 
 extern double AWG_GAIN;
@@ -38,7 +43,7 @@ public:
 	void disconnect();
 	void startStreaming();
 
-	bool loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 llBytesToCalculate);
+	bool loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 llBytesToCalculate, sin_mode wave);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);
