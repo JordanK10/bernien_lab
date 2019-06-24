@@ -1,22 +1,16 @@
 #include "AWGController.h"
 #include <fstream>
 
-#define SIN_1    0 // standard
-#define SIN_2    1 // half
-
-
 // AWG Controller constructor
 AWGController::AWGController(bool shouldConnect, double sample_rate, output_mode mode, int sw_buf){
   //Set card parameters
   llSWBufSize = sw_buf;
   sampleRate = MEGA(sample_rate/(MEGA(1)));
 
-  // Read out used bytes per sample
-  lBytesPerSample = stCard.lBytesPerSample;
-
   //Initialize card and setup card if successful
   if (bSpcMInitCardByIdx(&stCard, 0)){
-	  setupCard(mode);
+	  setupCard();
+    changeMode(SEQUENCE);
     setupSuccess = true;
   }else{
     cout << "Could not connect";
@@ -25,14 +19,14 @@ AWGController::AWGController(bool shouldConnect, double sample_rate, output_mode
 }
 
 //Sets up parameters such as buffer information, clockrate, output channels, and mode
-bool AWGController::setupCard(output_mode mode){
+bool AWGController::setupCard(){
     //Print card info
     printf(pszSpcMPrintCardInfo(&stCard, szBuffer, sizeof(szBuffer)));
 
     //The hardware buffer is the length of the memory we write the wave to
     spcm_dwSetParam_i64(stCard.hDrv, SPC_DATA_OUTBUFSIZE, llHWBufSize);
     //Sets up the card for writing to memory
-    // spcm_dwSetParam_i32(stCard.hDrv, SPC_M2CMD, M2CMD_CARD_WRITESETUP);
+    spcm_dwSetParam_i32(stCard.hDrv, SPC_M2CMD, M2CMD_CARD_WRITESETUP);
     //Sets clockrate
     bSpcMSetupClockPLL (&stCard,  sampleRate, false);
     printf ("Sampling rate set to %.1lf MHz\n", (double) stCard.llSetSamplerate / MEGA(1));
@@ -40,20 +34,6 @@ bool AWGController::setupCard(output_mode mode){
     //Enables all channels
     for (int i=0; i < stCard.lMaxChannels; i++)
             bSpcMSetupAnalogOutputChannel (&stCard, i, 1000, 0, 0);
-    if(twoChen)
-      spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0 | CHANNEL1 );
-    else
-      spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0 );
-
-    spcm_dwSetParam_i32(stCard.hDrv, SPC_AMP0,2000);
-    spcm_dwSetParam_i32(stCard.hDrv, SPC_AMP1,2000);
-
-    spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER0,0);
-    spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER1,0);
-
-    changeMode(mode);
-
-    spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_STARTSTEP, 0);
 
     connected = true;
 
@@ -64,10 +44,8 @@ bool AWGController::changeMode(output_mode mode){
   if( mode == SINGLE){
     bSpcMSetupModeRepStdLoops  (&stCard, 1, KILO_B(64), 0);
     return spcm_dwSetParam_i32 (stCard.hDrv, SPCM_X0_MODE, SPCM_XMODE_CONTOUTMARK);
-  }else if (mode == FIFO){
-    return bSpcMSetupModeRepFIFOSingle (&stCard, 1, 1024);
   }else if (mode == SEQUENCE){
-    return  bSpcMSetupModeRepSequence(&stCard,1,2);
+    return bSpcMSetupModeRepSequence(&stCard,2,2);
   }else{
     printf("Mode selection invalid\n");
     return false;
@@ -84,48 +62,52 @@ void AWGController::disconnect() {
 static int64 g_llOffset = 0;
 static int64 g_llXDiv = KILO_B(100);
 
-bool AWGController::loadSegmentDataBlock(vector<Waveform> waveforms, int64 bufSize, uint32 dwSegmentIndex, uint32 amplitude ){
-
-  int amp;
-  if (amplitude==SIN_1)
-    amp = 1;
-  else
-    amp = 2;
+bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 segSize, sin_mode wave){
 
   // Generate array of pointers to buffer memory
   int16* pnData = (int16*) pvBuffer;
+  cout << "\n" << gain << "\n";
 
+  int scale; int seg;
+  if(wave == SIN2){
+    seg = 1;
+    scale = 1;
+  }else{
+    seg = 0;
+    scale = 0;
+  }
   vector<complex<float>> dataVecX = waveforms[0].dataVector;
   vector<complex<float>> dataVecY = waveforms[1].dataVector;
 
   if(twoChen){
-    for (int64 i = 0; i <bufSize/4; i++){
-      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain/amp);
-      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain/amp);
+    for (int64 i = 0; i <segSize; i++){
+      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain*scale);
+      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain*scale);
     }
   }
   else{
-    for (int64 i = 0; i <bufSize/2; i++){
+    for (int64 i = 0; i <segSize/2; i++){
       pnData[i] = (int16)(real(dataVecX[i%dataVecX.size()])*gain);
     }
   }
-
-
+  cout << "Halfway. The Segsize is: " << segSize << endl;
   // setup
-  if (!dwErr) dwErr = spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, dwSegmentIndex);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
+  cout << "Initial value: " <<dwErr << endl;
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, seg);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
 
-  if (!dwErr) dwErr = spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  llSWBufSize);
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  81920);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
 
   // write data to board (main) sample memory
-  if (!dwErr) dwErr = spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, llSWBufSize);
-  if (!dwErr) dwErr = spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+  spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, segSize*2);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
 
-  if(!dwErr)
-    return true;
-  else {
-    cout << (int)dwErr << endl;
-    return false;
-  }
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
+
+	return true;
 }
 
 int AWGController::getGain(){
@@ -138,9 +120,7 @@ bool AWGController::changeGain(int g){
   return true;
 }
 
-
-
-void AWGController::vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepIndex,
+void vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepIndex,
                       uint32 dwStepNextIndex, uint32 dwSegmentIndex, uint32 dwLoops, uint32 dwFlags)
     {
     uint32 dwErr =         0;
@@ -156,37 +136,47 @@ void AWGController::vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepInd
 
 
 void AWGController::pushStaticWaveforms(vector<Waveform> waveforms) {
-  if (stCard.bSetError){
-    return;
-  }
-
-  int buffer_size = (uint32)waveforms[0].dataVector.size();
-  int buffer_size_in_bytes = buffer_size * 2;
-	pvBuffer = pvAllocMemPageAligned((uint32)buffer_size);
+  // if (stCard.bSetError){
+  //   return;
+  // }
+  // ------------------------------------------------------------------------
+	// allocate and setup the fifo buffer and fill it once with data
+  int dataSize = (int16)(waveforms[0].dataVector.size());
+  cout << dataSize*8 << endl;
+	pvBuffer = pvAllocMemPageAligned((dataSize*8));
 	if (!pvBuffer){
 		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
     return;
   }
+  cout << "before\n";
+  // for (i = 0; i < waveforms.size(); i++){
+  loadStaticDataBlock(waveforms,1,dataSize*2,SIN1);
+  loadStaticDataBlock(waveforms,1,dataSize*2,SIN2);
 
-  if(success) success = loadSegmentDataBlock(waveforms,buffer_size,0,SIN_1);
-  if(success) success = loadSegmentDataBlock(waveforms,buffer_size,1,SIN_2);
-  if(success && !stCard.bSetError)
+  cout << "after\n";
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_STARTSTEP, 0);
+  if (!stCard.bSetError)
       {
       // we define the buffer for transfer and start the DMA transfer
       printf ("Starting the DMA transfer and waiting until data is in board memory\n");
 
-      vWriteStepEntry (&stCard,  0,  1,  SIN_1,      500000,  0);
-      vWriteStepEntry (&stCard,  1,  1,  SIN_2,      500000,  0);
+      if(twoChen)
+        spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0 | CHANNEL1 );
+      else
+        spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0 );
 
-      if (!dwErr) dwErr =spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, 0);
-      if (!dwErr) dwErr = spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE, llSWBufSize*lBytesPerSample);
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_AMP0,2000);
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_AMP1,2000);
 
-      if (!dwErr) dwErr = spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, buffer_size);
-      if (!dwErr) dwErr = spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER0,0);
+      spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER1,0);
+
+      vWriteStepEntry (&stCard,  0,  1,  0,      100000000000000,  0);
+      vWriteStepEntry (&stCard,  1,  0,  0,      100000000000000,  0);
 
       // check for error code
       if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer)){
-          vFreeMemPageAligned (pvBuffer, buffer_size);
+          vFreeMemPageAligned (pvBuffer, llSWBufSize);
           nSpcMErrorMessageStdOut (&stCard, szBuffer, false);
           printf( "...data transfer failed. Freeing memory\n");
       }else{
@@ -195,7 +185,7 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms) {
       }
     }else
       cout << "Error \n";
-    vFreeMemPageAligned (pvBuffer, (int32)buffer_size);
+    vFreeMemPageAligned (pvBuffer, (int32)llSWBufSize);
 
     return;
 
@@ -230,24 +220,7 @@ bool AWGController::isConnected() {
 }
 
 bool AWGController::run(int timeout, int channel){
-
-  int64 lStep = 0; // current step is Step#0
-  int64 llSegment = 0; // associated with data memory segment 0
-  int64 llLoop = 10; // Pattern will be repeated 10 times
-  int64 llNext = 1; // Next step is Step#1
-  int64 llCondition = SPCSEQ_ENDLOOPALWAYS; // Unconditionally leave current step
-  // combine all the parameters to one int64 bit value
-  int64 llValue = (llCondition << 32) | (llLoop << 32) | (llNext << 16) | (llSegment);
-  cout << spcm_dwSetParam_i64 (stCard.hDrv, SPC_SEQMODE_STEPMEM0 + lStep, llValue) << endl ;
-  // combine all the parameters to one int64 bit value
-  spcm_dwSetParam_i64 (stCard.hDrv, SPC_SEQMODE_STEPMEM0 + lStep, llValue);
-  lStep = 1; // current step is Step#1
-  llSegment = 1; // associated with data memory segment 1
-  llLoop = 1; // Pattern will be repeated once before condition is checked
-  llNext = 0; // Next step is Step#0
-  llCondition = SPCSEQ_ENDLOOPONTRIG; // Repeat current step until a trigger has occurred
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-
   if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szErrorText) != ERR_OK) {
     cout << (szErrorText); // print the error text
     return false;
@@ -258,17 +231,9 @@ bool AWGController::run(int timeout, int channel){
 
 //An experimental function to test fifo looping
 void AWGController::fifoLoop(int llLoops){
-  tempBuffer = pvAllocMemPageAligned((uint32)llSWBufSize);
-  int16* pnDataTemp = (int16*)tempBuffer;
-  int16* pnData = (int16*)pvBuffer;
-  for(int i=0; i<llSWBufSize/2;i++){
-    pnDataTemp[i] = pnData[i]*0.5;
-  }
-   spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, tempBuffer, llSWBufSize+1, llSWBufSize);
-  cout << endl <<spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)<<endl;
-  //spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_STOP);
-  //cout << endl << spcm_dwSetParam_i64 (stCard.hDrv, SPC_LOOPS,llLoops);
-  //spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_STOP);
+  cout << endl << spcm_dwSetParam_i64 (stCard.hDrv, SPC_LOOPS,llLoops);
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
 
 }
 
