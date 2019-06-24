@@ -5,7 +5,7 @@ spcm_lib_card.cpp                              (c) Spectrum GmbH , 01/2006
 
 **************************************************************************
 
-Supplies different common functions for C/C++ programs accessing the 
+Supplies different common functions for C/C++ programs accessing the
 SpcM driver interface. Feel free to use this source for own projects and
 modify it in any kind
 
@@ -118,7 +118,7 @@ bool bSpcMInitCardByName (ST_SPCM_CARDINFO *pstCardInfo, char* szDrvName)
     spcm_dwGetParam_i32 (pstCardInfo->hDrv, SPC_PCITYP,                 &pstCardInfo->lCardType);
     spcm_dwGetParam_i32 (pstCardInfo->hDrv, SPC_PCISERIALNO,            &pstCardInfo->lSerialNumber);
     spcm_dwGetParam_i32 (pstCardInfo->hDrv, SPC_PCIFEATURES,            &pstCardInfo->lFeatureMap);
-    spcm_dwGetParam_i32 (pstCardInfo->hDrv, SPC_PCIEXTFEATURES,         &pstCardInfo->lExtFeatureMap);    
+    spcm_dwGetParam_i32 (pstCardInfo->hDrv, SPC_PCIEXTFEATURES,         &pstCardInfo->lExtFeatureMap);
     spcm_dwGetParam_i64 (pstCardInfo->hDrv, SPC_PCIMEMSIZE,             &pstCardInfo->llInstMemBytes);
     spcm_dwGetParam_i64 (pstCardInfo->hDrv, SPC_MIINST_MINADCLOCK,      &pstCardInfo->llMinSamplerate);
     spcm_dwGetParam_i64 (pstCardInfo->hDrv, SPC_MIINST_MAXADCLOCK,      &pstCardInfo->llMaxSamplerate);
@@ -508,7 +508,7 @@ bSpcMSetupModeRecStdSingle: record standard mode single
 */
 
 bool bSpcMSetupModeRecStdSingle (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llMemSamples, int64 llPostSamples)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -542,7 +542,7 @@ bool bSpcMSetupModeRecFIFOSingle (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnab
         return false;
 
     uint32 dwError = ERR_OK;
-    
+
     // check for invalid block/loop combinations
     if ((llBlockToRec && !llLoopToRec) || (!llBlockToRec && llLoopToRec))
         {
@@ -577,7 +577,7 @@ bSpcMSetupModeRecStdAverage: record standard mode Average
 */
 
 bool bSpcMSetupModeRecStdAverage (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llMemSamples, int64 llSegmentSize, int64 llPostSamples, int32 lAverages)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -608,7 +608,7 @@ bSpcMSetupModeRecStdMulti: record standard mode Multiple Recording
 */
 
 bool bSpcMSetupModeRecStdMulti (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llMemSamples, int64 llSegmentSize, int64 llPostSamples)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -672,7 +672,7 @@ bool bSpcMSetupModeRecFIFOAverage (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEna
     if (!pstCardInfo)
         return false;
 
-    uint32 dwError = ERR_OK;    
+    uint32 dwError = ERR_OK;
 
     // setup the mode
     if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_CARDMODE,    SPC_REC_FIFO_AVERAGE);
@@ -834,7 +834,7 @@ bSpcMSetupModeRepStdSingle: replay standard mode single
 */
 
 bool bSpcMSetupModeRepStdSingle (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llMemSamples)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -863,7 +863,7 @@ bSpcMSetupModeRepStdLoops: replay standard mode looped
 */
 
 bool bSpcMSetupModeRepStdLoops (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llMemSamples, int64 llLoops)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -926,7 +926,7 @@ bool bSpcMSetupModeRepFIFOSingle (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnab
         return false;
 
     uint32 dwError = ERR_OK;
-    
+
     // check for invalid block/loop combinations
     if ((llBlockToRep && !llLoopToRep) || (!llBlockToRep && llLoopToRep))
         {
@@ -961,7 +961,7 @@ bSpcMSetupModeRepStdMulti: replay standard mode Multiple Replay
 */
 
 bool bSpcMSetupModeRepStdMulti (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llMemSamples, int64 llSegmentSize, int64 llSegmentsToRep)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -991,7 +991,7 @@ bSpcMSetupModeRepFIFOMulti: replay FIFO mode Multiple Replay
 */
 
 bool bSpcMSetupModeRepFIFOMulti (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llSegmentSize, int64 llSegmentsToRep)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -1020,7 +1020,7 @@ bSpcMSetupModeRepStdGate: replay standard mode Gated Replay
 */
 
 bool bSpcMSetupModeRepStdGate (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llMemSamples, int64 llGatesToRep)
-    {   
+    {
        if (!pstCardInfo)
         return false;
 
@@ -1049,7 +1049,7 @@ bSpcMSetupModeRepFIFOGate: replay FIFO mode Gated Replay
 */
 
 bool bSpcMSetupModeRepFIFOGate (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, int64 llGatesToRep)
-    {   
+    {
        if (!pstCardInfo)
         return false;
 
@@ -1077,7 +1077,7 @@ bSpcMSetupModeRepSequence: replay sequence mode
 */
 
 bool bSpcMSetupModeRepSequence (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, uint32 dwMaxSegments)
-    {   
+    {
     if (!pstCardInfo)
         return false;
 
@@ -1085,7 +1085,7 @@ bool bSpcMSetupModeRepSequence (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable
 
     // setup the mode
     if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_CARDMODE,            SPC_REP_STD_SEQUENCE);
-    if (!dwError) dwError = spcm_dwSetParam_i64 (pstCardInfo->hDrv, SPC_CHENABLE,            qwChEnable);
+    // if (!dwError) dwError = spcm_dwSetParam_i64 (pstCardInfo->hDrv, SPC_CHENABLE,            qwChEnable);
     if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_SEQMODE_MAXSEGMENTS, dwMaxSegments);
 
     // store some information in the structure
@@ -1186,7 +1186,7 @@ bool bSpcMSetupClockExternal (ST_SPCM_CARDINFO *pstCardInfo, int32 lExtRange, bo
     uint32 dwError = ERR_OK;
 
     if (lDivider > 1)
-        if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_CLOCKMODE, SPC_CM_EXTDIVIDER);    
+        if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_CLOCKMODE, SPC_CM_EXTDIVIDER);
     else
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_CLOCKMODE, SPC_CM_EXTERNAL);
 
@@ -1522,7 +1522,7 @@ bool bSpcMSetupTrigChannel (ST_SPCM_CARDINFO *pstCardInfo, int32 lChannel, int32
 
 /*
 **************************************************************************
-bSpcMSetupTrigMask: this function sets the trigger masks (bSingleSrc 
+bSpcMSetupTrigMask: this function sets the trigger masks (bSingleSrc
 of other commands must be false to use this)
 **************************************************************************
 */
@@ -1654,11 +1654,11 @@ bool bSpcMSetupAnalogOutputChannel (ST_SPCM_CARDINFO *pstCardInfo, int32 lChanne
     // Check for programmable offset
     if (pstCardInfo->uCfg.stAO.bOffsetProgrammable)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_OFFS0 + lChannel * (SPC_OFFS1 - SPC_OFFS0), lOutputOffset);
-    
+
     // Check for programmable filters
     if (pstCardInfo->uCfg.stAO.bFilterAvailable)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_FILTER0 + lChannel * (SPC_FILTER1 - SPC_FILTER0), lFilter);
-    
+
     // Check for programmable stop levels
     if (pstCardInfo->uCfg.stAO.bStopLevelProgrammable)
         if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_CH0_STOPLEVEL + lChannel * (SPC_CH1_STOPLEVEL - SPC_CH0_STOPLEVEL), lStopMode);
@@ -1743,7 +1743,7 @@ bool bSpcMSetupDigitalInput (ST_SPCM_CARDINFO *pstCardInfo,    int32 lGroup, boo
 
 /*
 **************************************************************************
-bSpcMSetupTimestamp: set up the timestamp mode and performs a 
+bSpcMSetupTimestamp: set up the timestamp mode and performs a
 synchronisation with refernce clock if that mode is activated. Checks for
 BASEXIO option if one wants to use reference clock mode
 **************************************************************************
@@ -1764,7 +1764,7 @@ bool bSpcMSetupTimestamp (ST_SPCM_CARDINFO *pstCardInfo, int32 lMode, uint32 dwR
         return false;
         }
 
-    // set the timestamp mode 
+    // set the timestamp mode
     if (!dwError) dwError = spcm_dwSetParam_i32 (pstCardInfo->hDrv, SPC_TIMESTAMP_CMD, lMode);
 
     // in ref clock mode we now try the synchronisation with external clock
@@ -1783,4 +1783,3 @@ bool bSpcMSetupTimestamp (ST_SPCM_CARDINFO *pstCardInfo, int32 lMode, uint32 dwR
 
     return bSpcMCheckSetError (dwError, pstCardInfo);
     }
-
