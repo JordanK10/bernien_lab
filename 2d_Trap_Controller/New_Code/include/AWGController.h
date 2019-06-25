@@ -43,7 +43,7 @@ public:
 	void disconnect();
 	void startStreaming();
 
-	bool loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 llBytesToCalculate, sin_mode wave);
+	bool loadStaticDataBlock(vector<Waveform> waveforms, int channel, int llBytesToCalculate, sin_mode wave);
 
 	void pushWaveform(Waveform waveform);
 	void pushWaveform(Waveform *waveform);

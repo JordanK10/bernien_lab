@@ -1,6 +1,9 @@
 #include "AWGController.h"
 #include <fstream>
 
+#define USING_EXTERNAL_TRIGGER  0   // wait for keystroke to switch to next sequence group
+//#define USING_EXTERNAL_TRIGGER  1   // use external trigger to switch to next sequence group
+
 // AWG Controller constructor
 AWGController::AWGController(bool shouldConnect, double sample_rate, output_mode mode, int sw_buf){
   //Set card parameters
@@ -62,11 +65,10 @@ void AWGController::disconnect() {
 static int64 g_llOffset = 0;
 static int64 g_llXDiv = KILO_B(100);
 
-bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel, int64 segSize, sin_mode wave){
+bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel, int segSize, sin_mode wave){
 
   // Generate array of pointers to buffer memory
   int16* pnData = (int16*) pvBuffer;
-  cout << "\n" << gain << "\n";
 
   int scale; int seg;
   if(wave == SIN2){
@@ -74,15 +76,16 @@ bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel,
     scale = 1;
   }else{
     seg = 0;
-    scale = 0;
+    scale = 2;
   }
   vector<complex<float>> dataVecX = waveforms[0].dataVector;
   vector<complex<float>> dataVecY = waveforms[1].dataVector;
 
   if(twoChen){
+    cout << segSize << endl;
     for (int64 i = 0; i <segSize; i++){
-      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain*scale);
-      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain*scale);
+      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain/scale);
+      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain/scale);
     }
   }
   else{
@@ -92,20 +95,15 @@ bool AWGController::loadStaticDataBlock(vector<Waveform> waveforms, int channel,
   }
   cout << "Halfway. The Segsize is: " << segSize << endl;
   // setup
-  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
-  cout << "Initial value: " <<dwErr << endl;
+  cout << seg << endl;
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, seg);
-  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
 
-  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  81920);
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  segSize);
   cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
 
   // write data to board (main) sample memory
-  spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, segSize*2);
-  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
-
+  spcm_dwDefTransfer_i64 (stCard.hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 0, pvBuffer, 0, segSize*stCard.lBytesPerSample);
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
-  cout << spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer) << endl;
 
 	return true;
 }
@@ -141,9 +139,8 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms) {
   // }
   // ------------------------------------------------------------------------
 	// allocate and setup the fifo buffer and fill it once with data
-  int dataSize = (int16)(waveforms[0].dataVector.size());
-  cout << dataSize*8 << endl;
-	pvBuffer = pvAllocMemPageAligned((dataSize*8));
+  int dataSize = waveforms[0].dataVector.size();
+	pvBuffer = pvAllocMemPageAligned(dataSize*8);
 	if (!pvBuffer){
 		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
     return;
@@ -171,8 +168,8 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms) {
       spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER0,0);
       spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER1,0);
 
-      vWriteStepEntry (&stCard,  0,  1,  0,      100000000000000,  0);
-      vWriteStepEntry (&stCard,  1,  0,  0,      100000000000000,  0);
+      vWriteStepEntry (&stCard,  0,  1,  SIN1,      1,  SPCSEQ_ENDLOOPALWAYS);
+      vWriteStepEntry (&stCard,  1,  0,  SIN2,      1,  SPCSEQ_ENDLOOPALWAYS);
 
       // check for error code
       if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer)){
