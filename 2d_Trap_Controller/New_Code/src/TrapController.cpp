@@ -106,19 +106,19 @@ bool TrapController::sanitizeTraps(double new_gain,
 			return false;
 		}
 
-		// double freq = traps[i].frequency / 1.0E6;
-		// if (freq < -51 || freq > 51) {
-		// 	cout << "Trap #" << i << ": frequency " << freq << " out of bounds [-51, 51]" << endl;
-		// 	return false;
-		// }
+		double freq = traps[i].frequency / 1.0E6;
+		if (freq < 75 || freq > 105) {
+			cout << "Trap #" << i << ": frequency " << freq << " out of bounds [75, 105]" << endl;
+			return false;
+		}
 
 		double amp = traps[i].amplitude;
-		// if (amp < 0 || amp > 0.5) {
-		// 	cout << "Trap #" << i << ": amplitude" << amp << " out of bounds [0, 0.5]" << endl;
-		// 	return false;
-		// }
+		if (amp < 0 || amp > 1) {
+			cout << "Trap #" << i << ": amplitude" << amp << " out of bounds [0, 1]" << endl;
+			return false;
+		}
 
-		double powerInMode = amp * amp * 5300; // Conversion from amplitude -> RF power
+		double powerInMode = amp * amp; // Conversion from amplitude -> RF power
 		totalPower += powerInMode;
 		totalAmplitude += amp;
 	}
@@ -146,8 +146,7 @@ bool TrapController::sanitizeTraps(double new_gain,
 }
 
 void TrapController::printTraps() {
-	// cout << "SDR center frequency: " << centerFrequency << " MHz" << endl;
-	// cout << "SDR gain: " << sdr_gain << endl;
+
 	cout << traps.size() << "\n";
 	for (int i = 0; i < traps.size(); i++) {
 		cout << i << " " << traps[i].frequency << " " << traps[i].amplitude  << " " << traps[i].phase << endl;

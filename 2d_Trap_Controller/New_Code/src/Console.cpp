@@ -26,7 +26,6 @@ std::vector<string> parseCommand(string &cmd) {
 		}
 	}
 
-
 	return tokens;
 }
 
@@ -219,7 +218,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			std::vector<bool> underflowRecords;
 
 			// We push the static waveforms to the static traps
-			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform());
+			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
 
 			// Keeping track of number of rearrangements
 			int numRearrangementsPerformed = 0;
@@ -322,7 +321,7 @@ void processAWGInput(vector<string> &commandTokens, TrapControllerHandler &trapC
 		if (awgController.isConnected()) {
 			cout << "AWG already connected!" << endl;
 		} else {
-			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform());
+			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
 		}
 	} else if (commandTokens[1].compare("disconnect") == 0) {
 		if (awgController.isConnected()) {
@@ -358,25 +357,24 @@ void processAWGInput(vector<string> &commandTokens, TrapControllerHandler &trapC
 			string filename = commandTokens[2];
 			Waveform w(filename);
 
-			awgController.pushWaveform(w);
+			// awgController.pushWaveform(w);
 		} else {
 			cout << "Usage: awg load_waveform [filename]" << endl;
 			cout << "NOTE: Please make sure that the waveform is sanitized" << endl;
 			cout << " and that the gain is good before loading a waveform." << endl;
 		}
 	} else if (commandTokens[1].compare("push_waveform") == 0) {
-		awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform());
-	} else if (commandTokens[1].compare("switch") == 0) {
+		awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
+	} else if (commandTokens[1].compare("push_trans_waveform") == 0) {
+		awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),false);
+	} else if (commandTokens[1].compare("trigger") == 0) {
+		awgController.triggerSequence();
+	}else if (commandTokens[1].compare("switch") == 0) {
 		if(commandTokens[2].compare("fifo") == 0)
 			awgController.changeMode(FIFO);
 		else if(commandTokens[2].compare("single") == 0)
 			awgController.changeMode(SINGLE);
-	} else if (commandTokens[1].compare("fifo_test") == 0) {
-		cout << "How many loops? ";
-		string loops; cin >> loops;
-		awgController.fifoLoop(stoi(loops));
-		return;
-	}else if (commandTokens[1].compare("run") == 0) {
+	} else if (commandTokens[1].compare("run") == 0) {
 		awgController.run(0,1);
 		return;
 	} else if (commandTokens[1].compare("stop") == 0){
@@ -506,7 +504,7 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				// If we loaded the file, then no need to generate a new waveform.
 				if (loadedPrecomputedStaticWaveform && awgController.isConnected()) {
 					cout << "Loaded pre-computed static waveform." << endl;
-					awgController.pushWaveform(static_waveform);
+					// awgController.pushWaveform(static_waveform);
 				} else {
 					cout << "No pre-computed static waveform found" << endl;
 					waveformShouldChange = true;
@@ -608,7 +606,7 @@ bool process2DInput(std::vector<string> &commandTokens, TrapControllerHandler &t
 	if (mainCommand.compare("traps") == 0) {
 		bool waveformShouldBeRecalculated = processTrapsInput(commandTokens, trapControllerHandler, awgController);
 		if (waveformShouldBeRecalculated && awgController.isConnected()) {
-			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform());
+			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
 			// awgController.pushWaveTable(trapControllerHandler.statHandler[0].getWaveTable());
 
 		}

@@ -960,7 +960,7 @@ bool bSpcMSetupModeRepFIFOSingle (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnab
 
 bool bSpcMSetupModeRepSequence (ST_SPCM_CARDINFO *pstCardInfo, uint64 qwChEnable, uint32 dwMaxSegments)
     {
-    if (!pstCardInfo)
+      if (!pstCardInfo)
         return false;
 
     uint32 dwError = ERR_OK;
