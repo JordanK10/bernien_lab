@@ -24,15 +24,16 @@ enum output_mode{
 	SEQUENCE
 };
 
-enum sin_mode{
-	SIN1,
-	SIN2
+enum signal_type{
+	STATIC,
+	TRANS,
+	TRANS_EMPTY,
+	TRANS_FULL
 };
 
 using namespace std;
 
 extern double AWG_GAIN;
-
 
 class AWGController{
 
@@ -43,31 +44,22 @@ public:
 	void disconnect();
 	void startStreaming();
 
-	bool loadStaticDataBlock(vector<Waveform> waveforms, int channel, int llBytesToCalculate, sin_mode wave);
-
-	void pushWaveform(Waveform waveform);
-	void pushWaveform(Waveform *waveform);
-
-	void pushWaveform(std::vector<Waveform> waveform);
+	bool loadStaticDataBlock(vector<Waveform> waveforms, int segSize, signal_type data);
 
 	void pushWaveTable(std::vector<std::complex<float>> waveform);
 
 	bool changeMode(output_mode mode);
 
-	int getGain();
-	bool changeGain(int gain);
+	float getGain();
+	bool changeGain(float gain);
 
-	void pushStaticWaveforms(vector<Waveform> waveforms);
-	void pushWaveforms(vector<Waveform *> waveforms);
+	void pushStaticWaveforms(vector<Waveform> waveforms, bool first_push);
+	void triggerSequence();
 
 	bool isConnected();
 
 	bool run(int timeout,int channel);
-	void fifoLoop(int loops);
 	void stop();
-
-	// drv_handle hDrv;
-
 
 private:
 
@@ -88,7 +80,8 @@ private:
 
     double sampleRate;
 
-    int gain = 32761;
+    float gain = 32761.;
+		float base_gain = 32761.;
 
     bool connected = false;
     bool shouldDisconnect;
@@ -110,6 +103,8 @@ private:
 
 		bool setupCard();
 		void errorPrint(bool dwErr, string error);
+		void vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepIndex,
+		                      uint32 dwStepNextIndex, uint32 dwSegmentIndex, uint32 dwLoops, uint32 dwFlags);
 };
 
 #endif
