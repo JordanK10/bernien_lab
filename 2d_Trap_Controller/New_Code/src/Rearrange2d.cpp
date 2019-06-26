@@ -433,7 +433,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     //run the balance function. This only happens for a standard, and not rectangular, BC since the rectangular row range
     //is the whole hight of the array
     if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
-        for(int kevin=0; kevin<ArrayDim; kevin++){
+        for(int z=0; z<ArrayDim; z++){
             atoms = 0;
             for(j = row_y; j<=row_z; j++){
                 atoms += RowTotals[j+1];
@@ -442,9 +442,9 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
                 check = true;
                 break;
             }
-            tempCol = ColumnAt(Array,kevin); // Extract desired column
-            compressedCol = CompressRow(tempCol,row_y,row_z,ColTotals[kevin+1]);
-            Array = assignCol(Array,compressedCol,kevin);
+            tempCol = ColumnAt(Array,z); // Extract desired column
+            compressedCol = CompressRow(tempCol,row_y,row_z,ColTotals[z+1]);
+            Array = assignCol(Array,compressedCol,z);
 
             // Push back column and compressed column
             RowTotals = RowSum(Array); // Recalculate row totals
