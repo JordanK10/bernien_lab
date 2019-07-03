@@ -560,7 +560,7 @@ for ending_filename in [
     amplitude_landscape = create_amplitude_landscape("%s.txt" %filename, should_smooth=False);
 # # precomputedExponential = precomputeExponential();
 
-    duration = 0.003
+    duration = 0.05
 
 
     write_static_waveform(ending_filename, ending_freqs, ending_amps, ending_phases, 0.001) #Always should use 1ms duration. # SHOULD RE-ENABLE
