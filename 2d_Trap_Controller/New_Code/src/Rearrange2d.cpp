@@ -19,6 +19,33 @@ void setTimeOut(){
     cin >> timeOut;
 }
 
+vector<int> one_d_rearrange(vector<bool> start, vector<bool> ending){
+    vector<int> endingConfig;
+    vector<int> orderedEndingSites;
+    for(int i = 0;i<ending.size();i++){
+        if(ending[i]){
+            orderedEndingSites.push_back(i);
+        }
+    }
+    int j = 0;
+    for(int i = 0;i<start.size();i++){
+        if(start[i]){
+            endingConfig.push_back(orderedEndingSites[j]);
+            j ++;
+        }else{
+            endingConfig.push_back(-1);
+        }
+    }
+    return endingConfig;
+}
+
+void convert_ending_config(vector<RearrangementMove> &moves,vector<vector<bool>> endings){
+    cout << "here" << endl;
+    for(int i = 0;i<moves.size();i++){
+        moves[i].endingConfig = one_d_rearrange(moves[i].startingConfig,endings[i]);
+    }
+}
+
 void printArray(vector<vector<bool>> Array){
   int d1 = Array.size();
   int d2 = Array[0].size();
@@ -299,6 +326,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     int g_counter = 0;
     vector<vector<bool>> startArray = Array;
     vector<RearrangementMove> moves;
+    vector<vector<bool>> endings;
     int ArrayDim = Array.size();
     vector<int> RowTotals = RowSum(Array);
     int atoms = RowTotals[0];
@@ -309,6 +337,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
             return moves;
         }
     }
+
     int TargetDim = sqrt(atoms);
 
     int col_y;
@@ -422,7 +451,6 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         col_z = col_y + TargetDim - 1;
     }
 
-
         vector<bool> tempCol;
         vector<bool> compressedCol;
         bool check = false;
@@ -432,7 +460,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     //this iterates through all the columns, compressing them until there are enough atoms in the spcified row range to
     //run the balance function. This only happens for a standard, and not rectangular, BC since the rectangular row range
     //is the whole hight of the array
-    if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
+ if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
         for(int z=0; z<ArrayDim; z++){
             atoms = 0;
             for(j = row_y; j<=row_z; j++){
@@ -507,7 +535,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
             moves[g_counter].startingConfig = start;
             moves[g_counter].dim = s;
             moves[g_counter].row = false;
-            moves[g_counter].endingConfig = ending;
+            endings.push_back(ending);
             g_counter ++;
         }
     }
@@ -520,13 +548,14 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         moves[g_counter].dim = i;
         moves[g_counter].row = true;
         moves[g_counter].startingConfig = Array[i];
-        moves[g_counter].endingConfig = CompressRow(Array[i],col_y,col_z,RowTotals[i + 1]);
+        endings.push_back(CompressRow(Array[i],col_y,col_z,RowTotals[i + 1]));
 
         Array[i] = CompressRow(Array[i],col_y,col_z,RowTotals[i + 1]);
 
         i++;
         g_counter++;
     }
+/*
     vector<RearrangementMove> bankMoves;
     if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
         bankMoves = rectBank(Array);
@@ -537,10 +566,14 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
             cout << "Cannot Bank Centered Array" << endl;
       }
     }
-    moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
 
+    moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
+*/
+    convert_ending_config(moves,endings);
 return moves;
 }
+
+/*
 
 ///////////////////////////HUNGARIAN///////////////////////////////////////
 
@@ -1441,14 +1474,13 @@ bool detectVacancies(vector<vector<int>> &vacant,vector<vector<bool>> Array)
             if(!Array[i][j] && i>=RowRange1 && i <= RowRange2 && j>=ColRange1 && j<= ColRange2){
                 vacant.push_back({i,j});
             }
-            if(!Array[i][j]){
-                for(int m = 0; m<bankLocations.size(); m++){
-                    if(bankLocations[m][0] == i && bankLocations[m][1] == j){
-                        bankLocations.erase(bankLocations.begin() + m);
-                        break;
-                    }
-                }
-            }
+        }
+    }
+
+
+    for(int m = 0; m<bankLocations.size(); m++){
+        if(!Array[bankLocations[m][0]][bankLocations[m][1]]){
+            bankLocations.erase(bankLocations.begin() + m);
         }
     }
     if(vacant.size() == 0){
@@ -1614,7 +1646,6 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
         }
     }
 
-
     vector<vector<vector<int>>> ordered_moves;
 
     int j = 0;
@@ -1626,7 +1657,9 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
         }
     }
 
-    for(i = 0;i<ordered_moves.size();i++){
+
+    int n = ordered_moves.size();
+    for(i = 0;i<n;i++){
     if(!Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]]){
         if(ordered_moves[i][0][0] == ordered_moves[i][1][0]){
             moves.push_back(RearrangementMove());
@@ -1672,7 +1705,8 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
                 Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
                 moves[counter].endingConfig = Array[ordered_moves[i][1][0]];
                 counter ++;
-            }else{
+            }
+            if(Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] == false){
                 //row first
                 moves.push_back(RearrangementMove());
                 moves[counter].row = true;
@@ -1692,6 +1726,11 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
                 Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
                 moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][1][1]);
                 counter ++;
+            }
+            if(Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] == true && Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] == true){
+                ordered_moves.push_back(ordered_moves[i]);
+              //  cout << ordered_moves[i][1][0] << " " << ordered_moves[i][1][1] << endl;
+                if(i != n-1){n ++;}else{cout << "prob!" << endl;}
             }
         }
     }
@@ -1901,16 +1940,20 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
 
 //////////////////////////END///////////////////////////////////////////////
 
-
+*/
 vector<RearrangementMove> rearrange(vector<vector<bool>> &Array, rearrange_method method,rearrange_mode mode)
 {
     if(method == BALANCE_COMPRESS){
         return BalanceCompressAlg(Array,mode);
     }
+/*
     if(method == HUNGARIAN){
         return compute(Array,mode);
     }
     if(method == DROP_IT_LIKE_ITS_HOT){
         return DropItLikeItsHot(Array);
     }
+*/
 }
+
+/////////////////////////DONE WITH REARRANGE2D.CPP/////////////////////////////////////////////////
