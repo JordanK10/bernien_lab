@@ -27,21 +27,24 @@ vector<int> one_d_rearrange(vector<bool> start, vector<bool> ending){
             orderedEndingSites.push_back(i);
         }
     }
+    cout << "yo" << endl;
     int j = 0;
     for(int i = 0;i<start.size();i++){
-        if(start[i]){
+        if(start[i] && j<orderedEndingSites.size()){
             endingConfig.push_back(orderedEndingSites[j]);
             j ++;
         }else{
             endingConfig.push_back(-1);
         }
     }
+    cout << "here2" << endl;
     return endingConfig;
 }
 
 void convert_ending_config(vector<RearrangementMove> &moves,vector<vector<bool>> endings){
     cout << "here" << endl;
     for(int i = 0;i<moves.size();i++){
+        cout << "here1" << endl;
         moves[i].endingConfig = one_d_rearrange(moves[i].startingConfig,endings[i]);
     }
 }
@@ -555,7 +558,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         i++;
         g_counter++;
     }
-/*
+    cout << "here" << endl;
     vector<RearrangementMove> bankMoves;
     if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
         bankMoves = rectBank(Array);
@@ -567,13 +570,13 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
       }
     }
 
-    moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
-*/
     convert_ending_config(moves,endings);
+    moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
+
+    cout << "finishedd" << endl;
 return moves;
 }
 
-/*
 
 ///////////////////////////HUNGARIAN///////////////////////////////////////
 
@@ -1235,6 +1238,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
     int moveNumber = ordered_moves.size();
     int counter  = 0;
     vector<RearrangementMove> rearrange_moves;
+    vector<vector<bool>> endings;
     for(i = 0;i<moveNumber;i++){
         if(ordered_moves[i][0][0] == ordered_moves[i][1][0]){
             rearrange_moves.push_back(RearrangementMove());
@@ -1243,7 +1247,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
             rearrange_moves[counter].startingConfig = Matrix[ordered_moves[i][0][0]];
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Matrix[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = Matrix[ordered_moves[i][0][0]];
+            endings.push_back(Matrix[ordered_moves[i][0][0]]);
             counter++;
         }
         if(ordered_moves[i][0][1] == ordered_moves[i][1][1]){
@@ -1253,7 +1257,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
             rearrange_moves[counter].startingConfig = ColumnAt(Matrix,ordered_moves[i][0][1]);
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Matrix[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = ColumnAt(Matrix,ordered_moves[i][0][1]);
+            endings.push_back(ColumnAt(Matrix,ordered_moves[i][0][1]));
             counter++;
         }
         if(ordered_moves[i][0][1] != ordered_moves[i][1][1] && ordered_moves[i][0][0] != ordered_moves[i][1][0]){
@@ -1266,7 +1270,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
             rearrange_moves[counter].startingConfig = Matrix[ordered_moves[i][0][0]];
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = Matrix[ordered_moves[i][0][0]];
+            endings.push_back(Matrix[ordered_moves[i][0][0]]);
             counter++;
 
             rearrange_moves.push_back(RearrangementMove());
@@ -1275,10 +1279,11 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
             rearrange_moves[counter].startingConfig = ColumnAt(Matrix,ordered_moves[i][1][1]);
             Matrix[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = false;
             Matrix[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = ColumnAt(Matrix,ordered_moves[i][1][1]);
+            endings.push_back(ColumnAt(Matrix,ordered_moves[i][1][1]));
             counter++;
         }
     }
+    convert_ending_config(rearrange_moves,endings);
     vector<RearrangementMove> bankMoves = bank(Matrix);
     rearrange_moves.insert(rearrange_moves.end(),bankMoves.begin(),bankMoves.end());
     return rearrange_moves;
@@ -1434,9 +1439,9 @@ vector<RearrangementMove> DropItLikeItsHot(vector<vector<bool>> &Array){
     vector<RearrangementMove> moves;
     if(!timedOut){
         //initialize a nullRow of all zeros
-        vector<bool> nullRow;
+        vector<int> nullRow;
         for(int i = 0;i<Array.size();i++){
-            nullRow.push_back(false);
+            nullRow.push_back(-1);
         }
         //push back null rows for every row to be deleted, leaving just the disjoint array
         for(int i = 0;i<Array.size();i++){
@@ -1657,7 +1662,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
         }
     }
 
-
+    vector<vector<bool>> endings;
     int n = ordered_moves.size();
     for(i = 0;i<n;i++){
     if(!Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]]){
@@ -1668,7 +1673,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             moves[counter].startingConfig = Array[ordered_moves[i][0][0]];
             Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-            moves[counter].endingConfig = Array[ordered_moves[i][0][0]];
+            endings.push_back(Array[ordered_moves[i][0][0]]);
             counter ++;
 
         }
@@ -1679,7 +1684,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
             moves[counter].startingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
             Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
             Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-            moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
+            endings.push_back(ColumnAt(Array,ordered_moves[i][0][1]));
             counter ++;
 
         }
@@ -1693,7 +1698,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
                 moves[counter].startingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
                 Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
                 Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] = true;
-                moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][0][1]);
+                endings.push_back(ColumnAt(Array,ordered_moves[i][0][1]));
                 counter ++;
 
                 //row move second
@@ -1703,7 +1708,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
                 moves[counter].startingConfig = Array[ordered_moves[i][1][0]];
                 Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] = false;
                 Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-                moves[counter].endingConfig = Array[ordered_moves[i][1][0]];
+                endings.push_back(Array[ordered_moves[i][1][0]]);
                 counter ++;
             }
             if(Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] == false){
@@ -1714,7 +1719,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
                 moves[counter].startingConfig = Array[ordered_moves[i][0][0]];
                 Array[ordered_moves[i][0][0]][ordered_moves[i][0][1]] = false;
                 Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = true;
-                moves[counter].endingConfig = Array[ordered_moves[i][0][0]];
+                endings.push_back(Array[ordered_moves[i][0][0]]);
                 counter ++;
 
                 //col second
@@ -1724,7 +1729,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
                 moves[counter].startingConfig = ColumnAt(Array,ordered_moves[i][1][1]);
                 Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] = false;
                 Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]] = true;
-                moves[counter].endingConfig = ColumnAt(Array,ordered_moves[i][1][1]);
+                endings.push_back(ColumnAt(Array,ordered_moves[i][1][1]));
                 counter ++;
             }
             if(Array[ordered_moves[i][0][0]][ordered_moves[i][1][1]] == true && Array[ordered_moves[i][1][0]][ordered_moves[i][0][1]] == true){
@@ -1735,6 +1740,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
         }
     }
     }
+    convert_ending_config(moves,endings);
     return moves;
 }
 
@@ -1806,6 +1812,7 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
         j ++;
     }
     int counter = 0;
+    vector<vector<bool>> endings;
     for(int i = 0;i<moves.size();i++){
         if(moves[i][0][0] == moves[i][1][0]){
             rearrange_moves.push_back(RearrangementMove());
@@ -1814,7 +1821,7 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
             rearrange_moves[counter].startingConfig = Array[moves[i][0][0]];
             Array[moves[i][0][0]][moves[i][0][1]] = false;
             Array[moves[i][1][0]][moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = Array[moves[i][0][0]];
+            endings.push_back(Array[moves[i][0][0]]);
             counter++;
         }
         if(moves[i][0][1] == moves[i][1][1]){
@@ -1824,7 +1831,7 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
             rearrange_moves[counter].startingConfig = ColumnAt(Array,moves[i][0][1]);
             Array[moves[i][0][0]][moves[i][0][1]] = false;
             Array[moves[i][1][0]][moves[i][1][1]] = true;
-            rearrange_moves[counter].endingConfig = ColumnAt(Array,moves[i][0][1]);
+            endings.push_back(ColumnAt(Array,moves[i][0][1]));
             counter++;
         }
         if(moves[i][0][1] != moves[i][1][1] && moves[i][0][0] != moves[i][1][0]){
@@ -1836,7 +1843,7 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
                 rearrange_moves[counter].startingConfig = Array[moves[i][0][0]];
                 Array[moves[i][0][0]][moves[i][0][1]] = false;
                 Array[moves[i][0][0]][moves[i][1][1]] = true;
-                rearrange_moves[counter].endingConfig = Array[moves[i][0][0]];
+                endings.push_back(Array[moves[i][0][0]]);
                 counter++;
 
                 rearrange_moves.push_back(RearrangementMove());
@@ -1845,7 +1852,7 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
                 rearrange_moves[counter].startingConfig = ColumnAt(Array,moves[i][1][1]);
                 Array[moves[i][0][0]][moves[i][1][1]] = false;
                 Array[moves[i][1][0]][moves[i][1][1]] = true;
-                rearrange_moves[counter].endingConfig = ColumnAt(Array,moves[i][1][1]);
+                endings.push_back(ColumnAt(Array,moves[i][1][1]));
                 counter++;
             }else{
                 rearrange_moves.push_back(RearrangementMove());
@@ -1854,7 +1861,7 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
                 rearrange_moves[counter].startingConfig = ColumnAt(Array,moves[i][0][1]);
                 Array[moves[i][0][0]][moves[i][0][1]] = false;
                 Array[moves[i][1][0]][moves[i][0][1]] = true;
-                rearrange_moves[counter].endingConfig = ColumnAt(Array,moves[i][0][1]);
+                endings.push_back(ColumnAt(Array,moves[i][0][1]));
                 counter++;
 
                 rearrange_moves.push_back(RearrangementMove());
@@ -1863,11 +1870,12 @@ vector<RearrangementMove> rectBank(vector<vector<bool>> &Array){
                 rearrange_moves[counter].startingConfig = Array[moves[i][1][0]];
                 Array[moves[i][1][0]][moves[i][0][1]] = false;
                 Array[moves[i][1][0]][moves[i][1][1]] = true;
-                rearrange_moves[counter].endingConfig = Array[moves[i][1][0]];
+                endings.push_back(Array[moves[i][1][0]]);
                 counter++;
             }
         }
     }
+    convert_ending_config(rearrange_moves,endings);
     return rearrange_moves;
 }
 
@@ -1894,6 +1902,7 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
     int index;
     vector<vector<int>> vacant;
     vector<int> rowTotals = RowSum(Array);
+    vector<vector<bool>> endings;
     if(detectVacancies(vacant,Array)){
         for(int m = 0; m<vacant.size(); m++){
             index = findNearestBank(Array, vacant[m]);
@@ -1905,7 +1914,7 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
                 moves[counter].startingConfig = ColumnAt(Array,vacant[m][1]);
                 Array[bankLocations[index][0]][bankLocations[index][1]] = false;
                 Array[vacant[m][0]][vacant[m][1]] = true;
-                moves[counter].endingConfig = ColumnAt(Array,vacant[m][0]);
+                endings.push_back(ColumnAt(Array,vacant[m][0]));
                 bankLocations.erase(bankLocations.begin() + index);
                 counter ++;
             }else{
@@ -1916,7 +1925,7 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
                 moves[counter].startingConfig = Array[vacant[m][0]];
                 Array[bankLocations[index][0]][bankLocations[index][1]] = false;
                 Array[bankLocations[index][0]][vacant[m][1]] = true;
-                moves[counter].endingConfig = Array[vacant[m][0]];
+                endings.push_back(Array[vacant[m][0]]);
                 counter ++;
 
                 moves.push_back(RearrangementMove());
@@ -1925,13 +1934,13 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
                 moves[counter].startingConfig = ColumnAt(Array,vacant[m][1]);
                 Array[bankLocations[index][0]][vacant[m][1]] = false;
                 Array[vacant[m][0]][vacant[m][1]] = true;
-                moves[counter].endingConfig = ColumnAt(Array,vacant[m][1]);
+                endings.push_back(ColumnAt(Array,vacant[m][1]));
                 bankLocations.erase(bankLocations.begin() + index);
                 counter ++;
             }
         }
     }
-
+    convert_ending_config(moves,endings);
     return moves;
 }
 
@@ -1940,20 +1949,19 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
 
 //////////////////////////END///////////////////////////////////////////////
 
-*/
 vector<RearrangementMove> rearrange(vector<vector<bool>> &Array, rearrange_method method,rearrange_mode mode)
 {
     if(method == BALANCE_COMPRESS){
         return BalanceCompressAlg(Array,mode);
     }
-/*
+
     if(method == HUNGARIAN){
         return compute(Array,mode);
     }
     if(method == DROP_IT_LIKE_ITS_HOT){
         return DropItLikeItsHot(Array);
     }
-*/
+
 }
 
 /////////////////////////DONE WITH REARRANGE2D.CPP/////////////////////////////////////////////////
