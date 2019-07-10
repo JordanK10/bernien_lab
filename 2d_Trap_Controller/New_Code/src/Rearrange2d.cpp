@@ -27,7 +27,6 @@ vector<int> one_d_rearrange(vector<bool> start, vector<bool> ending){
             orderedEndingSites.push_back(i);
         }
     }
-    cout << "yo" << endl;
     int j = 0;
     for(int i = 0;i<start.size();i++){
         if(start[i] && j<orderedEndingSites.size()){
@@ -37,14 +36,11 @@ vector<int> one_d_rearrange(vector<bool> start, vector<bool> ending){
             endingConfig.push_back(-1);
         }
     }
-    cout << "here2" << endl;
     return endingConfig;
 }
 
 void convert_ending_config(vector<RearrangementMove> &moves,vector<vector<bool>> endings){
-    cout << "here" << endl;
     for(int i = 0;i<moves.size();i++){
-        cout << "here1" << endl;
         moves[i].endingConfig = one_d_rearrange(moves[i].startingConfig,endings[i]);
     }
 }
@@ -558,7 +554,6 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         i++;
         g_counter++;
     }
-    cout << "here" << endl;
     vector<RearrangementMove> bankMoves;
     if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
         bankMoves = rectBank(Array);
@@ -572,8 +567,6 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
 
     convert_ending_config(moves,endings);
     moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
-
-    cout << "finishedd" << endl;
 return moves;
 }
 
