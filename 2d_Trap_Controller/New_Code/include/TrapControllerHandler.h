@@ -34,7 +34,7 @@ public:
 
   bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  std::vector<std::vector<Waveform *>> rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM);
+  std::vector<RearrangementMove> rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM);
   std::vector<std::vector<Waveform *>> TrapControllerHandler::combinePrecomputedWaveforms(vector<bool> &destinations);
   std::vector<Waveform> generateStaticWaveform();
 

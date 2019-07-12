@@ -5,6 +5,7 @@
 #define MAX_SEGMENTS 2
 
 #include "Waveform.h"
+#include "TrapControllerHandler.h"
 #include <queue>
 #include <mutex>
 #include <thread>
@@ -28,7 +29,6 @@ enum signal_type{
 	STATIC,
 	TRANS,
 	TRANS_EMPTY,
-	TRANS_FULL
 };
 
 using namespace std;
@@ -39,21 +39,22 @@ class AWGController{
 
 public:
 
-	AWGController(bool shouldConnect, double sample_rate, output_mode mode, int sw_buf);
+	AWGController(double sample_rate, output_mode mode, int sw_buf);
 
 	void disconnect();
 	void startStreaming();
 
-	bool loadStaticDataBlock(vector<Waveform> waveforms, int segSize, signal_type data);
+	bool loadDataBlock(int segSize, signal_type data, vector<Waveform>* waveforms, vector<RearrangementMove>* moves);
 
 	void pushWaveTable(std::vector<std::complex<float>> waveform);
 
 	bool changeMode(output_mode mode);
-
+	void setModes(vector<Waveform> modes, bool x);
 	float getGain();
 	bool changeGain(float gain);
 
 	void pushStaticWaveforms(vector<Waveform> waveforms, bool first_push);
+	void pushRearrangeWaveforms(vector<RearrangementMove> moves);
 	void triggerSequence();
 
 	bool isConnected();
@@ -100,6 +101,9 @@ private:
 		char input;
 
 		bool setupSuccess;
+
+		vector<Waveform> xmodes;
+		vector<Waveform> ymodes;
 
 		bool setupCard();
 		void errorPrint(bool dwErr, string error);

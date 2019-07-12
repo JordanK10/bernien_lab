@@ -2,8 +2,6 @@
 #include "TrapControllerHandler.h"
 
 
-struct RearrangementMove;
-
 /* Generate width+length trap controllers. The length primary TCs are centered
 on the width axis, and create a trap per x-increment starting at the
 lowest frequency (x-y axis). Same for width, but along y-x axis */
@@ -264,32 +262,18 @@ bool TrapControllerHandler::loadPrecomputedWaveforms(double moveDuration, string
   return true;
 }
 
-vector<vector<Waveform *>> TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, rearrange_mode mode) {
+vector <RearrangementMove> TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, rearrange_mode mode) {
 
-	vector<vector<Waveform *>> waveforms;
+	vector<Waveform *> waveforms;
+
   for(int i=0; i<moves.size();i++){
-    for(int j=0;j<moves[i].startingConfig.size();j++){
-      cout << moves[i].startingConfig[j];
-    }
-    cout << endl;
-    for(int j=0;j<moves[i].endingConfig.size();j++){
-      cout << moves[i].endingConfig[j];
-    }
-    cout << endl <<endl;
-  }
-  for(int i=0; i<moves.size();i++){
-    if(moves[i].row){ //this is a row operation
-      waveforms.push_back(statHandler.x->combinePrecomputedWaveform(moves[i].startingConfig,moves[i].endingConfig));
-      waveforms[i][0]->row = true;
-    }
-    else{ //this is a column operation
-      waveforms.push_back(statHandler.y->combinePrecomputedWaveform(moves[i].startingConfig,moves[i].endingConfig));
-      waveforms[i][0]->row = false;
-    }
-    waveforms[i][0]->dim = moves[i].dim;
+    if(moves[i].row) //this is a row operation
+      moves[i].wf = statHandler.x->combinePrecomputedWaveform(moves[i].startingConfig,moves[i].endingConfig);
+    else //this is a column operation
+      moves[i].wf = statHandler.y->combinePrecomputedWaveform(moves[i].startingConfig,moves[i].endingConfig);
   }
 
-	return waveforms;
+	return moves;
 }
 
 /* Moving traps: This will be the sum of the "loaded trap" waveforms for each

@@ -51,7 +51,7 @@ public:
     void setCenter(double xaxis, double freq);
 
 		Waveform generateWaveform(double duration = DEFAULT_WAVEFORM_DURATION);
-
+		vector<Waveform> generateModes();
 		bool loadDefaultTrapConfiguration(std::vector<std::vector<std::string>> tokenList, int groupSize);
 
     std::vector<Trap> traps;
@@ -61,7 +61,7 @@ public:
 
 		bool loadPrecomputedWaveforms(double moveDuration, std::string starting_configuration, std::string ending_configuration);
 
-		std::vector<Waveform *> combinePrecomputedWaveform(std::vector<bool> &initial, std::vector<bool> &destinations);
+		Waveform* combinePrecomputedWaveform(std::vector<bool> &initial, std::vector<bool> &destinations);
 
 		void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<bool> *destinations, const size_t movingWaveformSize);
 

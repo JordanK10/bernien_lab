@@ -1,6 +1,7 @@
 #ifndef REARRANGE2D_H
 #define REARRANGE2D_H
 
+#include "Waveform.h"
 #include <vector>
 #include <tuple>
 #include <iostream>
@@ -35,6 +36,7 @@ struct RearrangementMove {
 	std::vector<bool> endingConfig;
 	bool row; // 1 if row, 0 if col
 	int dim; // the endex of the desired move
+	Waveform* wf;
 };
 
 //Common Functions

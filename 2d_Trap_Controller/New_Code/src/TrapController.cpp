@@ -93,6 +93,23 @@ Waveform TrapController::generateWaveform(double duration) {
 	return staticStartingWaveform;
 }
 
+vector<Waveform> TrapController::generateModes() {
+	size_t num_samples;
+
+	std::vector<std::complex<float>> tempWaveform;
+	std::vector<Waveform> waveforms;
+
+	for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
+	 	tempWaveform.clear();
+		num_samples = (size_t)(waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
+		for (size_t sample_index = 0; sample_index < num_samples; sample_index++)
+					tempWaveform.push_back(traps[trap_index].nextSample());
+		waveforms.push_back(Waveform(tempWaveform));
+	}
+
+	return waveforms;
+}
+
 //Checks to see if the traps are acceptable
 bool TrapController::sanitizeTraps(double new_gain,
 	bool shouldPrintTotalPower) {
@@ -198,53 +215,44 @@ void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
 
 		for (int sample_index = startIndex; sample_index < endIndex; sample_index++) {
 			movingWaveform[sample_index] += loadedTrapWaveforms[trap_index][dest_index].dataVector[sample_index];
-
-		}cout << endl;
-		cout << "START: " << trap_index << " to END: " << dest_index << endl;
-		cout << endl;
+		}
 	}
 }
 
 /* Moving traps: This will be the sum of the "loaded trap" waveforms for each
 moving trap, designated by a start position and end position.
 */
-vector<Waveform *> TrapController::combinePrecomputedWaveform(vector<bool> &initial,
+Waveform* TrapController::combinePrecomputedWaveform(vector<bool> &initial,
 	vector<bool> &destinations) {
+
 
 	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
 
 	thread *workers[numWorkers];
-	for(int i=0; i<initial.size(); i++)
-	cout << initial[i];
-	cout << endl;
-	for(int i=0; i<destinations.size(); i++)
-	cout << destinations[i];
-	cout << endl;
+
+
 	// Moving traps:
 	complex<float> *movingWaveform = rearrangeWaveform.dataVector.data();
 
 	// Add each moving waveform separately.
 	for (int worker = 0; worker < numWorkers; worker++) {
-		workers[worker] = new thread(&TrapController::combineRearrangeWaveform,
-							this, movingWaveform, worker, &destinations, movingWaveformSize);
-		workers[worker]->join();
-
+		workers[worker] = new thread(&TrapController::combineRearrangeWaveform, this, movingWaveform, worker, &destinations, movingWaveformSize);
 	}
 
 	// Wait for all workers to finish combining waveforms.
-//	for (int worker = 0; worker < numWorkers; worker++) {
-	//	workers[worker]->join();
-//	}
+	for (int worker = 0; worker < numWorkers; worker++) {
+		workers[worker]->join();
+	}
 	// Done with rearrangement!
 
 
 	vector<Waveform *> waveforms;
 	waveforms.push_back(&rearrangeWaveform);
-	waveforms.push_back(&staticEndingWaveform);
 
 
-	return waveforms;
+	return &rearrangeWaveform;
 }
+
 
 int numTrapsForConfigurationName(string config_name) {
 	int index_of_parens = config_name.find_first_of('(');

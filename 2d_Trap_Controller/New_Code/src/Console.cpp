@@ -4,12 +4,6 @@
 
 struct RearrangementMove;
 
-
-static const int DYNAMIC_AWG_X = 1;
-static const int DYNAMIC_AWG_Y = 2;
-static const int STATIC_AWG_X = 3;
-static const int STATIC_AWG_Y = 4;
-
 std::vector<string> parseCommand(string &cmd) {
 	if (cmd[cmd.size() - 1] == '\n') {
 		cmd.pop_back();
@@ -238,11 +232,16 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				startTimer();
 
 				// Rearrange traps:
-				vector<vector<Waveform *>> rearrangementWaveforms = trapControllerHandler.rearrangeWaveforms(rearrange(atomsPresent,method,mode),mode);
+				// vector<RearrangementMove> moves;
+				// moves.push_back(RearrangementMove());
+				// moves[0].row = true; moves[0].dim = 0;
+				// moves[0].startingConfig = {0,1,0,0,0,0,0,0,0,0};
+				// moves[0].startingConfig = {0,1,0,0,0,0,0,0,0,0};
+				// moves = trapControllerHandler.rearrangeWaveforms(moves,mode);
+								vector<RearrangementMove> moves = trapControllerHandler.rearrangeWaveforms(rearrange(atomsPresent,method,mode),mode);
 
-				// Push rearrangement waveforms to the AWG
-				// awgController.pushRearrangeWaveforms(rearrangementWaveforms);
-				cout << "brandon" << endl;
+				awgController.pushRearrangeWaveforms(moves);
+
 				cout << "Performed rearrangement " << numRearrangementsPerformed << ": \n";
 				int duration = timeElapsed();
 				cout << "Duration from trigger -> trigger: " << duration << " ms" << endl;
@@ -278,7 +277,8 @@ void processRunCommand(std::vector<string> &commandTokens, TrapControllerHandler
 		printRunHelp();
 	} else if (commandTokens[1].compare("rearrangement") == 0) {
 
-		double moveDuration = 3.0; // In milliseconds
+		double moveDuration = 3.0; //in milliseconds
+
 
 		// Default name of trap configurations to start and end with.
 		string starting_configuration = trapControllerHandler.lastLoadedConfiguration;
@@ -392,7 +392,6 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 	previousTraps.push_back(trapControllerHandler.statHandler.x->traps);
 	previousTraps.push_back(trapControllerHandler.statHandler.y->traps);
 
-
 	bool waveformShouldChange = false;
 
 	if (commandTokens.size() == 1 || commandTokens[1].compare("help") == 0) {
@@ -495,6 +494,13 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		if (commandTokens.size() >= 3) {
 			string configuration_filename = commandTokens[2];
 			if (trapControllerHandler.loadDefaultTrapConfiguration(configuration_filename)) {
+				cout << endl << "done " << endl;
+
+				awgController.setModes(trapControllerHandler.statHandler.x->generateModes(),true);
+				awgController.setModes(trapControllerHandler.statHandler.y->generateModes(),false);
+
+				cout << endl << "done " << endl;
+
 				// If a static waveform has been precomputed for this set of traps,
 				// load the precomputed version rather than computing a new waveform for the same set of traps.
 				Waveform static_waveform;

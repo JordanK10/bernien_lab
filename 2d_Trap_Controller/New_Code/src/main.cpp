@@ -20,7 +20,7 @@ int main(){
     int gain = 1;
 
       TrapControllerHandler trapControllerHandler(clock_rate, gain, KILO(wt_freq));
-      AWGController awgController(0,clock_rate,SEQUENCE,KILO(sw_buf_size));
+      AWGController awgController(clock_rate,SEQUENCE,KILO(sw_buf_size));
 
       if (awgController.isConnected())
         run2DConsole(trapControllerHandler, awgController);
