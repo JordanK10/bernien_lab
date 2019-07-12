@@ -190,8 +190,8 @@ def usePrecomputedExponential(phase, precomputedExponential):
 def generateWaveform(f1, f2, amp1, amp2, phase1, phase2, tau, amplitudeLandscape=None, precomputedExponential=None):
 	eps = find_eps(f1, f2, tau, phase2 - phase1);
 
-	sample_rate = 1.0E8
-	sample_times = np.arange(0, tau, 1.0 / sample_rate)
+	sample_rate = 1.024E9
+	sample_times = np.arange(0, tau, 100.0 / sample_rate)
 
 	T = tau - eps
 	phases = phase(sample_times, T, f1, f2);
@@ -560,7 +560,7 @@ for ending_filename in [
     amplitude_landscape = create_amplitude_landscape("%s.txt" %filename, should_smooth=False);
 # # precomputedExponential = precomputeExponential();
 
-    duration = 0.05
+    duration = 0.005
 
 
     write_static_waveform(ending_filename, ending_freqs, ending_amps, ending_phases, 0.001) #Always should use 1ms duration. # SHOULD RE-ENABLE
