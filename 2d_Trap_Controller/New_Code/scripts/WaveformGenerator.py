@@ -54,7 +54,7 @@ def create_amplitude_landscape(filename, should_smooth=False):
 
 	landmark_freqs = landmark_traps[:, 0] * 1.0E6
 	landmark_amps = landmark_traps[:, 1]
-	center_freq = 74.0E6
+	center_freq = 0.0E6
 
 	landmark_freqs -= center_freq
 
@@ -191,7 +191,7 @@ def generateWaveform(f1, f2, amp1, amp2, phase1, phase2, tau, amplitudeLandscape
 	eps = find_eps(f1, f2, tau, phase2 - phase1);
 
 	sample_rate = 1.024E9
-	sample_times = np.arange(0, tau, 100.0 / sample_rate)
+	sample_times = np.arange(0, tau, (1.0 / sample_rate))
 
 	T = tau - eps
 	phases = phase(sample_times, T, f1, f2);
@@ -265,7 +265,7 @@ def read_traps(filename):
 
 	# Should be adjusted depending on which set of traps we want to work with, and what center frequency we
 	# will be operating with.
-	center_freq = 74.0
+	center_freq = 0.0
 
 	freqs = []
 	amps = []
@@ -555,12 +555,13 @@ for ending_filename in [
     print "Rearranging from %s to %s..." %(filename, ending_filename)
 
 
+
 #print freqs
 
     amplitude_landscape = create_amplitude_landscape("%s.txt" %filename, should_smooth=False);
 # # precomputedExponential = precomputeExponential();
 
-    duration = 0.005
+    duration = 0.0005
 
 
     write_static_waveform(ending_filename, ending_freqs, ending_amps, ending_phases, 0.001) #Always should use 1ms duration. # SHOULD RE-ENABLE

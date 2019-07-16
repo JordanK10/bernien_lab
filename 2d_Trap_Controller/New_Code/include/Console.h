@@ -1,3 +1,6 @@
+#ifndef CONSOLE_H
+#define CONSOLE_H
+
 // Created by H.Levine with Atom Array team, Lukin group (2016).
 
 #include "AWGController.h"
@@ -15,3 +18,6 @@
 
 void run1DConsole(TrapController &trapController, AWGController &AWGController);
 void run2DConsole(TrapControllerHandler trapControllerHandler, AWGController &awgController);
+
+
+#endif

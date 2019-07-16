@@ -201,7 +201,7 @@ bool TrapController::mostRecentlyLoadedCorrectWaveforms(double duration, string 
 }
 
 void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
-	int worker, vector<bool> *destinations, const size_t movingWaveformSize) {
+	int worker, vector<int> *destinations, const size_t movingWaveformSize) {
 	int chunkSize = movingWaveformSize / numWorkers;
 	int startIndex = chunkSize * worker;
 	int endIndex = chunkSize * (worker + 1);
@@ -223,7 +223,7 @@ void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
 moving trap, designated by a start position and end position.
 */
 Waveform* TrapController::combinePrecomputedWaveform(vector<bool> &initial,
-	vector<bool> &destinations) {
+	vector<int> &destinations) {
 
 
 	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();

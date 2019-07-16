@@ -112,41 +112,47 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
       pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain*show);
     }
   }
+
   if(moves != NULL){
     vector<complex<float>> dataVec;
-    int move_len = (*moves)[0].wf->dataVector.size();
+    int move_len = segSize;
     vector<complex<float>> mode;
     int move_num = moves->size();
     int mode_len;
     int64 seg_ind = 0;
     int64 mem_ind = segSize;
-    cout << "here1\n";
+
     for(int64 move=0; move<move_num;move++){
-      cout << "here " << move << endl;
-      cout << mem_ind << "  " << seg_ind << endl;
+      // cout << "here " << move << endl;
+      // cout << mem_ind << "  " << seg_ind << endl;
       dataVec = (*moves)[move].wf->dataVector;
       if((*moves)[move].row){
-        cout << mem_ind << endl;
         mode = xmodes[(*moves)[move].dim].dataVector;
+        // cout << (*moves)[move].dim << endl;
         mode_len = mode.size();
         for(;seg_ind<mem_ind;seg_ind++){
           pnData[seg_ind*2] = (int16)(real(dataVec[seg_ind%move_len])*gain/5);
-          pnData[seg_ind*2+1] = (int16)(real(mode[seg_ind%mode_len])*gain);
+          pnData[seg_ind*2+1] = (int16)(real(mode[seg_ind%mode_len])*gain*10);
         }
       }else{
         mode = ymodes[(*moves)[move].dim].dataVector;
         mode_len = mode.size();
         for(;seg_ind<mem_ind;seg_ind++){
           pnData[seg_ind*2+1] = (int16)(real(dataVec[seg_ind%move_len])*gain/5);
-          pnData[seg_ind*2] = (int16)(real(mode[seg_ind%mode_len])*gain);
+          pnData[seg_ind*2] = (int16)(real(mode[seg_ind%mode_len])*gain*10);
 
         }
       }
+      // cout << move_len << endl;
       mem_ind += move_len;
     }
     segSize = seg_ind;
   }
 
+  if(segSize%32!=0){
+    cout << "fail\n";
+    return false;
+  }
     // write data to board (main) sample memory
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, seg);
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  segSize);
@@ -221,7 +227,7 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_p
 void AWGController::pushRearrangeWaveforms(vector<RearrangementMove> moves){
 
   int num_moves = moves.size();
-  int dataSize = moves[0].wf->dataVector.size();
+  int dataSize = moves[0].wf->dataVector.size()-1;
   pvBuffer = pvAllocMemPageAligned(num_moves*2*dataSize*BYTES_PER_DATA);
   cout << dataSize << "  " << num_moves << "  " << num_moves*dataSize*2 << endl;
   if (!pvBuffer){
