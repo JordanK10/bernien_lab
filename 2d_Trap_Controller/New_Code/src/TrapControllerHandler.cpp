@@ -267,6 +267,7 @@ vector <RearrangementMove> TrapControllerHandler::rearrangeWaveforms(vector <Rea
 	vector<Waveform *> waveforms;
 
   for(int i=0; i<moves.size();i++){
+    cout << i << endl;
     if(moves[i].row) //this is a row operation
       moves[i].wf = statHandler.x->combinePrecomputedWaveform(moves[i].startingConfig,moves[i].endingConfig);
     else //this is a column operation

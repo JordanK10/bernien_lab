@@ -101,7 +101,7 @@ vector<Waveform> TrapController::generateModes() {
 
 	for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
 	 	tempWaveform.clear();
-		num_samples = (size_t)(waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
+		num_samples = 100*(size_t)(waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
 		for (size_t sample_index = 0; sample_index < num_samples; sample_index++)
 					tempWaveform.push_back(traps[trap_index].nextSample());
 		waveforms.push_back(Waveform(tempWaveform));

@@ -122,6 +122,15 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
     int64 seg_ind = 0;
     int64 mem_ind = segSize;
 
+<<<<<<< HEAD
+=======
+    ofstream waveform3x3y;
+    ofstream waveform3x3x;
+      waveform3x3y.open ("3x3_15msY.txt");
+      waveform3x3x.open ("3x3_15msX.txt");
+
+
+>>>>>>> origin
     for(int64 move=0; move<move_num;move++){
       // cout << "here " << move << endl;
       // cout << mem_ind << "  " << seg_ind << endl;
@@ -133,6 +142,11 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
         for(;seg_ind<mem_ind;seg_ind++){
           pnData[seg_ind*2] = (int16)(real(dataVec[seg_ind%move_len])*gain/5);
           pnData[seg_ind*2+1] = (int16)(real(mode[seg_ind%mode_len])*gain*10);
+<<<<<<< HEAD
+=======
+          //waveform3x3x <<   pnData[seg_ind*2] << endl;
+          //waveform3x3y <<   pnData[seg_ind*2+1] << endl;
+>>>>>>> origin
         }
       }else{
         mode = ymodes[(*moves)[move].dim].dataVector;
@@ -140,13 +154,20 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
         for(;seg_ind<mem_ind;seg_ind++){
           pnData[seg_ind*2+1] = (int16)(real(dataVec[seg_ind%move_len])*gain/5);
           pnData[seg_ind*2] = (int16)(real(mode[seg_ind%mode_len])*gain*10);
+<<<<<<< HEAD
 
+=======
+          //waveform3x3x <<   pnData[seg_ind*2+1] << endl;
+          //waveform3x3y <<   pnData[seg_ind*2] << endl;
+>>>>>>> origin
         }
       }
       // cout << move_len << endl;
       mem_ind += move_len;
     }
     segSize = seg_ind;
+    waveform3x3y.close();
+    waveform3x3x.close();
   }
 
   if(segSize%32!=0){
@@ -203,10 +224,10 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_p
         loadDataBlock(dataSize,STATIC,&waveforms,NULL);
         loadDataBlock(dataSize,TRANS_EMPTY,&waveforms,NULL);
         vWriteStepEntry (&stCard,  0,  0,  STATIC, 1,  SPCSEQ_ENDLOOPONTRIG);
-        vWriteStepEntry (&stCard,  1,  0,  TRANS,  1,  SPCSEQ_ENDLOOPALWAYS);
+        vWriteStepEntry (&stCard,  1,  0,  TRANS,  1,  SPCSEQ_ENDLOOPONTRIG);
       }else
         loadDataBlock(dataSize,TRANS,&waveforms,NULL);
-        vWriteStepEntry (&stCard,  0,  1,  STATIC, 1,  SPCSEQ_ENDLOOPALWAYS);
+        vWriteStepEntry (&stCard,  0,  1,  STATIC, 1,  SPCSEQ_ENDLOOPONTRIG);
 
       spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_STARTSTEP, 0);
 

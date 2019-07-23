@@ -30,7 +30,7 @@ using namespace std;
 
 
 
-static const int numWorkers = 1;
+static const int numWorkers = 15;
 
 
 struct loadedWaveformProperties {

@@ -1,6 +1,10 @@
 #include "Console.h"
 
+<<<<<<< HEAD
 double m_dur = .5;
+=======
+double m_dur = 2.0;
+>>>>>>> origin
 
 
 //#include "control_interface.h"
@@ -228,13 +232,30 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				//Setting for rearrangement
 				trapControllerHandler.resetForRearrangement();
 
+
+				vector<RearrangementMove> some_rearrange_moves = rearrange(atomsPresent,method,mode);
+
+				cout << some_rearrange_moves.size() << endl;
+
 				startTimer();
 
+<<<<<<< HEAD
 				vector<RearrangementMove> moves = trapControllerHandler.rearrangeWaveforms(rearrange(atomsPresent,method,mode),mode);
 				int duration = timeElapsed();
 				cout << "Rearrange time: " << duration << " ms" << endl;
 				awgController.pushRearrangeWaveforms(moves);
 
+=======
+				vector<RearrangementMove> moves = trapControllerHandler.rearrangeWaveforms(some_rearrange_moves,mode);
+
+				int duration = timeElapsed();
+				cout << "Rearrange time: " << duration << " ms" << endl;
+
+				awgController.pushRearrangeWaveforms(moves);
+
+
+
+>>>>>>> origin
 				// cout << "Performed rearrangement " << numRearrangementsPerformed << ": \n";
 
 				cout << "Duration from trigger -> trigger: " << timeElapsed()-duration << " ms" << endl;
