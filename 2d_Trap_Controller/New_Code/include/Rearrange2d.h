@@ -33,13 +33,15 @@ using namespace std;
 
 struct RearrangementMove {
 	std::vector<bool> startingConfig;
-	std::vector<bool> endingConfig;
+	std::vector<int> endingConfig;
 	bool row; // 1 if row, 0 if col
 	int dim; // the endex of the desired move
 	Waveform* wf;
 };
 
 //Common Functions
+vector<int> one_d_rearrange(vector<bool> start, vector<bool> ending);
+void convert_ending_config(vector<RearrangementMove> &moves,vector<vector<bool>> endings);
 void printArray(vector<vector<bool>> Array);
 vector<RearrangementMove> rearrange(vector<vector<bool>> &Array, rearrange_method method,rearrange_mode mode = CENTER_COM);
 vector<vector<bool>> assignCol(vector<vector<bool>> Array, vector<bool> col, int index);

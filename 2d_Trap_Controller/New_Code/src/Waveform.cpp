@@ -38,13 +38,12 @@ void Waveform::importFromBinaryFile(vector<complex<float>> tempVector) {
 void Waveform::initializeFromBinaryFile(string binaryFilename) {
 	string path(dir);
 	path.append(binaryFilename);
+		ifstream binaryFile(path, ios::in | ios::binary);
+		unsigned int numElements;
+		binaryFile.read(reinterpret_cast<char*>(&numElements), sizeof(unsigned int));
+		dataVector.resize(numElements);
+		binaryFile.read(reinterpret_cast<char*>(&dataVector[0]), numElements * sizeof(dataVector[0]));
 
-	ifstream binaryFile(path, ios::in | ios::binary);
-	unsigned int numElements;
-	binaryFile.read(reinterpret_cast<char*>(&numElements), sizeof(unsigned int));
-
-	dataVector.resize(numElements);
-	binaryFile.read(reinterpret_cast<char*>(&dataVector[0]), numElements * sizeof(dataVector[0]));
 }
 
 bool Waveform::initializeFromStaticWaveform(string trap_configuration_file) {

@@ -30,7 +30,7 @@ using namespace std;
 
 
 
-static const int numWorkers = 1;
+static const int numWorkers = 15;
 
 
 struct loadedWaveformProperties {
@@ -61,9 +61,9 @@ public:
 
 		bool loadPrecomputedWaveforms(double moveDuration, std::string starting_configuration, std::string ending_configuration);
 
-		Waveform* combinePrecomputedWaveform(std::vector<bool> &initial, std::vector<bool> &destinations);
+		Waveform* combinePrecomputedWaveform(std::vector<bool> &initial, std::vector<int> &destinations);
 
-		void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<bool> *destinations, const size_t movingWaveformSize);
+		void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<int> *destinations, const size_t movingWaveformSize);
 
 
 		bool sanitizeTraps(double new_gain = -1, bool shouldPrintTotalPower=true);

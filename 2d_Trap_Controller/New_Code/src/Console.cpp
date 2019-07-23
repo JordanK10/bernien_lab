@@ -1,5 +1,8 @@
 #include "Console.h"
 
+double m_dur = 2.0;
+
+
 //#include "control_interface.h"
 
 struct RearrangementMove;
@@ -182,10 +185,6 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 		// if (trapControllerHandler.mostRecentlyLoadedCorrectWaveforms(moveDuration, )) {
 		// 		cout << "Found precomputed rearrangement waveforms already loaded!" << endl;
 		// 	} else {
-		cout << "Loading precomputed waveforms from disk." << endl;
-
-		if (!trapControllerHandler.loadPrecomputedWaveforms(moveDuration, starting_configuration, ending_configuration))
-			return;
 
 		rearrange_method method = BALANCE_COMPRESS;
 		rearrange_mode mode;
@@ -229,24 +228,26 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				//Setting for rearrangement
 				trapControllerHandler.resetForRearrangement();
 
+
+				vector<RearrangementMove> some_rearrange_moves = rearrange(atomsPresent,method,mode);
+
+				cout << some_rearrange_moves.size() << endl;
+
 				startTimer();
 
-				// Rearrange traps:
-				// vector<RearrangementMove> moves;
-				// moves.push_back(RearrangementMove());
-				// moves[0].row = true; moves[0].dim = 0;
-				// moves[0].startingConfig = {0,1,0,0,0,0,0,0,0,0};
-				// moves[0].startingConfig = {0,1,0,0,0,0,0,0,0,0};
-				// moves = trapControllerHandler.rearrangeWaveforms(moves,mode);
-								vector<RearrangementMove> moves = trapControllerHandler.rearrangeWaveforms(rearrange(atomsPresent,method,mode),mode);
+				vector<RearrangementMove> moves = trapControllerHandler.rearrangeWaveforms(some_rearrange_moves,mode);
+
+				int duration = timeElapsed();
+				cout << "Rearrange time: " << duration << " ms" << endl;
 
 				awgController.pushRearrangeWaveforms(moves);
 
-				cout << "Performed rearrangement " << numRearrangementsPerformed << ": \n";
-				int duration = timeElapsed();
-				cout << "Duration from trigger -> trigger: " << duration << " ms" << endl;
+
+
+				// cout << "Performed rearrangement " << numRearrangementsPerformed << ": \n";
+
+				cout << "Duration from trigger -> trigger: " << timeElapsed()-duration << " ms" << endl;
 				durations.push_back(duration);
-				cout << "katz" << endl;
 				break;
 			}
 
@@ -277,7 +278,7 @@ void processRunCommand(std::vector<string> &commandTokens, TrapControllerHandler
 		printRunHelp();
 	} else if (commandTokens[1].compare("rearrangement") == 0) {
 
-		double moveDuration = 3.0; //in milliseconds
+		double moveDuration = m_dur; //in milliseconds
 
 
 		// Default name of trap configurations to start and end with.
@@ -494,12 +495,18 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		if (commandTokens.size() >= 3) {
 			string configuration_filename = commandTokens[2];
 			if (trapControllerHandler.loadDefaultTrapConfiguration(configuration_filename)) {
-				cout << endl << "done " << endl;
 
 				awgController.setModes(trapControllerHandler.statHandler.x->generateModes(),true);
 				awgController.setModes(trapControllerHandler.statHandler.y->generateModes(),false);
 
-				cout << endl << "done " << endl;
+				cout << "Loading precomputed waveforms from disk." << endl;
+
+				// Default name of trap configurations to start and end with.
+				string starting_configuration = trapControllerHandler.lastLoadedConfiguration;
+				string ending_configuration = trapControllerHandler.lastLoadedConfiguration;
+
+				if (!trapControllerHandler.loadPrecomputedWaveforms(m_dur, starting_configuration, ending_configuration))
+					return false;
 
 				// If a static waveform has been precomputed for this set of traps,
 				// load the precomputed version rather than computing a new waveform for the same set of traps.

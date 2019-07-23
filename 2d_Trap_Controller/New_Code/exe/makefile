@@ -35,7 +35,7 @@ SRC_FILES = $(DIR_SRC)\main.cpp \
 
 $(EXE_FILE) : $(DIR_INT_X86)\*.obj
    @echo Linking $(EXE_FILE)...
-   link  ..\..\c_header_win\spcm_win32_msvcpp.lib  /out:$(DIR_BIN_X86)\$(EXE_FILE) $(DIR_INT_X86)\*.obj
+   link  ..\..\c_header_win\spcm_win64_msvcpp.lib  /out:$(DIR_BIN_X86)\$(EXE_FILE) $(DIR_INT_X86)\*.obj
 
 # build application
 aodctrl: $(EXE_FILE)

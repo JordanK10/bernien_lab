@@ -101,7 +101,7 @@ vector<Waveform> TrapController::generateModes() {
 
 	for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
 	 	tempWaveform.clear();
-		num_samples = (size_t)(waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
+		num_samples = 100*(size_t)(waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
 		for (size_t sample_index = 0; sample_index < num_samples; sample_index++)
 					tempWaveform.push_back(traps[trap_index].nextSample());
 		waveforms.push_back(Waveform(tempWaveform));
@@ -201,7 +201,7 @@ bool TrapController::mostRecentlyLoadedCorrectWaveforms(double duration, string 
 }
 
 void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
-	int worker, vector<bool> *destinations, const size_t movingWaveformSize) {
+	int worker, vector<int> *destinations, const size_t movingWaveformSize) {
 	int chunkSize = movingWaveformSize / numWorkers;
 	int startIndex = chunkSize * worker;
 	int endIndex = chunkSize * (worker + 1);
@@ -223,7 +223,7 @@ void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
 moving trap, designated by a start position and end position.
 */
 Waveform* TrapController::combinePrecomputedWaveform(vector<bool> &initial,
-	vector<bool> &destinations) {
+	vector<int> &destinations) {
 
 
 	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
