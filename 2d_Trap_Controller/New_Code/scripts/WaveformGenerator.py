@@ -169,7 +169,7 @@ def precomputeExponential():
 	num_samples = 1E6
 
 	fractional_phases = np.linspace(0, 1, num_samples, endpoint=False)
-	exp = np.exp(2.0j * np.pi * fractional_phases)
+	exp = np.cos(2.0 * np.pi * fractional_phases)
 
 	return (num_samples, exp)
 
@@ -207,7 +207,7 @@ def generateWaveform(f1, f2, amp1, amp2, phase1, phase2, tau, amplitudeLandscape
 
 		return vals
 	else:
-		return amplitudes * np.exp(1j * (phases + 2*np.pi * phase1))
+		return amplitudes * np.cos(1 * (phases + 2*np.pi * phase1))
 
 
 # Calculate waveform to sweep from one freq(amp) to another freq(amp) using a minimal jerk trajectory.
@@ -232,26 +232,29 @@ def generateWaveformMinimalJerk(f1, f2, amp1, amp2, phase1, phase2, tau, amplitu
 
 		return vals
 	else:
-		return amplitudes * np.exp(1j * (phases + 2*np.pi * phase1))
+		return amplitudes * np.cos(1 * (phases + 2*np.pi * phase1))
 
 
 
 
 def saveWaveform(waveform, filename):
-	num_samples = len(waveform)
+    num_samples = len(waveform)
 
-	f = open(filename, 'wb')
-	f.write(struct.pack('I', num_samples))
+    f = open(filename, 'wb')
+    f.write(struct.pack('I', num_samples))
 
-	real_parts = np.real(waveform)
-	imag_parts = np.imag(waveform)
+    array = np.int16(np.multiply(100000,waveform))
 
-	interwoven_waveform = np.empty(2*num_samples)
-	interwoven_waveform[0::2] = real_parts
-	interwoven_waveform[1::2] = imag_parts
+    f.write(struct.pack('h' * num_samples , *array))
+    f.close()
+    print(filename)
+    if filename == "../bin/TrapWaveforms/10(1)Xtr_to_10(1)Xtr_in_10.0ms/rearrange_0_to_9":
+        print(array)
+        # filename = "rearrange_0_to_0TEXT.txt"
+        # f = open(filename, 'wb')
+        # f.write('\n'.join(array))
+        # f.close()
 
-	f.write(struct.pack('f' * num_samples * 2, *interwoven_waveform));
-	f.close()
 
 
 
@@ -454,7 +457,7 @@ def write_rearrangement_waveforms_between_two_configs(filename_start, filename_e
                                                         duration,
                                                         amplitudeLandscape = None):
 
-    directory_path = "../bin/TrapWaveforms/%s_to_%s_in_%.1fms" %(filename_start, filename_end, duration*1000.0)
+    directory_path = "../bin/TrapWaveforms/%s_to_%s_in_%.8fms" %(filename_start, filename_end, duration*1000.0000)
     os.mkdir(directory_path)
 
     for start_index in range(len(freqs1)):
@@ -561,7 +564,7 @@ for ending_filename in [
     amplitude_landscape = create_amplitude_landscape("%s.txt" %filename, should_smooth=False);
 # # precomputedExponential = precomputeExponential();
 
-    duration = 0.01
+    duration = 0.00099978125
 
 
 

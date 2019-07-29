@@ -1,11 +1,6 @@
 #include "Console.h"
 
-<<<<<<< HEAD
-double m_dur = .5;
-=======
-double m_dur = 2.0;
->>>>>>> origin
-
+double m_dur =1;
 
 //#include "control_interface.h"
 
@@ -50,6 +45,8 @@ std::vector<string> takeInput() {
 
 	return parseCommand(input);
 }
+
+
 
 int promptForInteger(string attr) {
 	int val;
@@ -186,10 +183,6 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 		cout << "Rearranging from " << starting_configuration << " configuration to " << ending_configuration << " in ";
 		cout << fixed << setprecision(1) << moveDuration << " ms." << endl;
 
-		// if (trapControllerHandler.mostRecentlyLoadedCorrectWaveforms(moveDuration, )) {
-		// 		cout << "Found precomputed rearrangement waveforms already loaded!" << endl;
-		// 	} else {
-
 		rearrange_method method = BALANCE_COMPRESS;
 		rearrange_mode mode;
 		int modeArgument;
@@ -232,33 +225,27 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				//Setting for rearrangement
 				trapControllerHandler.resetForRearrangement();
 
-
-				vector<RearrangementMove> some_rearrange_moves = rearrange(atomsPresent,method,mode);
-
-				cout << some_rearrange_moves.size() << endl;
-
 				startTimer();
 
-<<<<<<< HEAD
-				vector<RearrangementMove> moves = trapControllerHandler.rearrangeWaveforms(rearrange(atomsPresent,method,mode),mode);
+				vector<RearrangementMove> moves = rearrange(atomsPresent,method,mode);
+				// RearrangementMove temp_move;
+				// temp_move.startingConfig = {1,1,1,1,1,1,1,1,1,1};
+				// temp_move.endingConfig = {7,1,9,6,-1,-1,3,8,0,2};
+				// temp_move.row = 1;
+				// temp_move.dim = 0;
+				// vector<RearrangementMove> moves; moves.push_back(temp_move);
 				int duration = timeElapsed();
-				cout << "Rearrange time: " << duration << " ms" << endl;
-				awgController.pushRearrangeWaveforms(moves);
-
-=======
-				vector<RearrangementMove> moves = trapControllerHandler.rearrangeWaveforms(some_rearrange_moves,mode);
-
-				int duration = timeElapsed();
-				cout << "Rearrange time: " << duration << " ms" << endl;
-
-				awgController.pushRearrangeWaveforms(moves);
 
 
 
->>>>>>> origin
-				// cout << "Performed rearrangement " << numRearrangementsPerformed << ": \n";
+				int move_len = trapControllerHandler.rearrangeWaveforms(moves,mode,awgController.getDynamicBuffer());
+				int duration2 = timeElapsed();
 
-				cout << "Duration from trigger -> trigger: " << timeElapsed()-duration << " ms" << endl;
+				awgController.pushRearrangeWaveforms(moves.size(),move_len);
+				int duration3 = timeElapsed();
+				cout << "Software rearrange time: " << duration << " ms" << endl;
+				cout << "Waveform generation  time: " << duration2-duration << " ms" << endl; //this took 13 ms longer
+				cout << "Pushing waveform time -> trigger: " << duration3-duration2-duration << " ms" << endl;
 				durations.push_back(duration);
 				break;
 			}
@@ -343,28 +330,29 @@ void processAWGInput(vector<string> &commandTokens, TrapControllerHandler &trapC
 			cout << "Already disconnected!" << endl;
 		}
 	} else if (commandTokens[1].compare("gain") == 0) {
-		if (commandTokens.size() == 2) {
-			cout << "AWG Gain: " << awgController.getGain() << endl;
-		} else if (commandTokens.size() >= 3) {
-			try {
-				double gain = stod(commandTokens[2]);
-				if (trapControllerHandler.sanitizeTraps(gain)) {
-
-					bool success = awgController.changeGain(gain);
-
-					if (success) {
-						cout << "Set AWG Gain to " << awgController.getGain() << endl;
-						trapControllerHandler.awg_gain = awgController.getGain();
-					} else {
-						cout << "Unable to change gain - not connected to AWG!" << endl;
-					}
-				} else {
-					cout << "Unable to change gain - too much power!" << endl;
-				}
-			} catch (const invalid_argument&) {
-				cout << "Unable to parse gain!" << endl;
-			}
-		}
+			cout << "There is currently no gain functionality\n";
+	// 	if (commandTokens.size() == 2) {
+	// 		cout << "AWG Gain: " << awgController.getGain() << endl;
+	// 	} else if (commandTokens.size() >= 3) {
+	// 		try {
+	// 			double gain = stod(commandTokens[2]);
+	// 			if (trapControllerHandler.sanitizeTraps(gain)) {
+	//
+	// 				bool success = awgController.changeGain(gain);
+	//
+	// 				if (success) {
+	// 					cout << "Set AWG Gain to " << awgController.getGain() << endl;
+	// 					trapControllerHandler.awg_gain = awgController.getGain();
+	// 				} else {
+	// 					cout << "Unable to change gain - not connected to AWG!" << endl;
+	// 				}
+	// 			} else {
+	// 				cout << "Unable to change gain - too much power!" << endl;
+	// 			}
+	// 		} catch (const invalid_argument&) {
+	// 			cout << "Unable to parse gain!" << endl;
+	// 		}
+	// 	}
 	} else if (commandTokens[1].compare("load_waveform") == 0) {
 		if (commandTokens.size() >= 3) {
 			string filename = commandTokens[2];
@@ -504,13 +492,13 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		}
 	}
 	else if (commandTokens[1].compare("load_default") == 0) {
+
 		if (commandTokens.size() >= 3) {
 			string configuration_filename = commandTokens[2];
+
 			if (trapControllerHandler.loadDefaultTrapConfiguration(configuration_filename)) {
 
-				awgController.setModes(trapControllerHandler.statHandler.x->generateModes(),true);
-				awgController.setModes(trapControllerHandler.statHandler.y->generateModes(),false);
-
+				awgController.allocateDynamicWFBuffer(m_dur, trapControllerHandler.statHandler.x->traps.size(),trapControllerHandler.statHandler.x->traps.size());
 				cout << "Loading precomputed waveforms from disk." << endl;
 
 				// Default name of trap configurations to start and end with.
@@ -524,7 +512,8 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 				// load the precomputed version rather than computing a new waveform for the same set of traps.
 				Waveform static_waveform;
 
-				bool loadedPrecomputedStaticWaveform = static_waveform.initializeFromStaticWaveform(dimensionFormat(configuration_filename,"X"));
+				bool loadedPrecomputedStaticWaveform = NULL;
+				 // static_waveform.initializeFromStaticWaveform(dimensionFormat(configuration_filename,"X"));
 
 				// If we loaded the file, then no need to generate a new waveform.
 				if (loadedPrecomputedStaticWaveform && awgController.isConnected()) {
@@ -672,24 +661,3 @@ void run2DConsole( TrapControllerHandler trapControllerHandler, AWGController &a
 		shouldExit = process2DInput(commandTokens, trapControllerHandler, awgController);
 	}
 }
-
-
-
-// Extra code
-// for(int x=0; x <moves.size(); x++){
-// 	cout << "Dim: " << moves[x].dim << ", Axis: " << moves[x].row << " ";
-// 	for(int y=0; y<moves[x].startingConfig.size();y++){
-// 		if (moves[x].startingConfig[y])
-// 			cout << 1;
-// 		else
-// 			cout << 0;
-// 	}
-// 	cout<< "-->";
-// 	for(int y=0; y<moves[x].endingConfig.size();y++){
-// 		if (moves[x].endingConfig[y])
-// 			cout << 1;
-// 		else
-// 			cout << 0;
-// 	}
-// 	cout << endl;
-// }

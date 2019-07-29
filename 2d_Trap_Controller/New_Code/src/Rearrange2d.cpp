@@ -1951,7 +1951,7 @@ vector<RearrangementMove> rearrange(vector<vector<bool>> &Array, rearrange_metho
     if(method == HUNGARIAN){
         return compute(Array,mode);
     }
-    if(method == DROP_IT_LIKE_ITS_HOT){
+    else{//}(method == DROP_IT_LIKE_ITS_HOT){
         return DropItLikeItsHot(Array);
     }
 

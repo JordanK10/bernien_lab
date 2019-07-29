@@ -24,13 +24,13 @@
 
 #define DEFAULT_WAVEFORM_DURATION 0.00001
 // #define DEFAULT_WAVEFORM_DURATION 0.0000003
-#define MAX_NUM_TRAPS 101
+#define MAX_NUM_TRAPS 50
 
 using namespace std;
 
 
 
-static const int numWorkers = 15;
+static const int numWorkers = 1;
 
 
 struct loadedWaveformProperties {
@@ -51,7 +51,7 @@ public:
     void setCenter(double xaxis, double freq);
 
 		Waveform generateWaveform(double duration = DEFAULT_WAVEFORM_DURATION);
-		vector<Waveform> generateModes();
+		vector<vector<short>> generateModes();
 		bool loadDefaultTrapConfiguration(std::vector<std::vector<std::string>> tokenList, int groupSize);
 
     std::vector<Trap> traps;
@@ -61,9 +61,9 @@ public:
 
 		bool loadPrecomputedWaveforms(double moveDuration, std::string starting_configuration, std::string ending_configuration);
 
-		Waveform* combinePrecomputedWaveform(std::vector<bool> &initial, std::vector<int> &destinations);
+		void combinePrecomputedWaveform(std::vector<int> &destinations,std::vector<short> &mode, int move_ind, short* pvBuffer, bool row, int mode_len, const size_t movingWaveformSize);
 
-		void combineRearrangeWaveform(std::complex<float> *movingWaveform, int worker, std::vector<int> *destinations, const size_t movingWaveformSize);
+		void combineRearrangeWaveform(short *movingWaveform, int worker, std::vector<int> *destinations, const size_t movingWaveformSize, std::vector<short> *mode, int move_ind, short* pvBuffer, bool row, int mode_len);
 
 
 		bool sanitizeTraps(double new_gain = -1, bool shouldPrintTotalPower=true);
@@ -76,7 +76,7 @@ public:
 
 		void printAvailableDefaultTrapConfigurations();
 
-    double awg_gain;
+    double gain;
     double xAxisCenterFreq;
     double yAxisCenterFreq;
 
@@ -88,6 +88,8 @@ public:
 		void setAxisFile(string filename, string axis);
 
 		string staticWaveform;
+
+		int getWFSize();
 
 private:
 
@@ -107,7 +109,7 @@ private:
 
 
 		Waveform loadedTrapWaveforms[MAX_NUM_TRAPS][MAX_NUM_TRAPS];
-
+	  Waveform loadedTrapWaveformsShort[MAX_NUM_TRAPS][MAX_NUM_TRAPS];
 
 
   	std::vector<bool> periodicClusterPattern;

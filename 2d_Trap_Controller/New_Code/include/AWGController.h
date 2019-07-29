@@ -49,13 +49,15 @@ public:
 	void pushWaveTable(std::vector<std::complex<float>> waveform);
 
 	bool changeMode(output_mode mode);
-	void setModes(vector<Waveform> modes, bool x);
-	float getGain();
-	bool changeGain(float gain);
+
+
 
 	void pushStaticWaveforms(vector<Waveform> waveforms, bool first_push);
-	void pushRearrangeWaveforms(vector<RearrangementMove> moves);
+	void pushRearrangeWaveforms(int num_moves, int move_size);
 	void triggerSequence();
+
+	void allocateDynamicWFBuffer(float duration, int x_dim, int y_dim);
+	short* getDynamicBuffer();
 
 	bool isConnected();
 
@@ -66,8 +68,8 @@ private:
 
     char                szBuffer[1024];     // a character buffer for any messages
   	ST_SPCM_CARDINFO    stCard;             // info structure of my card
-  	void*              pvBuffer = NULL;
-		void* 						 tempBuffer = NULL;
+  	short*              pvBuffer = NULL;
+		short*							pvBufferDynamic = NULL;
   	uint32              dwErr;
   	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
 
@@ -79,10 +81,9 @@ private:
 
 		bool twoChen = true;
 
-    double sampleRate;
+    double sample_rate;
 
-    float gain = 32761.;
-		float base_gain = 32761.;
+    float gain;
 
     bool connected = false;
     bool shouldDisconnect;
@@ -102,13 +103,13 @@ private:
 
 		bool setupSuccess;
 
-		vector<Waveform> xmodes;
-		vector<Waveform> ymodes;
+
 
 		bool setupCard();
 		void errorPrint(bool dwErr, string error);
 		void vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepIndex,
 		                      uint32 dwStepNextIndex, uint32 dwSegmentIndex, uint32 dwLoops, uint32 dwFlags);
+
 };
 
 #endif

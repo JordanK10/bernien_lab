@@ -7,7 +7,7 @@
 
 using namespace std;
 
-TrapController::TrapController(double sampleRate,	double gain, bool axis, int wt_freq) {
+TrapController::TrapController(double sampleRate,	double g, bool axis, int wt_freq) {
 	srand(time(NULL));
 
   //The frequency of the wavetable
@@ -17,7 +17,7 @@ TrapController::TrapController(double sampleRate,	double gain, bool axis, int wt
 
 	majorAxisx = axis;
 
-	awg_gain = gain;
+	gain = g;
 
 }
 
@@ -55,7 +55,8 @@ bool TrapController::loadDefaultTrapConfiguration(std::vector<std::vector<string
 
 		try {
 			freqx = stod(tokens[0]) * 1.0E6;
-			amplitude = stod(tokens[1]);
+			amplitude = stod(tokens[1])*gain;
+
 			phase = stod(tokens[2]);
 
 			addTrap(freqx, amplitude, phase);
@@ -65,7 +66,7 @@ bool TrapController::loadDefaultTrapConfiguration(std::vector<std::vector<string
 		}
 	}
 
-	if (!sanitizeTraps(awg_gain, false)) {
+	if (!sanitizeTraps(gain, false)) {
 		cout << "Unable to load trap configuration: not sanitized." << endl;
 		traps = previousTraps;
 		return false;
@@ -78,33 +79,33 @@ bool TrapController::loadDefaultTrapConfiguration(std::vector<std::vector<string
 Waveform TrapController::generateWaveform(double duration) {
 	size_t num_samples = (size_t)(duration * waveTable->sampleRate);
 
-	std::vector<std::complex<float>> waveform;
+	std::vector<short> waveform;
 	waveform.resize(num_samples);
 
 	for (size_t sample_index = 0; sample_index < num_samples; sample_index++) {
-		std::complex<float> sample = 0;
-		for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
-			sample += traps[trap_index].nextSample();
-		}
+		float sample = 0;
+		for (int trap_index = 0; trap_index < traps.size(); trap_index++)
+			sample += real(traps[trap_index].nextSample());
 
-		waveform[sample_index] = sample;
+		waveform[sample_index] = short(sample);
 	}
+
 	staticStartingWaveform = Waveform(waveform);
 	return staticStartingWaveform;
 }
 
-vector<Waveform> TrapController::generateModes() {
+vector<vector<short>> TrapController::generateModes() {
 	size_t num_samples;
 
-	std::vector<std::complex<float>> tempWaveform;
-	std::vector<Waveform> waveforms;
+	vector<short> tempWaveform;
+	vector<vector<short>> waveforms;
 
 	for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
 	 	tempWaveform.clear();
-		num_samples = 100*(size_t)(waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
+		num_samples = (size_t)(10000*waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
 		for (size_t sample_index = 0; sample_index < num_samples; sample_index++)
-					tempWaveform.push_back(traps[trap_index].nextSample());
-		waveforms.push_back(Waveform(tempWaveform));
+					tempWaveform.push_back((short)(real(traps[trap_index].nextSample())));
+		waveforms.push_back(tempWaveform);
 	}
 
 	return waveforms;
@@ -130,8 +131,8 @@ bool TrapController::sanitizeTraps(double new_gain,
 		}
 
 		double amp = traps[i].amplitude;
-		if (amp < 0 || amp > 1) {
-			cout << "Trap #" << i << ": amplitude" << amp << " out of bounds [0, 1]" << endl;
+		if (amp < 0 || amp > 32767) {
+			cout << "Trap #" << i << ": amplitude" << amp << " out of bounds [0, 32767]" << endl;
 			return false;
 		}
 
@@ -141,7 +142,7 @@ bool TrapController::sanitizeTraps(double new_gain,
 	}
 
 	if (new_gain == -1) {
-		new_gain = awg_gain;
+		new_gain = gain;
 	}
 	double gainFactor = pow(10.0, (new_gain - 1.0)/ 10.0);
 
@@ -200,57 +201,66 @@ bool TrapController::mostRecentlyLoadedCorrectWaveforms(double duration, string 
 	return true;
 }
 
-void TrapController::combineRearrangeWaveform(complex<float> *movingWaveform,
-	int worker, vector<int> *destinations, const size_t movingWaveformSize) {
+void TrapController::combineRearrangeWaveform(short *movingWaveform,
+	int worker, vector<int> *destinations, const size_t movingWaveformSize, std::vector<short> *mode, int move_block, short* pvBuffer, bool row, int mode_len) {
 	int chunkSize = movingWaveformSize / numWorkers;
-	int startIndex = chunkSize * worker;
-	int endIndex = chunkSize * (worker + 1);
+	int startIndex = (chunkSize * worker)+(move_block);
+	int endIndex = (chunkSize * (worker + 1)) + (move_block) ;
 
-	for (int trap_index = 0; trap_index < destinations->size(); trap_index++) {
-		int dest_index = (*destinations)[trap_index];
+	int trap_index; int dest_index; int sample_index; vector<short>* dataArr;
+	// auto start = chrono::high_resolution_clock::now(); //start
+
+	for (trap_index = 0; trap_index < destinations->size(); trap_index++) {
+		dest_index = (*destinations)[trap_index];
+		dataArr = &loadedTrapWaveforms[trap_index][dest_index].dataVectorShort;
 
 		if (dest_index == -1) {
 			continue;
 		}
-
-		for (int sample_index = startIndex; sample_index < endIndex; sample_index++) {
-			movingWaveform[sample_index] += loadedTrapWaveforms[trap_index][dest_index].dataVector[sample_index];
+		if(row){
+			for (sample_index = startIndex; sample_index < endIndex; sample_index++)
+				pvBuffer[sample_index*2] += (*dataArr)[sample_index%movingWaveformSize];
+				cout << "HERE " << (*dataArr)[sample_index%movingWaveformSize] << endl;
+		}
+		else{
+			for (sample_index = startIndex; sample_index < endIndex; sample_index++)
+				pvBuffer[sample_index*2+1] += (*dataArr)[sample_index%movingWaveformSize];
 		}
 	}
+	if(row){
+		for(sample_index = startIndex; sample_index < endIndex; sample_index++){
+			pvBuffer[sample_index*2+1] += (*mode)[sample_index%mode_len];
+		}
+	}else{
+		for(sample_index = startIndex; sample_index < endIndex; sample_index++){
+			pvBuffer[sample_index*2] += (*mode)[sample_index%mode_len];
+		}
+	}
+
+	// cout << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count() << "ms to combine move" << endl;
+
 }
 
 /* Moving traps: This will be the sum of the "loaded trap" waveforms for each
 moving trap, designated by a start position and end position.
 */
-Waveform* TrapController::combinePrecomputedWaveform(vector<bool> &initial,
-	vector<int> &destinations) {
-
-
-	const size_t movingWaveformSize = loadedTrapWaveforms[0][0].dataVector.size();
+void TrapController::combinePrecomputedWaveform(vector<int> &destinations, std::vector<short> &mode, int move_ind, short* pvBuffer, bool row, int mode_ln,const size_t movingWaveformSize) {
 
 	thread *workers[numWorkers];
-
-
+	int mode_len = mode.size();
 	// Moving traps:
-	complex<float> *movingWaveform = rearrangeWaveform.dataVector.data();
+	short *movingWaveform = rearrangeWaveform.dataVectorShort.data();
 
+	int block_ind = move_ind*movingWaveformSize;
 	// Add each moving waveform separately.
 	for (int worker = 0; worker < numWorkers; worker++) {
-		workers[worker] = new thread(&TrapController::combineRearrangeWaveform, this, movingWaveform, worker, &destinations, movingWaveformSize);
+		workers[worker] = new thread(&TrapController::combineRearrangeWaveform, this, movingWaveform, worker, &destinations, movingWaveformSize, &mode, block_ind, pvBuffer, row, mode_len);
 	}
 
 	// Wait for all workers to finish combining waveforms.
 	for (int worker = 0; worker < numWorkers; worker++) {
 		workers[worker]->join();
 	}
-	// Done with rearrangement!
-
-
-	vector<Waveform *> waveforms;
-	waveforms.push_back(&rearrangeWaveform);
-
-
-	return &rearrangeWaveform;
 }
 
 
@@ -306,7 +316,9 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 			loadedTrapWaveforms[start_index][dest_index].initializeFromMovingWaveform(moveDuration,
 																					 starting_configuration, ending_configuration,
 																					 start_index, dest_index);
+			// loadedTrapWaveformsShort[start_index][dest_index].initializeShortFromFloatWaveform(loadedTrapWaveforms[start_index][dest_index].dataVector);
 		}
+
 	}
 
 	rearrangeWaveform.dataVector.resize(loadedTrapWaveforms[0][0].dataVector.size());
@@ -321,7 +333,7 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 
 	cout << "\rLoading precomputed waveforms... done! (Time elapsed: " << (msElapsed / 1000.0) << " s)                      " << endl;
 
-	if (loadedTrapWaveforms[0][0].dataVector.size() == 0) {
+	if (loadedTrapWaveforms[0][0].dataVectorShort.size() == 0) {
 		cout << "Unable to read waveforms in from disk!" << endl;
 		cout << "Aborting!!!" << endl;
 		return false;
@@ -332,4 +344,8 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 
 std::vector<std::complex<float>> TrapController::getWaveTable(){
 	return waveTable->waveTable;
+}
+
+int TrapController::getWFSize(){
+	return  loadedTrapWaveforms[0][0].dataVectorShort.size()-1;
 }

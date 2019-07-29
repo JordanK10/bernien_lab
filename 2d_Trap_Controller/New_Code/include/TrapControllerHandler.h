@@ -34,7 +34,7 @@ public:
 
   bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  std::vector<RearrangementMove> rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM);
+  int rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM, short* pvBuffer=NULL);
   std::vector<Waveform> generateStaticWaveform();
 
   void resetForRearrangement();
@@ -58,8 +58,13 @@ public:
   int tchWid;
   int numTokens = 4;
 
+  int mode_len;
+
   Waveform staticYWaveform;
   Waveform staticXWaveform;
+
+  vector<vector<short>> xmodes;
+  vector<vector<short>> ymodes;
 
   /* DETERMINE LENGTH OF VECTORS */
   int size = 0;

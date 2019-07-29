@@ -25,9 +25,9 @@ bool Waveform::fileExists(string filename) {
 	return file.good();
 }
 
-Waveform::Waveform(std::vector<std::complex<float>> data)
+Waveform::Waveform(std::vector<short> data)
 {
-	dataVector = data;
+	dataVectorShort = data;
 }
 
 
@@ -41,10 +41,17 @@ void Waveform::initializeFromBinaryFile(string binaryFilename) {
 		ifstream binaryFile(path, ios::in | ios::binary);
 		unsigned int numElements;
 		binaryFile.read(reinterpret_cast<char*>(&numElements), sizeof(unsigned int));
-		dataVector.resize(numElements);
-		binaryFile.read(reinterpret_cast<char*>(&dataVector[0]), numElements * sizeof(dataVector[0]));
+		dataVectorShort.resize(numElements);
+		binaryFile.read(reinterpret_cast<char*>(&dataVectorShort[0]), numElements * sizeof(dataVectorShort[0]));
 
 }
+
+// void Waveform::initializeShortFromFloatWaveform(vector<complex<float>> dV){
+// 	dataVectorShort.resize(dV.size());
+// 	for(int i=0; i<dV.size(); i++){
+// 		dataVectorShort[i]=(complex<short>)(10000*dV[i]);
+// 	}
+// }
 
 bool Waveform::initializeFromStaticWaveform(string trap_configuration_file) {
 	int length = trap_configuration_file.length();

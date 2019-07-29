@@ -9,10 +9,10 @@ static int BIG_NUMBER = pow(2,31)-1;
 static int SMALL_NUMBER = 1.024*pow(10,7);
 
 // AWG Controller constructor
-AWGController::AWGController(double sample_rate, output_mode mode, int sw_buf){
+AWGController::AWGController(double s_r, output_mode mode, int sw_buf){
   //Set card parameters
   llSWBufSize = sw_buf;
-  sampleRate = MEGA(sample_rate/(MEGA(1)));
+  sample_rate = MEGA(s_r/(MEGA(1)));
 
   //Initialize card and setup card if successful
   if (bSpcMInitCardByIdx(&stCard, 0)){
@@ -26,14 +26,6 @@ AWGController::AWGController(double sample_rate, output_mode mode, int sw_buf){
 
 }
 
-void AWGController::setModes(vector<Waveform> modes, bool x){
-
-    if(x)
-      xmodes = modes;
-    if(!x)
-      ymodes = modes;
-}
-
 //Sets up parameters such as buffer information, clockrate, output channels, and mode
 bool AWGController::setupCard(){
     //Print card info
@@ -44,7 +36,7 @@ bool AWGController::setupCard(){
     //Sets up the card for writing to memory
     spcm_dwSetParam_i32(stCard.hDrv, SPC_M2CMD, M2CMD_CARD_WRITESETUP);
     //Sets clockrate
-    bSpcMSetupClockPLL (&stCard,  sampleRate, false);
+    bSpcMSetupClockPLL (&stCard,  sample_rate, false);
     printf ("Sampling rate set to %.1lf MHz\n", (double) stCard.llSetSamplerate / MEGA(1));
 
     //Enables all channels
@@ -91,10 +83,9 @@ static int64 g_llXDiv = KILO_B(100);
 bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform>* waveforms, vector<RearrangementMove>* moves){
 
   // Generate array of pointers to buffer memory
-  int16* pnData = (int16*) pvBuffer;
 
   int seg;
-  int show;
+  short show;
   if(data == STATIC){
     seg = 0;
     show = 1;
@@ -104,76 +95,20 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
   }
 
   if(waveforms != NULL){
-    vector<complex<float>> dataVecX = (*waveforms)[0].dataVector;
-    vector<complex<float>> dataVecY = (*waveforms)[1].dataVector;
+    vector<short> dataVecX = (*waveforms)[0].dataVectorShort;
+    vector<short> dataVecY = (*waveforms)[1].dataVectorShort;
 
     for (int64 i = 0; i <segSize; i++){
-      pnData[i*2] = (int16)(real(dataVecX[i%dataVecX.size()])*gain*show);
-      pnData[i*2+1] = (int16)(real(dataVecY[i%dataVecY.size()])*gain*show);
+      pvBuffer[i*2] = dataVecX[i%dataVecX.size()]*show;
+      pvBuffer[i*2+1] = dataVecY[i%dataVecY.size()]*show;
     }
-  }
-
-  if(moves != NULL){
-    vector<complex<float>> dataVec;
-    int move_len = segSize;
-    vector<complex<float>> mode;
-    int move_num = moves->size();
-    int mode_len;
-    int64 seg_ind = 0;
-    int64 mem_ind = segSize;
-
-<<<<<<< HEAD
-=======
-    ofstream waveform3x3y;
-    ofstream waveform3x3x;
-      waveform3x3y.open ("3x3_15msY.txt");
-      waveform3x3x.open ("3x3_15msX.txt");
-
-
->>>>>>> origin
-    for(int64 move=0; move<move_num;move++){
-      // cout << "here " << move << endl;
-      // cout << mem_ind << "  " << seg_ind << endl;
-      dataVec = (*moves)[move].wf->dataVector;
-      if((*moves)[move].row){
-        mode = xmodes[(*moves)[move].dim].dataVector;
-        // cout << (*moves)[move].dim << endl;
-        mode_len = mode.size();
-        for(;seg_ind<mem_ind;seg_ind++){
-          pnData[seg_ind*2] = (int16)(real(dataVec[seg_ind%move_len])*gain/5);
-          pnData[seg_ind*2+1] = (int16)(real(mode[seg_ind%mode_len])*gain*10);
-<<<<<<< HEAD
-=======
-          //waveform3x3x <<   pnData[seg_ind*2] << endl;
-          //waveform3x3y <<   pnData[seg_ind*2+1] << endl;
->>>>>>> origin
-        }
-      }else{
-        mode = ymodes[(*moves)[move].dim].dataVector;
-        mode_len = mode.size();
-        for(;seg_ind<mem_ind;seg_ind++){
-          pnData[seg_ind*2+1] = (int16)(real(dataVec[seg_ind%move_len])*gain/5);
-          pnData[seg_ind*2] = (int16)(real(mode[seg_ind%mode_len])*gain*10);
-<<<<<<< HEAD
-
-=======
-          //waveform3x3x <<   pnData[seg_ind*2+1] << endl;
-          //waveform3x3y <<   pnData[seg_ind*2] << endl;
->>>>>>> origin
-        }
-      }
-      // cout << move_len << endl;
-      mem_ind += move_len;
-    }
-    segSize = seg_ind;
-    waveform3x3y.close();
-    waveform3x3x.close();
   }
 
   if(segSize%32!=0){
     cout << "fail\n";
     return false;
   }
+
     // write data to board (main) sample memory
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, seg);
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  segSize);
@@ -183,15 +118,7 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
 	return true;
 }
 
-float AWGController::getGain(){
-  return float(gain/base_gain);
-}
 
-bool AWGController::changeGain(float g){
-  gain = g*base_gain;
-  //Insert check for valid variable change
-  return true;
-}
 
 void AWGController::vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepIndex,
                       uint32 dwStepNextIndex, uint32 dwSegmentIndex, uint32 dwLoops, uint32 dwFlags)
@@ -210,8 +137,8 @@ void AWGController::vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepInd
 
 void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_push) {
 
-  int dataSize = waveforms[0].dataVector.size()*2;
-	pvBuffer = pvAllocMemPageAligned(dataSize*BYTES_PER_DATA);
+  int dataSize = waveforms[0].dataVectorShort.size()*2;
+	pvBuffer = (short*)pvAllocMemPageAligned(dataSize*BYTES_PER_DATA);
 	if (!pvBuffer){
 		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
     return;
@@ -245,19 +172,16 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_p
 
 }
 
-void AWGController::pushRearrangeWaveforms(vector<RearrangementMove> moves){
-
-  int num_moves = moves.size();
-  int dataSize = moves[0].wf->dataVector.size()-1;
-  pvBuffer = pvAllocMemPageAligned(num_moves*2*dataSize*BYTES_PER_DATA);
-  cout << dataSize << "  " << num_moves << "  " << num_moves*dataSize*2 << endl;
+void AWGController::pushRearrangeWaveforms(int num_moves, int move_size){
+  cout << num_moves << " " << move_size << endl;
+  pvBuffer = pvBufferDynamic;
   if (!pvBuffer){
     nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
     return;
   }
 
   if (!stCard.bSetError){
-      loadDataBlock(dataSize,STATIC,NULL,&moves);
+      loadDataBlock(move_size*num_moves,TRANS,NULL,NULL);
       vWriteStepEntry (&stCard,  0,  1,  STATIC, 1,  SPCSEQ_ENDLOOPONTRIG);
       vWriteStepEntry (&stCard,  1,  0,  TRANS,  1,  SPCSEQ_ENDLOOPONTRIG);
 
@@ -269,7 +193,6 @@ void AWGController::pushRearrangeWaveforms(vector<RearrangementMove> moves){
       }
   }else
     cout << "Error detected in card... Abortinig data transfer \n";
-  vFreeMemPageAligned (pvBuffer, (int32)llSWBufSize);
 }
 
 void AWGController::triggerSequence(){
@@ -309,4 +232,14 @@ void AWGController::stop(){
 void AWGController::errorPrint(bool dwErr, string error){
   if (dwErr)
     cout << endl << error  << endl << dwErr << endl;
+}
+
+void AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim){
+
+  pvBufferDynamic = (short*)pvAllocMemPageAligned((x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000);
+  cout << ((x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000) << endl;
+}
+
+short* AWGController::getDynamicBuffer(){
+  return pvBufferDynamic;
 }

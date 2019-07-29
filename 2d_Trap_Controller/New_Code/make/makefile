@@ -24,11 +24,11 @@ SRC_FILES = $(DIR_SRC)\main.cpp \
 						$(DIR_SRC)\Console.cpp \
 						$(DIR_SRC)\CameraServer.cpp \
 						$(DIR_SRC)\AtomSim.cpp \
-						$(DIR_SRC)\Rearrange2d.cpp 
+						$(DIR_SRC)\Rearrange2d.cpp
 
 {$(DIR_SRC)}.cpp{$(DIR_INT)}\*obj::
 			@echo Compiling...
-cl /c /EHsc /Fo$(DIR_INT)\ /I$(DIR_INCLUDE) /I$(DIR_COMMON) \
+cl /c /EHsc /O2 /Fo$(DIR_INT)\ /I$(DIR_INCLUDE) /I$(DIR_COMMON) \
 													 /I$(DIR_OSTOOLS) /I$(DIR_SB5) $<
 
 $(EXECUTABLE_NAME) : $(DIR_INT)\*.obj

@@ -31,7 +31,7 @@ SRC_FILES = $(DIR_SRC)\main.cpp \
 
 {$(DIR_SRC)}.cpp{$(DIR_INT_X86)}.obj ::
         @echo Compiling...
- cl /c /EHsc /Fo$(DIR_INT_X86)\ /Ispcm_win32_msvcpp.lib  /I$(DIR_INCLUDE)  $<
+ cl /c /EHsc /O2 /Fo$(DIR_INT_X86)\ /Ispcm_win32_msvcpp.lib  /I$(DIR_INCLUDE)  $<
 
 $(EXE_FILE) : $(DIR_INT_X86)\*.obj
    @echo Linking $(EXE_FILE)...

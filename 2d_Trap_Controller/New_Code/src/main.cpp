@@ -17,7 +17,7 @@ int main(){
     int cycles = 400;
     int clock_rate = MEGA(sw_buf_size*wt_freq/cycles); //Use mathematica to find parameter combination that is integer
     double bandwidth = 15;
-    int gain = 1;
+    int gain = 32761;
 
       TrapControllerHandler trapControllerHandler(clock_rate, gain, KILO(wt_freq));
       AWGController awgController(clock_rate,SEQUENCE,KILO(sw_buf_size));

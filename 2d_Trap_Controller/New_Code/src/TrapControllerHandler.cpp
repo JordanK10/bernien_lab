@@ -80,6 +80,14 @@ void TrapControllerHandler::printAvailableDefaultTrapConfigurations() {
 	}
 }
 
+//void TrapControllerHanlder::setModes(vector<Waveform> modes, bool x){
+//
+//    if(x)
+//      xmodes = modes;
+//    if(!x)
+//      ymodes = modes;
+//}
+
 // Loads a trap configuration from a file
 bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 
@@ -128,8 +136,10 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
   }}
 
   lastLoadedConfiguration = filename;
-
   config_file.close();
+  xmodes = statHandler.x->generateModes();
+  ymodes = statHandler.y->generateModes();
+  mode_len = ymodes[0].size();
 
   return true;
 
@@ -262,17 +272,24 @@ bool TrapControllerHandler::loadPrecomputedWaveforms(double moveDuration, string
   return true;
 }
 
-vector <RearrangementMove> TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, rearrange_mode mode) {
+int TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, rearrange_mode mode, short* pvBuffer) {
 
-	vector<Waveform *> waveforms;
-
+  const size_t movingWaveformSize = statHandler.x->getWFSize();
+  cout << movingWaveformSize << endl;
+  RearrangementMove curr_move;
   for(int i=0; i<moves.size();i++){
-    cout << i << endl;
-    if(moves[i].row) //this is a row operation
-      moves[i].wf = statHandler.x->combinePrecomputedWaveform(moves[i].startingConfig,moves[i].endingConfig);
+    curr_move = moves[i];
+
+    // auto start = chrono::high_resolution_clock::now(); //start
+
+    if(curr_move.row) //this is a row operation
+      statHandler.x->combinePrecomputedWaveform(curr_move.endingConfig, (xmodes[curr_move.dim]),i,pvBuffer,curr_move.row,mode_len, movingWaveformSize);
     else //this is a column operation
-      moves[i].wf = statHandler.y->combinePrecomputedWaveform(moves[i].startingConfig,moves[i].endingConfig);
+      statHandler.y->combinePrecomputedWaveform(curr_move.endingConfig, (ymodes[curr_move.dim]),i,pvBuffer,curr_move.row,mode_len, movingWaveformSize);
+
+    // cout << i << " " << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count() << "ms to call and combine move" << endl;
+    //stop
   }
 
-	return moves;
+	return statHandler.x->getWFSize();
 }
