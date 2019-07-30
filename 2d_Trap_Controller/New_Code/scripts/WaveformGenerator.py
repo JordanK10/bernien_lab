@@ -448,7 +448,16 @@ def write_rearrangement_waveforms(configuration_filename, freqs, amps, phases, d
 																								configuration_filename,
 																								duration*1000.0,
 																								filename))
-
+def resize(waveform,length):
+    curLength = len(waveform)
+    if curLength != length:
+        if curLength < length:
+            for i in range(length - curLength):
+                waveform.append(0)
+        else:
+            for i in range(curLength - length):
+                del waveform[length]
+    return waveform
 
 # Compute rearrangement waveforms.
 def write_rearrangement_waveforms_between_two_configs(filename_start, filename_end,
@@ -468,6 +477,9 @@ def write_rearrangement_waveforms_between_two_configs(filename_start, filename_e
                     phases1[start_index], phases2[end_index],
                     duration, amplitudeLandscape, None)
 
+            #resize waveforms to be of the proper size
+            waveform = resize(waveform,int(1.024e9*duration))
+            
             filename = "rearrange_%d_to_%d" %(start_index, end_index)
 
             saveWaveform(waveform, "%s/%s" %(directory_path, filename))
