@@ -102,7 +102,7 @@ vector<vector<short>> TrapController::generateModes() {
 
 	for (int trap_index = 0; trap_index < traps.size(); trap_index++) {
 	 	tempWaveform.clear();
-		num_samples = (size_t)(10000*waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
+		num_samples = (size_t)(1000*waveTable->tableLength*waveTable->tableFrequency/traps[trap_index].frequency);
 		for (size_t sample_index = 0; sample_index < num_samples; sample_index++)
 					tempWaveform.push_back((short)(real(traps[trap_index].nextSample())));
 		waveforms.push_back(tempWaveform);
@@ -219,12 +219,11 @@ void TrapController::combineRearrangeWaveform(short *movingWaveform,
 		}
 		if(row){
 			for (sample_index = startIndex; sample_index < endIndex; sample_index++)
-				pvBuffer[sample_index*2] += (*dataArr)[sample_index%movingWaveformSize];
-				cout << "HERE " << (*dataArr)[sample_index%movingWaveformSize] << endl;
+				pvBuffer[sample_index*2] += (*dataArr)[sample_index%movingWaveformSize]/3;
 		}
 		else{
 			for (sample_index = startIndex; sample_index < endIndex; sample_index++)
-				pvBuffer[sample_index*2+1] += (*dataArr)[sample_index%movingWaveformSize];
+				pvBuffer[sample_index*2+1] += (*dataArr)[sample_index%movingWaveformSize]/3;
 		}
 	}
 	if(row){
@@ -278,19 +277,19 @@ int numTrapsForConfigurationName(string config_name) {
 bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starting_configuration, string ending_configuration) {
 	// Load static waveforms for before and after rearrangement.
 
-	if (!staticStartingWaveform.initializeFromStaticWaveform(starting_configuration)) {
-		cout << "Unable to find static waveform for: " << starting_configuration << endl;
-		cout << "Aborting!!!" << endl;
-
-		return false;
-	}
-
-	if (!staticEndingWaveform.initializeFromStaticWaveform(ending_configuration)) {
-		cout << "Unable to find static waveform for: " << ending_configuration << endl;
-		cout << "Aborting!!!" << endl;
-
-		return false;
-	}
+	// if (!staticStartingWaveform.initializeFromStaticWaveform(starting_configuration)) {
+	// 	cout << "Unable to find static waveform for: " << starting_configuration << endl;
+	// 	cout << "Aborting!!!" << endl;
+	//
+	// 	return false;
+	// }
+	//
+	// if (!staticEndingWaveform.initializeFromStaticWaveform(ending_configuration)) {
+	// 	cout << "Unable to find static waveform for: " << ending_configuration << endl;
+	// 	cout << "Aborting!!!" << endl;
+	//
+	// 	return false;
+	// }
 
 	// Use configuration names (up to first open parens) to determine the number of traps before and after rearrangement.
 	numStartingTraps = numTrapsForConfigurationName(starting_configuration);
@@ -347,5 +346,5 @@ std::vector<std::complex<float>> TrapController::getWaveTable(){
 }
 
 int TrapController::getWFSize(){
-	return  loadedTrapWaveforms[0][0].dataVectorShort.size()-1;
+	return  loadedTrapWaveforms[0][0].dataVectorShort.size();
 }

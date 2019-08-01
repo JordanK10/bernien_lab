@@ -1,6 +1,6 @@
 #include "Console.h"
 
-double m_dur =1;
+double m_dur =10;
 
 //#include "control_interface.h"
 

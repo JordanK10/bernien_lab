@@ -457,7 +457,7 @@ def write_rearrangement_waveforms_between_two_configs(filename_start, filename_e
                                                         duration,
                                                         amplitudeLandscape = None):
 
-    directory_path = "../bin/TrapWaveforms/%s_to_%s_in_%.8fms" %(filename_start, filename_end, duration*1000.0000)
+    directory_path = "../bin/TrapWaveforms/%s_to_%s_in_%.1fms" %(filename_start, filename_end, duration*1000.0000)
     os.mkdir(directory_path)
 
     for start_index in range(len(freqs1)):
@@ -564,7 +564,7 @@ for ending_filename in [
     amplitude_landscape = create_amplitude_landscape("%s.txt" %filename, should_smooth=False);
 # # precomputedExponential = precomputeExponential();
 
-    duration = 0.00099978125
+    duration = 0.01
 
 
 
