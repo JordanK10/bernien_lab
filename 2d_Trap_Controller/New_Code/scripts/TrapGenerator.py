@@ -44,6 +44,25 @@ tableInd = np.linspace(0,tableLength,num=tableLength+1)
 coeff = pi2/tableLength
 waveTable = [np.exp((s*coeff)*1j) for s in tableInd]
 
+"""
+10 trap phases:
+Freq(MHz)   phase(fractional period)
+85          0.3899609375
+86          0.405020507812
+87          0.884223632813
+88          0.846274414063
+89          0.60730859375
+90          0.666987304688
+91          0.87426953125
+92          0.520982421875
+93          0.001861328125
+94          0.519811523438
+
+max peak = 3.65838438877
+max peak/trap = .365838438877 
+"""
+
+
 def genWave(freq,phase):
     pha = int(phase*tableLength)
     wave = []
