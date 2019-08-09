@@ -7,7 +7,6 @@
 
 #include "WaveTable.h"
 #include <iostream>
-#include <complex.h>
 #include "math.h"
 #include <ostream>
 #include <string>
@@ -28,7 +27,7 @@ class Trap {
       	void saveState();
       	void restoreState();
 
-        std::complex<float> nextSample();
+        short nextSample();
 
 
         double getPhase();

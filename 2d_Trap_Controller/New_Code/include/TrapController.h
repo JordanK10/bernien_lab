@@ -20,6 +20,12 @@
 #include <fstream>
 
 
+/*
+#include "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v10.1\\include\\cuda_runtime.h"
+*/
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+
 #include <vector>
 
 #define DEFAULT_WAVEFORM_DURATION 0.00001
@@ -30,7 +36,7 @@ using namespace std;
 
 
 
-static const int numWorkers = 15;
+static const int numWorkers = 16;
 
 
 struct loadedWaveformProperties {
@@ -61,12 +67,13 @@ public:
 
 		bool loadPrecomputedWaveforms(double moveDuration, std::string starting_configuration, std::string ending_configuration);
 
-		void combinePrecomputedWaveform(std::vector<int> &destinations,std::vector<short> &mode, int move_ind, short* pvBuffer, bool row, int mode_len, const size_t movingWaveformSize);
+		void combinePrecomputedWaveform(vector<int> &destinations,short* mode, int move_ind, short* pvBuffer, bool row, int mode_len,const size_t movingWaveformSize, int bufferSize, int num_moves);
 
-		void combineRearrangeWaveform(short *movingWaveform, int worker, std::vector<int> *destinations, const size_t movingWaveformSize, std::vector<short> *mode, int move_ind, short* pvBuffer, bool row, int mode_len);
+		void combineRearrangeWaveform(int worker, std::vector<int> *destinations, const size_t movingWaveformSize, std::vector<short> *mode, int move_ind, short* pvBuffer, bool row, int mode_len, int bufferSize);
 
+		void combineRearrangeWaveformCuda(vector<int> *destinations, const size_t movingWaveformSize, short* mode, short* pvBuffer, bool row, int mode_len, int bufSize,int num_moves, int move_index);
 
-		bool sanitizeTraps(double new_gain = -1, bool shouldPrintTotalPower=true);
+    bool sanitizeTraps(double new_gain = -1, bool shouldPrintTotalPower=true);
 
 		void printTraps();
 
@@ -80,7 +87,6 @@ public:
     double xAxisCenterFreq;
     double yAxisCenterFreq;
 
-		std::vector<std::complex<float>> getWaveTable();
 
 		Waveform staticStartingWaveform;
 		Waveform staticEndingWaveform;
@@ -90,7 +96,7 @@ public:
 		string staticWaveform;
 
 		int getWFSize();
-
+		vector<vector<short*>> loadedCudaWaveforms;
 private:
 
 
@@ -119,6 +125,10 @@ private:
   	int clusterPeriodicity;
   	std::vector<bool> clusterTargetIndices;
   	int numClustersToBuild;
+
+		int rearrangeDataSize;
   };
 
+
+	__global__ void addWaveformsCuda(short* wave1, short* wave2, int row, int col,bool addMode, size_t movingWaveformSize, int startIndex, int endIndex,short* mode,int mode_len);
 #endif

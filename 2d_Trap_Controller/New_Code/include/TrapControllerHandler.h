@@ -9,8 +9,8 @@
 using namespace std;
 
 struct StaticHandler{
-  TrapController* x = NULL;
-  TrapController* y = NULL;
+  TrapController* x;
+  TrapController* y;
 };
 
 string dimensionFormat(string str, string ins);
@@ -34,7 +34,7 @@ public:
 
   bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  int rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM, short* pvBuffer=NULL);
+  int rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM, int bufferSize = 0, short* pvBuffer=NULL, short* cudaBuffer = NULL);
   std::vector<Waveform> generateStaticWaveform();
 
   void resetForRearrangement();
@@ -65,6 +65,9 @@ public:
 
   vector<vector<short>> xmodes;
   vector<vector<short>> ymodes;
+
+  vector<short*> xmodesCuda;
+  vector<short*> ymodesCuda;
 
   /* DETERMINE LENGTH OF VECTORS */
   int size = 0;

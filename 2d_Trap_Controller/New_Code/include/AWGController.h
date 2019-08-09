@@ -56,9 +56,9 @@ public:
 	void pushRearrangeWaveforms(int num_moves, int move_size);
 	void triggerSequence();
 
-	void allocateDynamicWFBuffer(float duration, int x_dim, int y_dim);
+	int allocateDynamicWFBuffer(float duration, int x_dim, int y_dim);
 	short* getDynamicBuffer();
-
+	short* getCudaBuffer();
 	bool isConnected();
 
 	bool run(int timeout,int channel);
@@ -70,6 +70,7 @@ private:
   	ST_SPCM_CARDINFO    stCard;             // info structure of my card
   	short*              pvBuffer = NULL;
 		short*							pvBufferDynamic = NULL;
+		short* 							cudaBuffer = NULL;
   	uint32              dwErr;
   	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
 

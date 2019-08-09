@@ -5,10 +5,9 @@
 #define WAVEFORM_H
 
 #include <vector>
-#include <complex>
 #include <string>
 #include <windows.h>
-
+#include <sstream>
 
 static const std::string dir = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\TrapWaveforms\\";
 static const std::string static_waveforms = "C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\TrapWaveforms\\";
@@ -19,24 +18,22 @@ class Waveform
 public:
 	Waveform();
 	Waveform(std::string binaryFilename);
+	Waveform(short* data);
 	Waveform(std::vector<short> data);
 
-	std::vector<std::complex<float>> dataVector;
 	std::vector<short> dataVectorShort;
-
+	short* dataShort;
 	bool shouldNotifyAfterSending = false;
 
 	static bool fileExists(std::string filename);
 
-	void initializeFromBinaryFile(std::string binaryFilename);
-	void initializeShortFromFloatWaveform(std::vector<std::complex<float>> dV);
+	int initializeFromBinaryFile(std::string binaryFilename);
 	bool initializeFromStaticWaveform(std::string trap_configuration_file);
 
-	void importFromBinaryFile(std::vector<std::complex<float>> tempVector);
 	void writeToFile(std::string filename);
 	void writeToBinaryFile(std::string filename);
 
-	void initializeFromMovingWaveform(double duration,
+	int initializeFromMovingWaveform(double duration,
 									  std::string starting_configuration, std::string ending_configuration,
 									  int starting_index, int ending_index);
 
