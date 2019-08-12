@@ -135,7 +135,7 @@ vector<int> ColSum(vector<vector<bool>> Array){
 //this takes a range of rows and divides it in half,
 //then moves atoms up and down until sufficient atoms
 //are in each sub-range. returns the new sub-ranges to be balanced
-vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int SufficientAtoms, vector<int> &RowTotal){
+vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range,int SufficientAtoms, vector<int> &RowTotal){
     int dim = Array[0].size();
     int center;
 
@@ -149,7 +149,6 @@ vector<vector<int>> Balance(vector<vector<bool>> &Array, vector<int> &Range, int
     }
     int SuffLower = (center - Range[0] + 1)*SufficientAtoms;
     int SuffUpper = (Range[1] - center)*SufficientAtoms;
-
 
     i = Range[0];
     int Lower = 0;
@@ -338,7 +337,6 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     }
 
     int TargetDim = sqrt(atoms);
-
     int col_y;
     int col_z;
     int row_y;
@@ -459,8 +457,8 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     //this iterates through all the columns, compressing them until there are enough atoms in the spcified row range to
     //run the balance function. This only happens for a standard, and not rectangular, BC since the rectangular row range
     //is the whole hight of the array
- if(mode == CENTER_COM||mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
-        for(int z=0; z<ArrayDim; z++){
+ if(mode == CENTER_COM){
+       for(int z=0; z<ArrayDim; z++){
             atoms = 0;
             for(j = row_y; j<=row_z; j++){
                 atoms += RowTotals[j+1];
@@ -495,7 +493,60 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
                 row_y ++;
             }
         }
+    }else if(mode == UL_CORNER||mode == UR_CORNER||mode == LL_CORNER||mode == LR_CORNER||mode == CLOSE_CORNER){
+        //new plan: balance rows until all coltotals are <= target dim -> compress all rows -> do a rect bank
+        //begin with the row balancing
+        vector<vector<int>> underFilledCols;
+        vector<vector<int>> overFilledCols;
+        for(int i = 0;i<ArrayDim;i++){
+            if(ColTotals[i+1] > TargetDim){
+                overFilledCols.push_back({i,ColTotals[i+1]-TargetDim});
+            }
+            if(ColTotals[i+1]<TargetDim){
+                underFilledCols.push_back({i,TargetDim - ColTotals[i+1]});
+            }
+        }
+        for(int i = 0;i<overFilledCols.size();i++){
+            for(int j = 0;j<overFilledCols[i][1];j++){
+                for(int row = 0;row<ArrayDim;row++){
+                    if(!Array[row][underFilledCols[0][0]] && Array[row][overFilledCols[i][0]]){
+                       Array[row][underFilledCols[0][0]] = true;
+                       Array[row][overFilledCols[i][0]] = false;
+                       ColTotals[underFilledCols[0][0] + 1] ++;
+                       ColTotals[overFilledCols[i][0] + 1] --;
+                       underFilledCols[0][1] --;
+                       if(underFilledCols[0][1] == 0){
+                            underFilledCols.erase(underFilledCols.begin());
+                       }
+                       break;
+                    }
+                }
+            }
+        }
+        //load the row moves into vector
+        for(int s = 0;s<Array.size();s++){
+            vector<bool> start = startArray[s];
+            vector<bool> ending = Array[s];
+            if(!eq(start,ending)){
+                moves.push_back(RearrangementMove());
+                moves[g_counter].startingConfig = start;
+                moves[g_counter].dim = s;
+                moves[g_counter].row = true;
+                endings.push_back(ending);
+                g_counter ++;
+            }
+        }
+
+        startArray = Array;
+
+        vector<bool> tempCol;
+        for(int z = 0;z<ArrayDim;z++){
+            tempCol = ColumnAt(Array,z); // Extract desired column
+            compressedCol = CompressRow(tempCol,row_y,row_z,ColTotals[z+1]);
+            Array = assignCol(Array,compressedCol,z);
+        }
     }
+
 
     RowRange1 = row_y;
     RowRange2 = row_z;
@@ -506,7 +557,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
     vector<vector<int>> Range1(2);
     int balancedRows = 0;
 
-
+    RowTotals = RowSum(Array);
     //initialize the first rowrange to be balanced - the whole array
     vector<vector<int>> RowRange = {{row_y,row_z}};
 
@@ -526,6 +577,63 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         s ++;
     }
 
+    //make sure that an even number of atoms are in each row
+    vector<int> sortedRowTotals = {};
+    int j = 0;
+    while(1){
+        sortedRowTotals = {};
+        j = 0;
+        while(1){
+            for(int i = row_y;i<=row_z;i++){
+                if(RowTotals[i + 1] == TargetDim + j){
+                    sortedRowTotals.push_back(i);
+                }
+            }
+            j++;
+            if(sortedRowTotals.size() == TargetDim){
+                break;
+            }
+        }
+        if(RowTotals[sortedRowTotals[TargetDim - 1] + 1] - RowTotals[sortedRowTotals[0] + 1] > 1){
+            for(int curCol = 0;curCol<ArrayDim;curCol++){
+                if(!Array[sortedRowTotals[0]][curCol] && Array[sortedRowTotals[TargetDim-1]][curCol]){
+                    Array[sortedRowTotals[0]][curCol] = true;
+                    Array[sortedRowTotals[TargetDim-1]][curCol] = false;
+                    RowTotals[sortedRowTotals[TargetDim - 1] + 1] --;
+                    RowTotals[sortedRowTotals[0]+ 1] ++;
+                    break;
+                }
+            }
+        }else{
+            break;
+        }
+    }
+
+    //moves all extra col atoms away from the array
+    for(int i = 0;i<ArrayDim;i++){
+        if(row_y == 0){
+            for(int j = row_z+1;j<ArrayDim-1;j++){
+                if(Array[j][i] && !Array[j+1][i]){
+                    Array[j][i] = false;
+                    Array[j+1][i] = true;
+                    RowTotals[j+1] --;
+                    RowTotals[j+2] ++;
+                }
+            }
+        }
+        if(row_z == ArrayDim-1){
+            for(int j = row_y-1;j>0;j--){
+                if(Array[j][i] && !Array[j-1][i]){
+                    Array[j][i] = false;
+                    Array[j-1][i] = true;
+                    RowTotals[j+1] --;
+                    RowTotals[j] ++;
+                }
+            }
+        }
+    }
+
+    //make col moves
     for(int s = 0;s<Array[0].size();s++){
         vector<bool> start = ColumnAt(startArray,s);
         vector<bool> ending = ColumnAt(Array,s);
@@ -554,19 +662,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
         i++;
         g_counter++;
     }
-    vector<RearrangementMove> bankMoves;
-    if(mode == REC_LEFT || mode == REC_RIGHT || mode == REC_CENT){
-        bankMoves = rectBank(Array);
-    }else{
-        if(mode != CENTER_COM){
-            bankMoves = bank(Array);
-        }else{
-            cout << "Cannot Bank Centered Array" << endl;
-      }
-    }
-
-    convert_ending_config(moves,endings);
-    moves.insert(moves.end(),bankMoves.begin(),bankMoves.end());
+convert_ending_config(moves,endings);
 return moves;
 }
 
@@ -830,6 +926,7 @@ vector<vector<vector<int>>> order(vector<vector<vector<int>>> moves, vector<vect
             i ++;
         }
         int j;
+        int k;
         while(1){
             todo1 = todo;
             todo = {};
@@ -1177,6 +1274,7 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
     for(i = 0; i < n*2; i++){
         path.push_back(row);
     }
+    bool done = false;
     int step = 1;
     vector<vector<int>> results = {};
     //step = 0 means the algorithm has finished
@@ -1655,7 +1753,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
 
     vector<vector<bool>> endings;
     int n = ordered_moves.size();
-    for(int i = 0;i<n;i++){
+    for(i = 0;i<n;i++){
     if(!Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]]){
         if(ordered_moves[i][0][0] == ordered_moves[i][1][0]){
             moves.push_back(RearrangementMove());
@@ -1889,6 +1987,7 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
 {
     vector<RearrangementMove> moves;
     int counter = 0;
+    bool done = false;
     int index;
     vector<vector<int>> vacant;
     vector<int> rowTotals = RowSum(Array);
@@ -1948,7 +2047,7 @@ vector<RearrangementMove> rearrange(vector<vector<bool>> &Array, rearrange_metho
     if(method == HUNGARIAN){
         return compute(Array,mode);
     }
-    else{//}(method == DROP_IT_LIKE_ITS_HOT){
+    if(method == DROP_IT_LIKE_ITS_HOT){
         return DropItLikeItsHot(Array);
     }
 
