@@ -21,7 +21,7 @@ public:
 
 
   TrapControllerHandler(double cloack_rate, double gain, int wt_freq);
-
+  void cleanCudaModes();
   bool loadDefaultTrapConfiguration(std::string filename);
   void printTraps();
 
@@ -34,7 +34,7 @@ public:
 
   bool sanitizeTraps(double new_gain = -1,bool shouldPrintTotalPower=true);
 
-  int rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM, int bufferSize = 0, short* pvBuffer=NULL, short* cudaBuffer = NULL);
+  int rearrangeWaveforms(std::vector<RearrangementMove> moves,  rearrange_mode mode=CENTER_COM,short* pvBuffer=NULL, short* cudaBuffer = NULL, short* cudaBuffer1 = NULL);
   std::vector<Waveform> generateStaticWaveform();
 
   void resetForRearrangement();
@@ -67,6 +67,7 @@ public:
   vector<vector<short>> ymodes;
 
   vector<short*> xmodesCuda;
+  vector<short*> xmodesCuda2;
   vector<short*> ymodesCuda;
 
   /* DETERMINE LENGTH OF VECTORS */

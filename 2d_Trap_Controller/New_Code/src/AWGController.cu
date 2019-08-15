@@ -4,7 +4,7 @@
 #define USING_EXTERNAL_TRIGGER  0   // wait for keystroke to switch to next sequence group
 //#define USING_EXTERNAL_TRIGGER  1   // use external trigger to switch to next sequence group
 
-static int BYTES_PER_DATA = 8;
+static int BYTES_PER_DATA = 2;
 static int BIG_NUMBER = pow(2,31)-1;
 static int SMALL_NUMBER = 1.024*pow(10,7);
 
@@ -236,24 +236,49 @@ void AWGController::errorPrint(bool dwErr, string error){
     cout << endl << error  << endl << dwErr << endl;
 }
 
-int AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim){
+void AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim){
+  size_t bufferSize = 1.5*(x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000; //this is the theoretical max buffer size
+                                                                                    //based on our current rearrangement algorithm
+  // pvBufferDynamic = (short*)pvAllocMemPageAligned((x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000);
+  cudaHostAlloc((void **)&pvBufferDynamic,bufferSize,cudaHostAllocPortable);
 
-  pvBufferDynamic = (short*)pvAllocMemPageAligned((x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000);
-
-   cudaError_t err = cudaSuccess;
- //move the buffer to the GPU
-   err =  cudaMalloc((void **)&cudaBuffer, (x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000);
-   if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
-   err = cudaMemcpy(cudaBuffer,pvBufferDynamic,(x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000,cudaMemcpyHostToDevice);
-   if(err != cudaSuccess){cout << "Memory Transfer Error (buffer)" << endl;}
-  cout << ((x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000) << endl;
-  return (x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000;
+  if(numDevices == 1){
+    cudaError_t err = cudaSuccess;
+    //move the buffer to the GPU
+    err =  cudaMalloc((void **)&cudaBuffer, bufferSize);
+    if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
+    cout << "Allocated Buffer Memory: " << bufferSize << endl;
+  }else if(numDevices == 2){//if using 2 devices, make 1 buffer of half the allotted size
+                            //on each device, so that they can be calculated in parallel
+    cudaError_t err = cudaSuccess;
+    //move the buffer to the GPU
+    cudaSetDevice(0);
+    err =  cudaMalloc((void **)&cudaBuffer, bufferSize/2);
+    if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
+    cudaSetDevice(1);
+    err =  cudaMalloc((void **)&cudaBuffer2, bufferSize/2);
+    if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
+    cout << "Allocated Buffer Memory: " << bufferSize << endl;
+  }
 }
 
 short* AWGController::getCudaBuffer(){
   return cudaBuffer;
 }
 
+short* AWGController::getCudaBuffer2(){
+  return cudaBuffer2;
+}
+
 short* AWGController::getDynamicBuffer(){
   return pvBufferDynamic;
+}
+
+void AWGController::cleanCudaBuffer(){ //free buffer from GPU memory
+  cudaSetDevice(0);
+  cudaFree(cudaBuffer);
+  if(numDevices == 2){
+    cudaSetDevice(1);
+    cudaFree(cudaBuffer2);
+  }
 }

@@ -205,42 +205,50 @@ bool TrapController::mostRecentlyLoadedCorrectWaveforms(double duration, string 
 
 //set row to 0 if this is a row move, or row to 1 if this is a column move
 __global__ void addWaveformsCuda(short* wave1, short* wave2, int row, int col,bool addMode, size_t movingWaveformSize, int startIndex, int endIndex,short* mode,int mode_len){
+	//row and col are int values of either 0 or 1, and define how the mulitplexing is carried out.
+	//If row is 1, col is 0 and vice waveform_on_samples
+	//addMode is a bool that is true only on the first pass through a set of data
+	//so that the modes are not repeatedly reassigned
+	// this is the only kernel we have that executes on the GPU
 	int i = blockDim.x * blockIdx.x + threadIdx.x + startIndex;
-	if(i >= startIndex && i<endIndex){
-		wave1[i*2 + row] += wave2[i%movingWaveformSize]/3;
-		if(addMode){
-			wave1[i*2 + col] = mode[i%mode_len];
-		}
+	wave1[i*2 + row] += wave2[i%movingWaveformSize]/3;
+	if(addMode){
+		wave1[i*2 + col] = mode[i%mode_len];
 	}
-
-	__syncthreads();
 }
 
-void TrapController::combineRearrangeWaveformCuda(vector<int> *destinations, const size_t movingWaveformSize, short* mode, short* cudaBuffer, bool row, int mode_len, int bufSize,int num_moves, int move_index) {
+void TrapController::combineRearrangeWaveformCuda(vector<int> *destinations, const size_t movingWaveformSize, short* mode, short* cudaBuffer, bool row, int mode_len, int num_moves, int move_index) {
 
 	int dest_index; int trap_index; short* dataArr;
-	int threadsPerBlock = 128;
-	int numBlocks = movingWaveformSize/threadsPerBlock;
-
+	int threadsPerBlock = 128; //this should be either 128,256,512,or 1024
+	int numBlocks = movingWaveformSize/threadsPerBlock; //the total nmumber of blocks*the number of threads
+																											//per block has to be high enough to cycle though the whole
+																											//move on the buffer
 	int startIndex = movingWaveformSize*move_index;
 	int endIndex = movingWaveformSize*(move_index + 1);
 
 	bool addMode = true;
-
 	for (trap_index = 0; trap_index < destinations->size(); trap_index++) {
 		dest_index = (*destinations)[trap_index];
 		if (dest_index == -1) {
 			continue;
 		}
-		dataArr = loadedCudaWaveforms[trap_index][dest_index];
+		if(numDevices == 2 && move_index>=num_moves/2){
+			dataArr = loadedCudaWaveforms2[trap_index][dest_index]; //if there are 2 devices, the first half of the moves
+																															//are run on the first device, the second half on the second
+																															//loadedCudaWaveforms are on device 0, loadedCudaWaveforms2
+																															//are on device 1
+		}else{
+			dataArr = loadedCudaWaveforms[trap_index][dest_index];
+		}
 		if(row){
 			//invoke the Kernel
 			addWaveformsCuda<<<numBlocks,threadsPerBlock>>>(cudaBuffer,dataArr,0,1,addMode,movingWaveformSize,startIndex,endIndex,mode,mode_len);
 		}else{
 				//invoke the Kernel
-			addWaveformsCuda<<<numBlocks,threadsPerBlock>>>(cudaBuffer,dataArr,1,0,addMode, movingWaveformSize, startIndex, endIndex,mode,mode_len);
+			addWaveformsCuda<<<numBlocks,threadsPerBlock>>>(cudaBuffer,dataArr,1,0,addMode,movingWaveformSize,startIndex,endIndex,mode,mode_len);
 			}
-			addMode = false;
+		addMode = false;
 		}
 }
 
@@ -286,9 +294,8 @@ void TrapController::combineRearrangeWaveform(int worker, vector<int> *destinati
 /* Moving traps: This will be the sum of the "loaded trap" waveforms for each
 moving trap, designated by a start position and end position.
 */
-void TrapController::combinePrecomputedWaveform(vector<int> &destinations, short* mode, int move_ind, short* pvBuffer, bool row, int mode_len,const size_t movingWaveformSize, int bufferSize, int num_moves){
-
-	combineRearrangeWaveformCuda(&destinations, movingWaveformSize, mode, pvBuffer, row, mode_len, bufferSize, num_moves, move_ind);
+void TrapController::combinePrecomputedWaveform(vector<int> &destinations, short* mode, int move_ind, short* pvBuffer, bool row, int mode_len,const size_t movingWaveformSize, int num_moves){
+	combineRearrangeWaveformCuda(&destinations, movingWaveformSize, mode, pvBuffer, row, mode_len, num_moves, move_ind);
 	return;
 	// thread *workers[numWorkers];
 	// int mode_len = mode.size();
@@ -339,13 +346,19 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 	short* tempWave = NULL;
 	// Rearranging waveforms:
 	vector<short*> tempCudaWaveforms;
+	vector<short*> tempCudaWaveforms2;
 	cudaError_t err;
+	//load the precompute moving waveforms onto the host, and then move them
+	//onto the GPU. If using 2 devices, load them all onto both devices. This
+	//is rather inefficient in memory usage, but allows the fastest comp time
+	//if the memory is available. once the mem is not available, we will need
+	// to be trickier with memory usage, and how/where it is put
 	for (int start_index = 0; start_index < numStartingTraps; start_index++) {
 		for (int dest_index = 0; dest_index < numEndingTraps; dest_index++) {
 			rearrangeDataSize = loadedTrapWaveforms[start_index][dest_index].initializeFromMovingWaveform(moveDuration,starting_configuration, ending_configuration,start_index, dest_index);
 			tempWave = NULL;
 			size_t size = rearrangeDataSize*sizeof(short);
-
+			cudaSetDevice(0);
 			err =  cudaMalloc((void **)&tempWave, size);
 			if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;}
 
@@ -353,10 +366,23 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 			if(err != cudaSuccess){cout << "Memory Transfer Error" << endl;}
 
 			tempCudaWaveforms.push_back(tempWave);
+			if(numDevices == 2){
+				cudaSetDevice(1);
+				tempWave = NULL;
+				err =  cudaMalloc((void **)&tempWave, size);
+				if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;}
+				err = cudaMemcpy(tempWave,loadedTrapWaveforms[start_index][dest_index].dataShort,size,cudaMemcpyHostToDevice);
+				if(err != cudaSuccess){cout << "Memory Transfer Error" << endl;}
+				tempCudaWaveforms2.push_back(tempWave);
+			}
 			 //loadedTrapWaveformsShort[start_index][dest_index].initializeShortFromFloatWaveform(loadedTrapWaveforms[start_index][dest_index].dataVector);
 		}
 		loadedCudaWaveforms.push_back(tempCudaWaveforms);
 		tempCudaWaveforms = {};
+		if(numDevices == 2){
+			loadedCudaWaveforms2.push_back(tempCudaWaveforms2);
+			tempCudaWaveforms2 = {};
+		}
 	}
 
 	// for(int k = 0;k<1000;k++){

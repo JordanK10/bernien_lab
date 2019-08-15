@@ -1,14 +1,10 @@
 #include "Console.h"
-#include <fstream>
-
 
 double m_dur =1;
 
 //#include "control_interface.h"
 
 struct RearrangementMove;
-
-int bufferSize = 1024001;
 
 std::vector<string> parseCommand(string &cmd) {
 	if (cmd[cmd.size() - 1] == '\n') {
@@ -230,24 +226,24 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				trapControllerHandler.resetForRearrangement();
 
 				startTimer();
-				// vector<RearrangementMove> moves = rearrange(atomsPresent,method,mode);
-				RearrangementMove temp_move;
-				vector<RearrangementMove> moves;
-				temp_move.startingConfig = {1,1,1,1,1,1,1,1,1,1};
-				temp_move.endingConfig = {-1,-1,-1,-1,-1,-1,-1,-1,0,1};
-				temp_move.row = 1;
-				temp_move.dim = 0;
-				moves.push_back(temp_move);
-				temp_move.startingConfig = {1,1,1,1,1,1,1,1,1,1};
-				temp_move.endingConfig = {8,9,-1,-1,-1,-1,-1,-1,-1,-1};
-				temp_move.row = 1;
-				temp_move.dim = 5;
-				moves.push_back(temp_move);
+				vector<RearrangementMove> moves = rearrange(atomsPresent,method,mode);
+				// RearrangementMove temp_move;
+				// vector<RearrangementMove> moves;
+				// temp_move.startingConfig = {1,1,1,1,1,1,1,1,1,1};
+				// temp_move.endingConfig = {-1,-1,-1,-1,-1,-1,-1,-1,0,1};
+				// temp_move.row = 1;
+				// temp_move.dim = 0;
+				// moves.push_back(temp_move);
+				// temp_move.startingConfig = {1,1,1,1,1,1,1,1,1,1};
+				// temp_move.endingConfig = {8,9,-1,-1,-1,-1,-1,-1,-1,-1};
+				// temp_move.row = 1;
+				// temp_move.dim = 5;
+				// moves.push_back(temp_move);
 				int duration = timeElapsed();
 
 
 
-				int move_len = trapControllerHandler.rearrangeWaveforms(moves,mode,bufferSize,awgController.getDynamicBuffer(),	awgController.getCudaBuffer());
+				int move_len = trapControllerHandler.rearrangeWaveforms(moves,mode,awgController.getDynamicBuffer(),	awgController.getCudaBuffer(),awgController.getCudaBuffer2());
 				int duration2 = timeElapsed();
 
 				awgController.pushRearrangeWaveforms(moves.size(),move_len);
@@ -452,12 +448,25 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 			cout << "Usage: delete [trap index]" << endl;
 		}
 	} else if (commandTokens[1].compare("clean") == 0) {
+		for(int i = 0;i<trapControllerHandler.tchLen;i++){
+			for(int j = 0;j<trapControllerHandler.tchLen;j++){
+				//free(trapControllerHandler.statHandler.x->loadedTrapWaveforms[i][j]);
+				cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms[i][j]);
+				if(numDevices == 2){
+					cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms2[i][j]);
+				}
+			}
+		}
+		awgController.cleanCudaBuffer();
+		trapControllerHandler.cleanCudaModes();
+
 		for(int i=0; i<trapControllerHandler.tchLen; i++){
 			trapControllerHandler.statHandler.x->traps.erase(	trapControllerHandler.statHandler.x->traps.begin());
 		}
 		for(int i=0; i<trapControllerHandler.tchWid; i++){
 			trapControllerHandler.statHandler.y->traps.erase(	trapControllerHandler.statHandler.y->traps.begin());
 		}
+
 	} else if (commandTokens[1].compare("change") == 0) {
 		if (commandTokens.size() >= 5) {
 			try {
@@ -506,7 +515,7 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 			if (trapControllerHandler.loadDefaultTrapConfiguration(configuration_filename)) {
 				//continue;
 
-				bufferSize = awgController.allocateDynamicWFBuffer(m_dur, trapControllerHandler.statHandler.x->traps.size(),trapControllerHandler.statHandler.x->traps.size());
+				awgController.allocateDynamicWFBuffer(m_dur, trapControllerHandler.statHandler.x->traps.size(),trapControllerHandler.statHandler.x->traps.size());
 				cout << "Loading precomputed waveforms from disk." << endl;
 
 				// Default name of trap configurations to start and end with.

@@ -649,7 +649,7 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
 
 
     //compress all the rows, store the moves
-    i = RowRange[0][0];
+    int i = RowRange[0][0];
     while(i <= RowRange[0][1]){
         moves.push_back(RearrangementMove());
         moves[g_counter].dim = i;
@@ -661,6 +661,25 @@ vector<RearrangementMove> BalanceCompressAlg(vector<vector<bool>> &Array, int mo
 
         i++;
         g_counter++;
+    }
+
+    //store bank locations for later REPLENSIHING
+    if(mode != CENTER_COM){
+      int  c1, c2;
+      if(ColRange1 == 0){
+        c1 = ColRange2 + 1;
+        c2 = ArrayDim;
+      }else{
+        c1 = 0;
+        c2 = ColRange1;
+      }
+      for(int i = RowRange1;i<=RowRange2;i++){
+        for(int j = c1;j<c2;j++){
+          if(Array[i][j]){
+            bankLocations.push_back({i,j});
+          }
+        }
+      }
     }
 convert_ending_config(moves,endings);
 return moves;
@@ -926,7 +945,6 @@ vector<vector<vector<int>>> order(vector<vector<vector<int>>> moves, vector<vect
             i ++;
         }
         int j;
-        int k;
         while(1){
             todo1 = todo;
             todo = {};
@@ -1274,7 +1292,6 @@ vector<RearrangementMove> compute(vector<vector<bool>> &Matrix,rearrange_mode mo
     for(i = 0; i < n*2; i++){
         path.push_back(row);
     }
-    bool done = false;
     int step = 1;
     vector<vector<int>> results = {};
     //step = 0 means the algorithm has finished
@@ -1753,7 +1770,7 @@ vector<RearrangementMove> bank(vector<vector<bool>> &Array){
 
     vector<vector<bool>> endings;
     int n = ordered_moves.size();
-    for(i = 0;i<n;i++){
+    for(int i = 0;i<n;i++){
     if(!Array[ordered_moves[i][1][0]][ordered_moves[i][1][1]]){
         if(ordered_moves[i][0][0] == ordered_moves[i][1][0]){
             moves.push_back(RearrangementMove());
@@ -1987,7 +2004,6 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
 {
     vector<RearrangementMove> moves;
     int counter = 0;
-    bool done = false;
     int index;
     vector<vector<int>> vacant;
     vector<int> rowTotals = RowSum(Array);
@@ -1995,36 +2011,39 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
     if(detectVacancies(vacant,Array)){
         for(int m = 0; m<vacant.size(); m++){
             index = findNearestBank(Array, vacant[m]);
-            if(bankLocations[index][1] == vacant[m][1]){
+            if(bankLocations[index][0] == vacant[m][0]){
                 //compress row
                 moves.push_back(RearrangementMove());
                 moves[counter].dim = vacant[m][1];
-                moves[counter].row = false;
-                moves[counter].startingConfig = ColumnAt(Array,vacant[m][1]);
+                moves[counter].row = true;
+                moves[counter].startingConfig = Array[vacant[m][0]];
                 Array[bankLocations[index][0]][bankLocations[index][1]] = false;
                 Array[vacant[m][0]][vacant[m][1]] = true;
-                endings.push_back(ColumnAt(Array,vacant[m][0]));
+                endings.push_back(Array[vacant[m][0]]);
                 bankLocations.erase(bankLocations.begin() + index);
                 counter ++;
             }else{
                 //two moves
+
+                //col first
                 moves.push_back(RearrangementMove());
-                moves[counter].dim = bankLocations[index][0];
-                moves[counter].row = true;
-                moves[counter].startingConfig = Array[vacant[m][0]];
+                moves[counter].dim = bankLocations[index][1];
+                moves[counter].row = false;
+                moves[counter].startingConfig = ColumnAt(Array,bankLocations[index][1]);
                 Array[bankLocations[index][0]][bankLocations[index][1]] = false;
-                Array[bankLocations[index][0]][vacant[m][1]] = true;
-                endings.push_back(Array[vacant[m][0]]);
+                Array[vacant[m][0]][bankLocations[index][1]] = true;
+                endings.push_back(ColumnAt(Array,bankLocations[index][1]));
+                bankLocations.erase(bankLocations.begin() + index);
                 counter ++;
 
+                //row second
                 moves.push_back(RearrangementMove());
-                moves[counter].dim = vacant[m][1];
-                moves[counter].row = false;
-                moves[counter].startingConfig = ColumnAt(Array,vacant[m][1]);
-                Array[bankLocations[index][0]][vacant[m][1]] = false;
+                moves[counter].dim = vacant[m][0];
+                moves[counter].row = true;
+                moves[counter].startingConfig = Array[vacant[m][0]];
+                Array[vacant[m][0]][bankLocations[index][1]] = false;
                 Array[vacant[m][0]][vacant[m][1]] = true;
-                endings.push_back(ColumnAt(Array,vacant[m][1]));
-                bankLocations.erase(bankLocations.begin() + index);
+                endings.push_back(Array[vacant[m][0]]);
                 counter ++;
             }
         }
@@ -2034,23 +2053,33 @@ vector<RearrangementMove> fillVacancies(vector<vector<bool>> &Array)
 }
 
 
-
-
 //////////////////////////END///////////////////////////////////////////////
 
 vector<RearrangementMove> rearrange(vector<vector<bool>> &Array, rearrange_method method,rearrange_mode mode)
 {
+  while(1){
     if(method == BALANCE_COMPRESS){
         return BalanceCompressAlg(Array,mode);
     }
-
     if(method == HUNGARIAN){
         return compute(Array,mode);
     }
     if(method == DROP_IT_LIKE_ITS_HOT){
         return DropItLikeItsHot(Array);
     }
-
+    int newMethod;
+    cout << "Invalid Rearrangement method\nChoose a new method:\n0:\tBALANCE_COMPRESS\n1:\tHUNGARIAN\n2:\tDROP_IT_LIKE_ITS_HOT" << endl;
+    cin >> newMethod;
+    if(newMethod == 0){
+      method = BALANCE_COMPRESS;
+    }
+    if(newMethod == 1){
+      method = HUNGARIAN;
+    }
+    if(newMethod == 2){
+      method = DROP_IT_LIKE_ITS_HOT;
+    }
+  }
 }
 
 /////////////////////////DONE WITH REARRANGE2D.CPP/////////////////////////////////////////////////
