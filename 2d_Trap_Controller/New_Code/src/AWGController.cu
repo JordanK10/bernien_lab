@@ -243,15 +243,19 @@ void AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim
                                                                                     //based on our current rearrangement algorithm
   // pvBufferDynamic = (short*)pvAllocMemPageAligned(bufferSize);
   cudaHostAlloc((void **)&pvBufferDynamic,bufferSize,cudaHostAllocPortable);
+  cout << "Allocated Host Buffer Memory: " << bufferSize << endl;
 
   if(numDevices == 1){
     cudaError_t err = cudaSuccess;
     //move the buffer to the GPU
+    cudaSetDevice(defaultDevice);
     err =  cudaMalloc((void **)&cudaBuffer, bufferSize);
     if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
-    cout << "Allocated Buffer Memory: " << bufferSize << endl;
-  }else if(numDevices == 2){//if using 2 devices, make 1 buffer of half the allotted size
-                            //on each device, so that they can be calculated in parallel
+    cout << "Allocated Device Buffer Memory: " << bufferSize << endl;
+  }
+  
+  if(numDevices == 2){//if using 2 devices, make 1 buffer of half the allotted size
+                      //on each device, so that they can be calculated in parallel
     cudaError_t err = cudaSuccess;
     //move the buffer to the GPU
     cudaSetDevice(0);
@@ -260,7 +264,6 @@ void AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim
     cudaSetDevice(1);
     err =  cudaMalloc((void **)&cudaBuffer2, bufferSize);
     if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
-    cout << "Allocated Host Buffer Memory: " << bufferSize << endl;
     cout << "Allocated Device Buffer Memory: " << bufferSize  << " (x2)"<< endl;
   }
 }
@@ -278,9 +281,13 @@ short* AWGController::getDynamicBuffer(){
 }
 
 void AWGController::cleanCudaBuffer(){ //free buffer from GPU memory
-  cudaSetDevice(0);
-  cudaFree(cudaBuffer);
+  if(numDevices == 1){
+    cudaSetDevice(defaultDevice);
+    cudaFree(cudaBuffer);
+  }
   if(numDevices == 2){
+    cudaSetDevice(0);
+    cudaFree(cudaBuffer);
     cudaSetDevice(1);
     cudaFree(cudaBuffer2);
   }

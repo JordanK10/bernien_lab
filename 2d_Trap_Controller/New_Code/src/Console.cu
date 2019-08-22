@@ -211,7 +211,7 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
 			// #include <fstream>
 			// ofstream myFile;
-			// myFile.open("c:/users/bernien_lab/desktop/test_run.csv");
+			// myFile.open("c:/users/bernien_lab/desktop/gpu_0_test.csv");
 			// Keeping track of number of rearrangements
 			int numRearrangementsPerformed = 0;
 			while (true) {
@@ -250,8 +250,8 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 
 				int move_len = trapControllerHandler.rearrangeWaveforms(moves,mode,awgController.getDynamicBuffer(),awgController.getCudaBuffer(),awgController.getCudaBuffer2());
 				int duration2 = timeElapsed();
-				// myFile << moves.size() << "," << duration2-duration << endl;
-				// }
+				 // myFile << moves.size() << "," << duration2-duration << endl;
+				 // }
 				awgController.pushRearrangeWaveforms(moves.size(),move_len);
 				int duration3 = timeElapsed();
 				cout << "Software rearrange time: " << duration << " ms" << endl;

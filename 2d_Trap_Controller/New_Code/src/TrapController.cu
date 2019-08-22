@@ -228,17 +228,22 @@ void TrapController::combineRearrangeWaveformCuda(vector<int> *destinations, con
 	int endIndex = movingWaveformSize*(move_index + 1);
 	cudaError_t err;
 	vector<vector<short*>> data;
-	if(device == 1){
-		err = cudaSetDevice(1); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
-		data = loadedCudaWaveforms2; //if there are 2 devices, the first half of the moves
-																														//are run on the first device, the second half on the second
-																														//loadedCudaWaveforms are on device 0, loadedCudaWaveforms2
-																														//are on device 1
-	}else{
-		err = cudaSetDevice(0); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
-		data = loadedCudaWaveforms;
+	if(numDevices == 2){
+		if(device == 1){
+			err = cudaSetDevice(1); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
+			data = loadedCudaWaveforms2; //if there are 2 devices, the first half of the moves
+																															//are run on the first device, the second half on the second
+																															//loadedCudaWaveforms are on device 0, loadedCudaWaveforms2
+																															//are on device 1
+		}else{
+			err = cudaSetDevice(0); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
+			data = loadedCudaWaveforms;
+		}
 	}
-
+	if(numDevices == 1){
+			err = cudaSetDevice(defaultDevice); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
+			data = loadedCudaWaveforms;
+	}
 	bool addMode = true;
 	for (trap_index = 0; trap_index < destinations->size(); trap_index++) {
 		dest_index = (*destinations)[trap_index];
@@ -363,15 +368,23 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 			rearrangeDataSize = loadedTrapWaveforms[start_index][dest_index].initializeFromMovingWaveform(moveDuration,starting_configuration, ending_configuration,start_index, dest_index);
 			tempWave = NULL;
 			size_t size = rearrangeDataSize*sizeof(short);
-			cudaSetDevice(0);
-			err =  cudaMalloc((void **)&tempWave, size);
-			if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;}
+			if(numDevices == 1){
+				cudaSetDevice(defaultDevice);
+				err =  cudaMalloc((void **)&tempWave, size);
+				if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;}
+				err = cudaMemcpy(tempWave,loadedTrapWaveforms[start_index][dest_index].dataShort,size,cudaMemcpyHostToDevice);
+				if(err != cudaSuccess){cout << "Memory Transfer Error" << endl;}
+				tempCudaWaveforms.push_back(tempWave);
+			}
 
-			err = cudaMemcpy(tempWave,loadedTrapWaveforms[start_index][dest_index].dataShort,size,cudaMemcpyHostToDevice);
-			if(err != cudaSuccess){cout << "Memory Transfer Error" << endl;}
-
-			tempCudaWaveforms.push_back(tempWave);
 			if(numDevices == 2){
+				cudaSetDevice(0);
+				err =  cudaMalloc((void **)&tempWave, size);
+				if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;}
+				err = cudaMemcpy(tempWave,loadedTrapWaveforms[start_index][dest_index].dataShort,size,cudaMemcpyHostToDevice);
+				if(err != cudaSuccess){cout << "Memory Transfer Error" << endl;}
+				tempCudaWaveforms.push_back(tempWave);
+
 				cudaSetDevice(1);
 				tempWave = NULL;
 				err =  cudaMalloc((void **)&tempWave, size);

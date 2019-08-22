@@ -39,6 +39,12 @@ static const int numDevices = 2; //This is the number of graphics cards being us
 																//The software currently supports either 1 or 2.
 																//If no card is used, one needs to use rearrangedWaveforms
 																//instead of rearrangeWaveformsCuda.
+static const int defaultDevice = 0; //if only using a single graphics card, and
+																		//multiple cards are available, it will run on the
+																		//default device. If only one card is available,
+																		//set the default device to 0. Also, recall that
+																		//graphics cards are 0 indexed if setting the default
+																		//to a value other than 0.
 static const int numWorkers = 20;
 
 
