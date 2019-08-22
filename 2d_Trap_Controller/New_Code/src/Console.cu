@@ -188,11 +188,11 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 		int modeArgument;
 		pickRearrangementMode(mode, modeArgument);
 
-		//  if (!awgController.isConnected()) {
-		//  	cout << "Error: Not connected to AWG!" << endl;
-		//  	cout << "***Aborting sequence***" << endl;
-		// 	return;
-		// }
+		 if (!awgController.isConnected()) {
+		 	cout << "Error: Not connected to AWG!" << endl;
+		 	cout << "***Aborting sequence***" << endl;
+			return;
+		}
 
 		// Start sending waveform to AWG.
 		Waveform startingXWaveform = trapControllerHandler.staticXWaveform;
@@ -208,12 +208,15 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			std::vector<bool> underflowRecords;
 
 			// We push the static waveforms to the static traps
-			// awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
-
+			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
+			// #include <fstream>
+			// ofstream myFile;
+			// myFile.open("c:/users/bernien_lab/desktop/test_run.csv");
 			// Keeping track of number of rearrangements
 			int numRearrangementsPerformed = 0;
 			while (true) {
 				// Find atoms in new picture on camera:
+				// for(int i = 0;i<10000;i++){
 				std::vector<std::vector<bool>> atomsPresent = cameraServer.receiveIdentifiedAtomList(trapControllerHandler.trapFrequencies().size(),trapControllerHandler.tchLen);
 				if (atomsPresent.size() == 0) {
 					cout << "Camera server returned an empty list. Aborting...\n";
@@ -230,22 +233,25 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 				// RearrangementMove temp_move;
 				// vector<RearrangementMove> moves;
 				// temp_move.startingConfig = {1,1,1,1,1,1,1,1,1,1};
-				// temp_move.endingConfig = {-1,-1,-1,-1,-1,-1,-1,-1,0,1};
-				// temp_move.row = 1;
+				// temp_move.endingConfig = {9,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+				// temp_move.row = false;
 				// temp_move.dim = 0;
 				// moves.push_back(temp_move);
+				//
 				// temp_move.startingConfig = {1,1,1,1,1,1,1,1,1,1};
-				// temp_move.endingConfig = {8,9,-1,-1,-1,-1,-1,-1,-1,-1};
-				// temp_move.row = 1;
-				// temp_move.dim = 5;
+				// temp_move.endingConfig = {-1,-1,-1,-1,-1,-1,-1,-1,-1,0};
+				// temp_move.row = false;
+				// temp_move.dim = 0;
 				// moves.push_back(temp_move);
+
 				int duration = timeElapsed();
 
 
 
-				int move_len = trapControllerHandler.rearrangeWaveforms(moves,mode,awgController.getDynamicBuffer(),	awgController.getCudaBuffer(),awgController.getCudaBuffer2());
+				int move_len = trapControllerHandler.rearrangeWaveforms(moves,mode,awgController.getDynamicBuffer(),awgController.getCudaBuffer(),awgController.getCudaBuffer2());
 				int duration2 = timeElapsed();
-
+				// myFile << moves.size() << "," << duration2-duration << endl;
+				// }
 				awgController.pushRearrangeWaveforms(moves.size(),move_len);
 				int duration3 = timeElapsed();
 				cout << "Software rearrange time: " << duration << " ms" << endl;
@@ -635,6 +641,17 @@ bool process2DInput(std::vector<string> &commandTokens, TrapControllerHandler &t
 		cout << "adwin [adwin command]" << endl;
 	} else if (mainCommand.compare("exit") == 0) {
 		awgController.disconnect();
+		for(int i = 0;i<trapControllerHandler.tchLen;i++){
+			for(int j = 0;j<trapControllerHandler.tchLen;j++){
+				//free(trapControllerHandler.statHandler.x->loadedTrapWaveforms[i][j]);
+				cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms[i][j]);
+				if(numDevices == 2){
+					cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms2[i][j]);
+				}
+			}
+		}
+		awgController.cleanCudaBuffer();
+		trapControllerHandler.cleanCudaModes();
 		cout << "Bye!" << endl;
 		return true;
 	} else {

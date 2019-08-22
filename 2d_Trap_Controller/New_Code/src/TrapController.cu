@@ -217,7 +217,7 @@ __global__ void addWaveformsCuda(short* wave1, short* wave2, int row, int col,bo
 	}
 }
 
-void TrapController::combineRearrangeWaveformCuda(vector<int> *destinations, const size_t movingWaveformSize, short* mode, short* cudaBuffer, bool row, int mode_len, int num_moves, int move_index) {
+void TrapController::combineRearrangeWaveformCuda(vector<int> *destinations, const size_t movingWaveformSize, short* mode, short* cudaBuffer, bool row, int mode_len, int num_moves, int move_index,int device) {
 
 	int dest_index; int trap_index; short* dataArr;
 	int threadsPerBlock = 128; //this should be either 128,256,512,or 1024
@@ -226,6 +226,18 @@ void TrapController::combineRearrangeWaveformCuda(vector<int> *destinations, con
 																											//move on the buffer
 	int startIndex = movingWaveformSize*move_index;
 	int endIndex = movingWaveformSize*(move_index + 1);
+	cudaError_t err;
+	vector<vector<short*>> data;
+	if(device == 1){
+		err = cudaSetDevice(1); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
+		data = loadedCudaWaveforms2; //if there are 2 devices, the first half of the moves
+																														//are run on the first device, the second half on the second
+																														//loadedCudaWaveforms are on device 0, loadedCudaWaveforms2
+																														//are on device 1
+	}else{
+		err = cudaSetDevice(0); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
+		data = loadedCudaWaveforms;
+	}
 
 	bool addMode = true;
 	for (trap_index = 0; trap_index < destinations->size(); trap_index++) {
@@ -233,14 +245,7 @@ void TrapController::combineRearrangeWaveformCuda(vector<int> *destinations, con
 		if (dest_index == -1) {
 			continue;
 		}
-		if(numDevices == 2 && move_index>=num_moves/2){
-			dataArr = loadedCudaWaveforms2[trap_index][dest_index]; //if there are 2 devices, the first half of the moves
-																															//are run on the first device, the second half on the second
-																															//loadedCudaWaveforms are on device 0, loadedCudaWaveforms2
-																															//are on device 1
-		}else{
-			dataArr = loadedCudaWaveforms[trap_index][dest_index];
-		}
+		dataArr = data[trap_index][dest_index];
 		if(row){
 			//invoke the Kernel
 			addWaveformsCuda<<<numBlocks,threadsPerBlock>>>(cudaBuffer,dataArr,0,1,addMode,movingWaveformSize,startIndex,endIndex,mode,mode_len);
@@ -294,8 +299,8 @@ void TrapController::combineRearrangeWaveform(int worker, vector<int> *destinati
 /* Moving traps: This will be the sum of the "loaded trap" waveforms for each
 moving trap, designated by a start position and end position.
 */
-void TrapController::combinePrecomputedWaveform(vector<int> &destinations, short* mode, int move_ind, short* pvBuffer, bool row, int mode_len,const size_t movingWaveformSize, int num_moves){
-	combineRearrangeWaveformCuda(&destinations, movingWaveformSize, mode, pvBuffer, row, mode_len, num_moves, move_ind);
+void TrapController::combinePrecomputedWaveform(vector<int> &destinations, short* mode, int move_ind, short* pvBuffer, bool row, int mode_len,const size_t movingWaveformSize, int num_moves,int device){
+	combineRearrangeWaveformCuda(&destinations, movingWaveformSize, mode, pvBuffer, row, mode_len, num_moves, move_ind, device);
 	return;
 	// thread *workers[numWorkers];
 	// int mode_len = mode.size();

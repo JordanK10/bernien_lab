@@ -19,7 +19,7 @@
 #include "../../common/ostools/spcm_ostools.h"
 #include "../../sb5_file/sb5_file.h"
 
-// static const int numDevices = 1;
+// static const int numDevices = 2;
 
 enum output_mode{
 	FIFO,

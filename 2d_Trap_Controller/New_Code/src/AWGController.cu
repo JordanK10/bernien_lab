@@ -20,12 +20,11 @@ AWGController::AWGController(double s_r, output_mode mode, int sw_buf){
     changeMode(SEQUENCE);
     setupSuccess = true;
   }else{
-    // cout << "Could not connect";
-    setupSuccess = true;
+    cout << "Could not connect";
+    setupSuccess = false;
     return;
 
   }
-
 }
 
 //Sets up parameters such as buffer information, clockrate, output channels, and mode
@@ -52,7 +51,8 @@ bool AWGController::setupCard(){
     spcm_dwSetParam_i32(stCard.hDrv, SPC_FILTER1,0);
 
     spcm_dwSetParam_i32 (stCard.hDrv, SPC_TRIG_ORMASK, SPC_TMASK_NONE);
-
+    cout << "Printtingg error Status\n";
+    cout << stCard.bSetError << endl;
 
     connected = true;
 
@@ -83,7 +83,6 @@ void AWGController::disconnect() {
 // static int64 g_llXDiv = KILO_B(100);
 
 bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform>* waveforms, vector<RearrangementMove>* moves){
-
   // Generate array of pointers to buffer memory
 
   int seg;
@@ -95,7 +94,6 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
     seg = 1;
     show = 1;
   }
-
   if(waveforms != NULL){
    vector<short> dataVecX = (*waveforms)[0].dataVectorShort;
     vector<short> dataVecY = (*waveforms)[1].dataVectorShort;
@@ -110,7 +108,6 @@ bool AWGController::loadDataBlock(int segSize, signal_type data, vector<Waveform
     cout << "fail\n";
     return false;
   }
-
     // write data to board (main) sample memory
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_WRITESEGMENT, seg);
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_SEQMODE_SEGMENTSIZE,  segSize);
@@ -140,7 +137,8 @@ void AWGController::vWriteStepEntry (ST_SPCM_CARDINFO *pstCard, uint32 dwStepInd
 void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_push) {
 
   int dataSize = waveforms[0].dataVectorShort.size()*2;
-	pvBuffer = (short*)pvAllocMemPageAligned(dataSize*BYTES_PER_DATA);
+  cudaHostAlloc((void **)&pvBuffer,dataSize*BYTES_PER_DATA,cudaHostAllocPortable);
+
 	if (!pvBuffer){
 		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
     return;
@@ -150,8 +148,10 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_p
       {
       spcm_dwSetParam_i32(stCard.hDrv, SPC_CHENABLE,CHANNEL0 | CHANNEL1 );
       if(first_push){
+
         loadDataBlock(dataSize,STATIC,&waveforms,NULL);
         loadDataBlock(dataSize,TRANS_EMPTY,&waveforms,NULL);
+
         vWriteStepEntry (&stCard,  0,  0,  STATIC, 1,  SPCSEQ_ENDLOOPONTRIG);
         vWriteStepEntry (&stCard,  1,  0,  TRANS,  1,  SPCSEQ_ENDLOOPONTRIG);
       }else
@@ -162,8 +162,10 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_p
 
       // check for error code
       if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szBuffer)){
+
           vFreeMemPageAligned (pvBuffer, llSWBufSize);
           nSpcMErrorMessageStdOut (&stCard, szBuffer, false);
+
           printf( "Data transfer failed. Freeing memory\n");
       }
     }else
@@ -211,7 +213,7 @@ bool AWGController::run(int timeout, int channel){
   spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_START |  M2CMD_CARD_FORCETRIGGER);
 
   if (spcm_dwGetErrorInfo_i32 (stCard.hDrv, NULL, NULL, szErrorText) != ERR_OK) {
-    cout << (szErrorText); // print the error text
+    cout << (szErrorText) << endl; // print the error text
     return false;
   }
   // spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_FORCETRIGGER);
@@ -237,9 +239,9 @@ void AWGController::errorPrint(bool dwErr, string error){
 }
 
 void AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim){
-  size_t bufferSize = 1.5*(x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000; //this is the theoretical max buffer size
+  size_t bufferSize = 2*(x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000; //this is the theoretical max buffer size
                                                                                     //based on our current rearrangement algorithm
-  // pvBufferDynamic = (short*)pvAllocMemPageAligned((x_dim+y_dim)*sample_rate*duration*2*BYTES_PER_DATA/1000);
+  // pvBufferDynamic = (short*)pvAllocMemPageAligned(bufferSize);
   cudaHostAlloc((void **)&pvBufferDynamic,bufferSize,cudaHostAllocPortable);
 
   if(numDevices == 1){
@@ -253,12 +255,13 @@ void AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim
     cudaError_t err = cudaSuccess;
     //move the buffer to the GPU
     cudaSetDevice(0);
-    err =  cudaMalloc((void **)&cudaBuffer, bufferSize/2);
+    err =  cudaMalloc((void **)&cudaBuffer, bufferSize);
     if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
     cudaSetDevice(1);
-    err =  cudaMalloc((void **)&cudaBuffer2, bufferSize/2);
+    err =  cudaMalloc((void **)&cudaBuffer2, bufferSize);
     if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
-    cout << "Allocated Buffer Memory: " << bufferSize << endl;
+    cout << "Allocated Host Buffer Memory: " << bufferSize << endl;
+    cout << "Allocated Device Buffer Memory: " << bufferSize  << " (x2)"<< endl;
   }
 }
 

@@ -41,10 +41,10 @@ bool CameraServer::startServer() {
 	cout << "Starting server..." << endl;
 	// serverSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (serverSocket < 0) {
-		cout << "Unable to open socket!" << endl;
-		return false;
-	}
+	// if (serverSocket < 0) {
+	// 	cout << "Unable to open socket!" << endl;
+	// 	return false;
+	// }
 	return true;
 }
 

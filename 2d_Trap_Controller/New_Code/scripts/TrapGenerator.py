@@ -10,8 +10,8 @@ center_y = 90*1e6
  ###
  ### Parameters
  ###
-trap_x_num = input("number of traps in x")
-trap_y_num = input("number of traps in y")
+trap_x_num = input("number of traps in x: ")
+trap_y_num = input("number of traps in y: ")
 
 pi2 = 2*np.pi
 optphase = True
@@ -59,7 +59,7 @@ Freq(MHz)   phase(fractional period)
 94          0.519811523438
 
 max peak = 3.65838438877
-max peak/trap = .365838438877 
+max peak/trap = .365838438877
 """
 
 

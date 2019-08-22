@@ -57,7 +57,7 @@ void TrapControllerHandler::printAvailableDefaultTrapConfigurations() {
 	struct dirent *epdf;
 
 
-	dir = opendir("C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\DefaultTrapConfigurations");
+	dir = opendir("C:\\Users\\bernien_lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\DefaultTrapConfigurations");
 
 	vector<string> filenames;
 
@@ -90,7 +90,7 @@ void TrapControllerHandler::printAvailableDefaultTrapConfigurations() {
 bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
 
   //Opens filestream from a given file. First two inputs are L/wW
-  ifstream config_file("C:\\Users\\Bernien Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\DefaultTrapConfigurations\\" + filename);
+  ifstream config_file("C:\\Users\\Bernien_Lab\\Documents\\bernien_lab\\2d_Trap_Controller\\New_Code\\bin\\DefaultTrapConfigurations\\" + filename);
 
   if (!config_file.is_open()) {
 	  cout << "Unable to open file: " << filename << endl;
@@ -154,15 +154,13 @@ bool TrapControllerHandler::loadDefaultTrapConfiguration(std::string filename){
         tempMode2[j] = xmodes[i][j];
       }
       cudaSetDevice(0);
-      err =  cudaMalloc((void **)&tempMode, size);
-      if(err != cudaSuccess){cout << "Memory Allocation Error (modes)"<<endl;}
-      err = cudaMemcpy(tempMode,tempMode2,size,cudaMemcpyHostToDevice);
-      if(err != cudaSuccess){cout << "Memory Transfer Error (modes)" << endl;}else{free(tempMode2);}
+      err =  cudaMalloc((void **)&tempMode, size); if(err != cudaSuccess){cout << "Memory Allocation Error (modes)"<<endl;}
+      err = cudaMemcpy(tempMode,tempMode2,size,cudaMemcpyHostToDevice); if(err != cudaSuccess){cout << "Memory Transfer Error (modes)" << endl;}
       xmodesCuda.push_back(tempMode);
       if(numDevices == 2){
         cudaSetDevice(1);
-        cudaMalloc((void**)&tempMode3, size);
-        cudaMemcpy(tempMode3,tempMode2,size,cudaMemcpyHostToDevice);
+        err = cudaMalloc((void**)&tempMode3, size); if(err != cudaSuccess){cout << "Memory Allocation Error (modes)"<<endl;}
+        err = cudaMemcpy(tempMode3,tempMode2,size,cudaMemcpyHostToDevice);if(err != cudaSuccess){cout << "Memory Transfer Error (modes)" << endl;}else{free(tempMode2);}
         xmodesCuda2.push_back(tempMode3);
       }
   }
@@ -256,7 +254,7 @@ std::vector<Waveform> TrapControllerHandler::generateStaticWaveform(){
 
   //Generate x,y component of static wave
   wfList.push_back(statHandler.x->generateWaveform());
-  wfList.push_back(statHandler.y->generateWaveform());
+  wfList.push_back(statHandler.x->generateWaveform());
 
   return wfList;
 }
@@ -329,36 +327,36 @@ int TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, 
     size_t size;
     size_t size1;
     cudaError_t err = cudaSuccess;
-    auto start = chrono::high_resolution_clock::now();
-    if(numDevices == 2){ //diviide the moves in half if using 2 GPUs
-      cudaSetDevice(0);
+    // auto start = chrono::high_resolution_clock::now();
+
+    if(numDevices == 2){ //divide the moves in half if using 2 GPUs
       int n = num_moves/2 + num_moves%2;
-      size = movingWaveformSize*n*sizeof(short)*2;
-      size1 = movingWaveformSize*(num_moves - n)*sizeof(short)*2;
+      size1 = movingWaveformSize*n*sizeof(short)*2;
+      size = movingWaveformSize*(num_moves - n)*sizeof(short)*2;
     }else{
       size = movingWaveformSize*num_moves*sizeof(short)*2;
     }
 
-    for(int i=0; i<num_moves;i++){
+    int k = 0;
+    for(int i=0; i<num_moves;i++){    //all data is now in statHandler.x
+                                      //since statHandler.y is a duplicate
       if(numDevices == 2 && i>=num_moves/2){
-        cudaSetDevice(1); //work on device 1
-                          //all data is now in statHandler.x
-                          //since statHandler.y is a duplicate
-        statHandler.x->combinePrecomputedWaveform(moves[i].endingConfig, (xmodesCuda2[moves[i].dim]),i,cudaBuffer1,moves[i].row,mode_len, movingWaveformSize, num_moves);
+        statHandler.x->combinePrecomputedWaveform(moves[i].endingConfig, (xmodesCuda2[moves[i].dim]),k,cudaBuffer1,moves[i].row,mode_len, movingWaveformSize, num_moves,1);
+        k++;
       }else{
-        cudaSetDevice(0); //work on device 0
-        statHandler.x->combinePrecomputedWaveform(moves[i].endingConfig, (xmodesCuda[moves[i].dim]),i,cudaBuffer,moves[i].row,mode_len, movingWaveformSize, num_moves);
+        statHandler.x->combinePrecomputedWaveform(moves[i].endingConfig, (xmodesCuda[moves[i].dim]),i,cudaBuffer,moves[i].row,mode_len, movingWaveformSize, num_moves,0);
       }
     }
-    //start
-    err = cudaMemcpy(pvBuffer,cudaBuffer,size,cudaMemcpyDeviceToHost); //return memory to the host on the pvBuffer
-    if(err != cudaSuccess){cout << "Mem transfer error" << endl;}
-    //end timer
+
+
+    err = cudaSetDevice(0); if(err != cudaSuccess){cout << "Device Set Error" << endl;}
+    err = cudaMemcpyAsync(pvBuffer,cudaBuffer,size,cudaMemcpyDeviceToHost); if(err != cudaSuccess){cout << "Mem transfer error: " << cudaGetErrorString(err) << endl;}
     if(numDevices == 2){
-      err = cudaMemcpy(&pvBuffer[size/sizeof(short)],cudaBuffer1,size1,cudaMemcpyDeviceToHost);
-      if(err != cudaSuccess){cout << "Mem transfer error" << endl;}
+      err = cudaSetDevice(1); if(err != cudaSuccess){cout << "Device Set Error: " << cudaGetErrorString(err) << endl;}
+      err = cudaMemcpyAsync(&pvBuffer[size/sizeof(short)],cudaBuffer1,size1,cudaMemcpyDeviceToHost); if(err != cudaSuccess){cout << "Mem transfer error: " << cudaGetErrorString(err) << endl;}
     }
-    double dur = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count();
+    cudaDeviceSynchronize();
+    // double dur = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start).count();
     cout << "Data Calculation Rate: " << movingWaveformSize*num_moves*2*sizeof(short)/dur/1e6 << " GB/s" << endl;
 
     // Transfer pvBuffer To Text File:
@@ -366,8 +364,8 @@ int TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, 
     // cout << "\n\nTransferring data to text file\n" << endl;
     // ofstream myFile;
     // ofstream myFile2;
-    // myFile.open("c:/users/bernien lab/desktop/sample_move_ch1.txt");
-    // myFile2.open("c:/users/bernien lab/desktop/sample_move_ch2.txt");
+    // myFile.open("c:/users/bernien_lab/desktop/sample_move_ch1.txt");
+    // myFile2.open("c:/users/bernien_lab/desktop/sample_move_ch2.txt");
     // for(int k = 0;k<movingWaveformSize*num_moves;k++){
     //   myFile << pvBuffer[2*k] << endl;
     //   myFile2 << pvBuffer[2*k+1] << endl;
@@ -378,8 +376,8 @@ int TrapControllerHandler::rearrangeWaveforms(vector <RearrangementMove> moves, 
 
     // Print Samples from the pvBuffer:
 
-    // for(int k = 0;k<movingWaveformSize*num_moves*2;k+=10000){
-    //   cout << pvBuffer[k] << endl;
+    // for(int k = 0;k<movingWaveformSize*num_moves*2;k+=2000000){
+    //   cout << k << " " << pvBuffer[k] << endl;
     // }
 
 	return statHandler.x->getWFSize();

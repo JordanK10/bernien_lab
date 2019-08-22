@@ -19,10 +19,10 @@ int main(){
     // double bandwidth = 15;
     int gain = 32761;
 
-      TrapControllerHandler trapControllerHandler(clock_rate, gain, KILO(wt_freq));
-      AWGController awgController(clock_rate,SEQUENCE,KILO(sw_buf_size));
+    TrapControllerHandler trapControllerHandler(clock_rate, gain, KILO(wt_freq));
+    AWGController awgController(clock_rate,SEQUENCE,KILO(sw_buf_size));
 
-      // if (awgsController.isConnected())
+      if (awgController.isConnected())
         run2DConsole(trapControllerHandler, awgController);
       return 0;
 }

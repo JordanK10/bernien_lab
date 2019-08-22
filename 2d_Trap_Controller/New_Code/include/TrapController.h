@@ -35,11 +35,11 @@
 using namespace std;
 
 
-static const int numDevices = 1; //This is the number of graphics cards being used.
+static const int numDevices = 2; //This is the number of graphics cards being used.
 																//The software currently supports either 1 or 2.
 																//If no card is used, one needs to use rearrangedWaveforms
 																//instead of rearrangeWaveformsCuda.
-static const int numWorkers = 16;
+static const int numWorkers = 20;
 
 
 struct loadedWaveformProperties {
@@ -70,11 +70,11 @@ public:
 
 		bool loadPrecomputedWaveforms(double moveDuration, std::string starting_configuration, std::string ending_configuration);
 
-		void combinePrecomputedWaveform(vector<int> &destinations,short* mode, int move_ind, short* pvBuffer, bool row, int mode_len,const size_t movingWaveformSize,int num_moves);
+		void combinePrecomputedWaveform(vector<int> &destinations,short* mode, int move_ind, short* pvBuffer, bool row, int mode_len,const size_t movingWaveformSize,int num_moves,int device);
 
 		void combineRearrangeWaveform(int worker, std::vector<int> *destinations, const size_t movingWaveformSize, std::vector<short> *mode, int move_ind, short* pvBuffer, bool row, int mode_len, int bufferSize);
 
-		void combineRearrangeWaveformCuda(vector<int> *destinations, const size_t movingWaveformSize, short* mode, short* pvBuffer, bool row, int mode_len, int num_moves, int move_index);
+		void combineRearrangeWaveformCuda(vector<int> *destinations, const size_t movingWaveformSize, short* mode, short* pvBuffer, bool row, int mode_len, int num_moves, int move_index,int device);
 
     bool sanitizeTraps(double new_gain = -1, bool shouldPrintTotalPower=true);
 
