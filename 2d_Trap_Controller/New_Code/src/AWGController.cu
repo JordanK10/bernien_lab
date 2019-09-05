@@ -253,18 +253,18 @@ void AWGController::allocateDynamicWFBuffer(float duration, int x_dim, int y_dim
     if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
     cout << "Allocated Device Buffer Memory: " << bufferSize << endl;
   }
-  
+
   if(numDevices == 2){//if using 2 devices, make 1 buffer of half the allotted size
                       //on each device, so that they can be calculated in parallel
     cudaError_t err = cudaSuccess;
     //move the buffer to the GPU
     cudaSetDevice(0);
-    err =  cudaMalloc((void **)&cudaBuffer, bufferSize);
+    err =  cudaMalloc((void **)&cudaBuffer, bufferSize/2);
     if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
     cudaSetDevice(1);
-    err =  cudaMalloc((void **)&cudaBuffer2, bufferSize);
+    err =  cudaMalloc((void **)&cudaBuffer2, bufferSize/2);
     if(err != cudaSuccess){cout << "Memory Allocation Error (buffer)" << endl;}
-    cout << "Allocated Device Buffer Memory: " << bufferSize  << " (x2)"<< endl;
+    cout << "Allocated Device Buffer Memory: " << bufferSize/2  << " (x2)"<< endl;
   }
 }
 

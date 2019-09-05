@@ -1,3 +1,4 @@
+ECHO OFF
 cls
 ECHO _________________________
 ECHO RUNNING...

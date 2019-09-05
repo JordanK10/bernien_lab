@@ -211,8 +211,8 @@ void runRearrangementSequence(TrapControllerHandler &trapControllerHandler, AWGC
 			awgController.pushStaticWaveforms(trapControllerHandler.generateStaticWaveform(),true);
 			// #include <fstream>
 			// ofstream myFile;
-			// myFile.open("c:/users/bernien_lab/desktop/gpu_0_test.csv");
-			// Keeping track of number of rearrangements
+			// myFile.open("c:/users/bernien_lab/desktop/38_moves_comp_time_data.csv");
+			// // Keeping track of number of rearrangements
 			int numRearrangementsPerformed = 0;
 			while (true) {
 				// Find atoms in new picture on camera:
@@ -456,9 +456,14 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 	} else if (commandTokens[1].compare("clean") == 0) {
 		for(int i = 0;i<trapControllerHandler.tchLen;i++){
 			for(int j = 0;j<trapControllerHandler.tchLen;j++){
-				//free(trapControllerHandler.statHandler.x->loadedTrapWaveforms[i][j]);
-				cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms[i][j]);
+				if(numDevices == 1){
+					cudaSetDevice(defaultDevice);
+					cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms[i][j]);
+				}
 				if(numDevices == 2){
+					cudaSetDevice(0);
+					cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms[i][j]);
+					cudaSetDevice(1);
 					cudaFree(trapControllerHandler.statHandler.x->loadedCudaWaveforms2[i][j]);
 				}
 			}
@@ -469,9 +474,9 @@ bool processTrapsInput(std::vector<string> &commandTokens, TrapControllerHandler
 		for(int i=0; i<trapControllerHandler.tchLen; i++){
 			trapControllerHandler.statHandler.x->traps.erase(	trapControllerHandler.statHandler.x->traps.begin());
 		}
-		for(int i=0; i<trapControllerHandler.tchWid; i++){
-			trapControllerHandler.statHandler.y->traps.erase(	trapControllerHandler.statHandler.y->traps.begin());
-		}
+		// for(int i=0; i<trapControllerHandler.tchWid; i++){
+		// 	trapControllerHandler.statHandler.y->traps.erase(	trapControllerHandler.statHandler.y->traps.begin());
+		// }
 
 	} else if (commandTokens[1].compare("change") == 0) {
 		if (commandTokens.size() >= 5) {

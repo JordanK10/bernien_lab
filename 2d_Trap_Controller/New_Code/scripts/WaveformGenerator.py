@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import struct
 import os
 import random
@@ -572,7 +572,7 @@ for ending_filename in [
 
 
 
-    write_static_waveform(ending_filename, ending_freqs, ending_amps, ending_phases, 0.001) #Always should use 1ms duration. # SHOULD RE-ENABLE
+    # write_static_waveform(ending_filename, ending_freqs, ending_amps, ending_phases, 0.001) #Always should use 1ms duration. # SHOULD RE-ENABLE
 
     write_rearrangement_waveforms_between_two_configs(filename, ending_filename,
                                                         freqs, amps, phases,
