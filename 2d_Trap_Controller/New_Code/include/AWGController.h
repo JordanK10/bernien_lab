@@ -19,6 +19,8 @@
 #include "../../common/ostools/spcm_ostools.h"
 #include "../../sb5_file/sb5_file.h"
 
+// static const int numDevices = 2;
+
 enum output_mode{
 	FIFO,
 	SINGLE,
@@ -40,7 +42,7 @@ class AWGController{
 public:
 
 	AWGController(double sample_rate, output_mode mode, int sw_buf);
-
+	void cleanCudaBuffer();
 	void disconnect();
 	void startStreaming();
 
@@ -58,7 +60,8 @@ public:
 
 	void allocateDynamicWFBuffer(float duration, int x_dim, int y_dim);
 	short* getDynamicBuffer();
-
+	short* getCudaBuffer();
+	short* getCudaBuffer2();
 	bool isConnected();
 
 	bool run(int timeout,int channel);
@@ -70,6 +73,8 @@ private:
   	ST_SPCM_CARDINFO    stCard;             // info structure of my card
   	short*              pvBuffer = NULL;
 		short*							pvBufferDynamic = NULL;
+		short* 							cudaBuffer = NULL;	//buffer on the GPU
+		short*							cudaBuffer2 = NULL;	//buffer on the second GPU if present
   	uint32              dwErr;
   	int                 nKeyCheck = 0;      // key check counter to avoid to much key polling
 

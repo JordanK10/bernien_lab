@@ -5,27 +5,36 @@ import matplotlib.pyplot as plt
 from numpy.random import uniform as ran
 from IPython.display import clear_output, display
 
-center_x = 90*1e6
-center_y = 90*1e6
+center_x = 90
+center_y = 90
  ###
  ### Parameters
  ###
-trap_x_num = input("number of traps in x")
-trap_y_num = input("number of traps in y")
+trap_x_num = input("number of traps in x: ")
+trap_y_num = input("number of traps in y: ")
 
 pi2 = 2*np.pi
 optphase = True
 
-txmin = center_x-(trap_x_num*1e6)/2
-txmax = center_x+(trap_x_num*1e6)/2
-tymin = center_y-(trap_y_num*1e6)/2
-tymax = center_y+(trap_y_num*1e6)/2
+txmin = center_x-(trap_x_num)/2
+txmax = center_x+(trap_x_num)/2
+tymin = center_y-(trap_y_num)/2
+tymax = center_y+(trap_y_num)/2
 
 xpow = float(1/float(trap_x_num))
 ypow = float(1/float(trap_x_num))
 
-xfrequencies = np.linspace(txmin,txmax,trap_x_num+1)
-yfrequencies = np.linspace(tymin,tymax,trap_y_num+1)
+if txmin<75:
+    txmin = 75.0
+if txmax>105:
+    txmax = 105.0
+if tymin<75:
+    tymin = 75.0
+if tymax>105:
+    tymax = 105.0
+
+xfrequencies = np.linspace(txmin,txmax,trap_x_num)
+yfrequencies = np.linspace(tymin,tymax,trap_y_num)
 ###
 ### Wavetable
 ###
@@ -59,7 +68,7 @@ Freq(MHz)   phase(fractional period)
 94          0.519811523438
 
 max peak = 3.65838438877
-max peak/trap = .365838438877 
+max peak/trap = .365838438877
 """
 
 
@@ -110,7 +119,7 @@ peaks = []
 def genPhases(tmin,tmax,num_traps):
     wave = [(genWave(tmin,0))[0]]
     phases = [0.]
-    frequencies = np.linspace(tmin,tmax,num_traps+1)
+    frequencies = np.linspace(tmin,tmax,num_traps)
     print(frequencies,tmin)
     for w in frequencies[1:]:
             lb_guess = initial_guess #left bound of min phase
@@ -142,11 +151,11 @@ end = " "
 if optphase:
     end = "to.txt"
 else:
-    end = "t.txt"
+    end = "tr.txt"
 
-fname = str(trap_x_num)+"x"+str(trap_y_num)+end
+fname = str(trap_x_num)+"(1)x"+str(trap_y_num)+"(1)"+end
 f=open("../bin/DefaultTrapConfigurations/"+fname,"w")
-gname = str(trap_x_num)
+gname = str(trap_x_num) + "(1)"
 g=open("../bin/DefaultTrapConfigurations/"+gname+"X"+end,"w")
 f.write(str(trap_x_num)+" "+str(trap_x_num)+"\n\n")
 xfrequencies,xphases = genPhases(txmin,txmax,trap_x_num)
