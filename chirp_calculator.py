@@ -3,6 +3,7 @@ import scipy
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from scipy import optimize
+import os
 
 def v(t,name,width,peak):
     if name == 'puretone':
@@ -20,7 +21,7 @@ def v(t,name,width,peak):
             return np.pi*(-t/width  + 1 + peak/width)
         else:
             return 0
-    if name == 'gaussian':
+    if name == 'gaussian' or 'truegaussian':
         return np.pi*np.exp(-(t - peak)**2/2/width**2)
 
 def normalize(y):
@@ -65,7 +66,7 @@ def getFFT(n):
         E.append(np.exp(1j*w1*2*np.pi*timestep*float(t) + 1j*v(timestep*float(t))) + np.exp(1j*w1*2*np.pi*timestep*float(t)))
         E2.append(np.exp(1j*w1*2*np.pi*timestep*float(t)) + np.exp(1j*w1*2*np.pi*timestep*float(t)))
         E3.append(np.exp(1j*w1*2*np.pi*timestep*float(t) + 1j*v(timestep*float(t))) + np.exp(1j*w1*2*np.pi*timestep*float(t) - 1j*v(timestep*float(t))))
-    
+
     y = abs(np.fft.fft(E).real)
     y2 = abs(np.fft.fft(E3).real)
     freq = np.fft.fftfreq(len(time),d = timestep)
@@ -139,23 +140,47 @@ def update2(n):
         ax3.cla()
         plotFFTCalc(n,ax,ax2,ax3,fig)
 
-def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,save):
+def writeToText(path,freq,fft,fname):
+    if os.path.isfile(path+fname+".txt"):
+        os.remove(path+fname+".txt")
+    f = open(path+fname+".txt",'w')
+    f.write("freq\tE\n")
+    for i in range(len(freq)):
+        f.write(str(freq[i]) + "\t" + str(fft[i]) + "\n")
+    f.close()
+
+def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show):
+    print("Started")
+    if save:
+        if not os.path.isdir(path):
+            os.mkdir(path)
     tempTime = []
-    for i in range(int((t_stop - t_start)/t_step)):
-        tempTime.append(t_start + float(i)*t_step)
+    tempFactor = 200
+    print(int((t_stop - t_start)/t_step)/1E3/tempFactor," thousand time steps")
+    for i in range(int((t_stop - t_start)/t_step/tempFactor)):
+        tempTime.append(t_start + float(i)*t_step*tempFactor)
+    print("Temp Time Done")
     peak = mid(tempTime)
+    print("peak: ", peak)
     if pulseType == 'square':
         width = Area
     elif pulseType == 'puretone':
         width = 0
+    elif pulseType == 'truegaussian':
+        width = Area/np.sqrt(2*np.pi)
     else:
-        width = calculateWidth(Area,tempTime,t_step, pulseType)
+        width = calculateWidth(Area,tempTime,t_step*tempFactor, pulseType)
+    print("width: ", width)
+    print("Frequency Grain = ", 1/(calc_length)/1E6, " MHz")
+    temptime = []
     num_steps = int((t_stop - calc_length)/skip_length)
-    print num_steps
+    print(num_steps, " total time steps")
+    print("starting ffts")
     freq = np.fft.fftfreq(int(calc_length/t_step),d = t_step)
     avg1 = [0 for i in range(len(freq))]
     avg2 = [0 for i in range(len(freq))]
     for i in range(num_steps):
+        print("Step: ",i)
         time = []
         E1 = []
         E2 = []
@@ -170,6 +195,8 @@ def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseTy
         for i in range(len(freq)):
             #avg1[i] += y1[i]/num_steps
             avg2[i] += y2[i]/num_steps
+        if save:
+            writeToText(path,freq,y2,str(0.5*t_step*(t1+t2)))
     plt.title(pulseType)
     #plt.plot(freq,np.log(avg1),'b.',label = 'zcut')
     plt.plot(freq,np.log(avg2),'r.',label = 'xcut')
@@ -177,8 +204,10 @@ def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseTy
     plt.ylabel("Log(E Field)")
     plt.legend()
     if save:
-        plt.savefig("c:/users/abpoc/documents/fast_pulse_shaping/time_averaged_spectrum_" + pulseType + ".jpg")
-    plt.show()
+        writeToText(path,freq,avg2,"Time Average Data")
+        plt.savefig(path + "time_average.pdf")
+    if show:
+        plt.show()
 
 def mid(time):
     return min(time) + 0.5*(max(time) - min(time))
@@ -195,28 +224,46 @@ def calculateWidth(Area,time,step, pulseType):
     return pf[0]
 
 
-def f(t):
-    
 
-
-w = 300E14
-Area = 5E-10
+w = 3.52E14
+Area = 1E-9
 t_start = 0.
-t_stop = 1E-11
-calc_length = 1E-6
+t_stop = 1E-8
+calc_length = 5E-9
 t_step = 1/2./w
-skip_length = 1E-16
-save = False
+skip_length = 1E-10
+save = True
+show = False
+'''
+w = 1
+Area = 0.1
+t_start = 0.
+t_stop = 10
+calc_length = .05
+t_step = .0001
+skip_length = .01
+save = True
+show = True
+'''
 
 
-p = ['gaussian','puretone']
-for pulseType in p:
-    timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,save)
+
+#input("\n\nstopped\n\n")
+p = ['gaussian','truegaussian','puretone']
+path  = "c:/users/bernien_lab/desktop/fft/" + str(Area) + "ns_x_Intensity_" + str(1/(calc_length)/1E6) + "_MHz_resolution/"
+if os.path.isdir(path):
+    a = input("This already Exists. Would you like to overwrite? (y/n)")
+    if a == "y":
+        for pulseType in p:
+            timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show)
+else:
+    os.mkdir(path)
+    for pulseType in p:
+        timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show)
 
 '''
 Writer = animation.writers['ffmpeg']
 writer = Writer(fps=5, metadata=dict(artist='Me'), bitrate=1800)
-
 fig = plt.figure(figsize=(10,10))
 ax = fig.add_subplot(3,1,1)
 ax2 = fig.add_subplot(3,1,2)
