@@ -149,6 +149,20 @@ def writeToText(path,freq,fft,fname):
         f.write(str(freq[i]) + "\t" + str(fft[i]) + "\n")
     f.close()
 
+def saveParameters(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,width,path):
+    if os.path.isfile(path+"settings.txt"):
+        os.remove(path+"settings.txt")
+    f = open(path+"settings.txt",'w')
+    f.write("t_start: " + str(t_start) + "\n")
+    f.write("t_stop: " + str(t_stop) + "\n")
+    f.write("calc_length: " + str(calc_length) + "\n")
+    f.write("skip_length: " + str(skip_length) + "\n")
+    f.write("frequency: " + str(w) + "\n")
+    f.write("pulse type: " + pulseType + "\n")
+    f.write("Area: " + str(Area) + "\n")
+    f.write("width: " + str(width) + "\n")
+    f.close()
+
 def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show):
     print("Started")
     if save:
@@ -170,6 +184,8 @@ def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseTy
         width = Area/np.sqrt(2*np.pi)
     else:
         width = calculateWidth(Area,tempTime,t_step*tempFactor, pulseType)
+    if save:
+        saveParameters(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,width,path)
     print("width: ", width)
     print("Frequency Grain = ", 1/(calc_length)/1E6, " MHz")
     temptime = []
@@ -216,60 +232,45 @@ def err(w,Area,time,step,pulseType):
     A = 0.
     peak = mid(time)
     for t in time:
-        A += np.sin(0.5*v(t,pulseType,w,peak))**2 * step
+        A += np.sin(0.5*v(t,pulseType,w,peak)) * step
     return (A-Area)
 
 def calculateWidth(Area,time,step, pulseType):
     pf,cov,info,mesg,success = optimize.leastsq(err,Area,args = (Area,time,step,pulseType),full_output = 1)
     return pf[0]
 
+##########Control Parameters###########################
+
+w = 3.52E14         ### frequency of 852 nm light
+Area = 1E-9         ### area under tha pulse that you want, in units of W*ns
+t_start = 0.        ### start time - probs just leave this at 0
+t_stop = 1E-8       ### ending time - make sure that it is long enough to get the whole pulse
+                    ### a good rule of thumb is to estimate the pulse width at approximately the
+                    ### the same as the area, and then double that. the pulse is automatically
+                    ### centered in the time frame
+calc_length = 5E-9  ### length of each time chunk to be fft'ed. Longer calc lengths mean higher
+                    ### better frequency resolution, but they also mean your gettig more global
+                    ### and less local data.
+t_step = 1/2./w     ### time step increment. This is the maximum value to avoid nyquist sampling.
+                    ### much shorter and the calculations will get very long
+skip_length = 1E-10 ### how far in time you skip in  between each fft. this defines the time grain
+                    ### when you look at frequency as a function of time
+save = True         ### binary, if you want to save the data
+show = False        ### binary, if you want to see the data
 
 
-w = 3.52E14
-Area = 1E-9
-t_start = 0.
-t_stop = 1E-8
-calc_length = 5E-9
-t_step = 1/2./w
-skip_length = 1E-10
-save = True
-show = False
-'''
-w = 1
-Area = 0.1
-t_start = 0.
-t_stop = 10
-calc_length = .05
-t_step = .0001
-skip_length = .01
-save = True
-show = True
-'''
+###################Done###########################################
 
-
-
-#input("\n\nstopped\n\n")
-p = ['gaussian','truegaussian','puretone']
-path  = "c:/users/bernien_lab/desktop/fft/" + str(Area) + "ns_x_Intensity_" + str(1/(calc_length)/1E6) + "_MHz_resolution/"
-if os.path.isdir(path):
-    a = input("This already Exists. Would you like to overwrite? (y/n)")
-    if a == "y":
+for i in range(2):
+    p = ['gaussian','truegaussian','square','puretone']
+    path  = "c:/users/bernien lab/desktop/fft2/" + str(Area) + "ns_x_Intensity_" + str(1/(calc_length)/1E6) + "_MHz_resolution/"
+    if os.path.isdir(path):
+        a = input("This already Exists. Would you like to overwrite? (y/n)")
+        if a == "y":
+            for pulseType in p:
+                timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path + pulseType + "/" ,save,show)
+    else:
+        os.mkdir(path)
         for pulseType in p:
-            timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show)
-else:
-    os.mkdir(path)
-    for pulseType in p:
-        timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show)
-
-'''
-Writer = animation.writers['ffmpeg']
-writer = Writer(fps=5, metadata=dict(artist='Me'), bitrate=1800)
-fig = plt.figure(figsize=(10,10))
-ax = fig.add_subplot(3,1,1)
-ax2 = fig.add_subplot(3,1,2)
-ax3 = fig.add_subplot(3,1,3)
-anim  = animation.FuncAnimation(fig, update,interval = 1)
-#anim.save('c:/users/abpoc/documents/fast_pulse_shaping/gaussian_updated_pulse.mp4', writer=writer)
-plt.show()
-print "done"
-'''
+            timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path  + pulseType + "/",save,show)
+    Area = 5E-10
