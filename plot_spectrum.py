@@ -49,7 +49,7 @@ for i in range(num_steps):
             E2.append(E[i])
     time.append(0.5*t_step*(t1+t2))
     shifted_freq.append(centerFreq(freq2,E2))
-    peak_freq.append(getPeak(E2))
+    peak_freq.append(getPeak(freq2,E2))
 
 plt.plot(time,shifted_freq,'r.',label = 'centroid')
 plt.plot(time,peak_freq,'b.',label = "max")
