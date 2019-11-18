@@ -163,6 +163,23 @@ def saveParameters(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Are
     f.write("width: " + str(width) + "\n")
     f.close()
 
+def centerFreq(freq,E):
+    COM = 0.0
+    tot = 0.0
+    for i in range(len(freq)):
+        COM += freq[i]*E[i]
+        tot += E[i]
+    return COM/tot
+
+def getPeak(freq,E):
+    peakfreq = freq[0]
+    peakE = E[0]
+    for i in range(len(freq)):
+        if E[i]>peakE:
+            peakE = E[i]
+            peakfreq = freq[i]
+    return peakfreq
+
 def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show):
     print("Started")
     if save:
@@ -195,15 +212,16 @@ def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseTy
     freq = np.fft.fftfreq(int(calc_length/t_step),d = t_step)
     avg1 = [0 for i in range(len(freq))]
     avg2 = [0 for i in range(len(freq))]
+    time = []
+    center_freq = []
+    centroid = []
     for i in range(num_steps):
         print("Step: ",i)
-        time = []
         E1 = []
         E2 = []
         t1 = int(skip_length*i/t_step)
         t2 = int(t1 + calc_length/t_step)
         for t in range(t1,t2):
-            time.append(t)
             #E1.append(np.exp(1j*w*2*np.pi*t_step*float(t) + 1j*v(t_step*float(t),pulseType,width,peak)) + np.exp(1j*w*2*np.pi*t_step*float(t)))
             E2.append(np.exp(1j*w*2*np.pi*t_step*float(t) + 0.5*1j*v(t_step*float(t),pulseType,width,peak)) + np.exp(1j*w*2*np.pi*t_step*float(t) - 0.5*1j*v(t_step*float(t),pulseType,width,peak)))
         #y1 = abs(np.fft.fft(E1))
@@ -213,6 +231,14 @@ def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseTy
             avg2[i] += y2[i]/num_steps
         if save:
             writeToText(path,freq,y2,str(0.5*t_step*(t1+t2)))
+        time.append(0.5*t_step*(t1+t2))
+        centroid.append(centerFreq(freq,E2))
+        center_freq.append(getPeak(freq,E2))
+    if save:
+        writeToText(path,time,centroid,"centroid_frequencies")
+        writeToText(path,time,center_freq,"peak_frequencies")
+
+
     plt.title(pulseType)
     #plt.plot(freq,np.log(avg1),'b.',label = 'zcut')
     plt.plot(freq,np.log(avg2),'r.',label = 'xcut')
@@ -251,7 +277,7 @@ t_stop = 1E-8       ### ending time - make sure that it is long enough to get th
 calc_length = 5E-9  ### length of each time chunk to be fft'ed. Longer calc lengths mean higher
                     ### better frequency resolution, but they also mean your gettig more global
                     ### and less local data.
-t_step = 1/2./w     ### time step increment. This is the maximum value to avoid nyquist sampling.
+t_step = 1/4./w     ### time step increment. This is the maximum value to avoid nyquist sampling.
                     ### much shorter and the calculations will get very long
 skip_length = 1E-10 ### how far in time you skip in  between each fft. this defines the time grain
                     ### when you look at frequency as a function of time
