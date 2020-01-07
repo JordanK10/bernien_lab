@@ -138,7 +138,6 @@ void AWGController::pushStaticWaveforms(vector<Waveform> waveforms, bool first_p
 
   int dataSize = waveforms[0].dataVectorShort.size()*2;
   cudaHostAlloc((void **)&pvBuffer,dataSize*BYTES_PER_DATA,cudaHostAllocPortable);
-
 	if (!pvBuffer){
 		nSpcMErrorMessageStdOut(&stCard, "Memory allocation error\n", false);
     return;
@@ -216,7 +215,7 @@ bool AWGController::run(int timeout, int channel){
     cout << (szErrorText) << endl; // print the error text
     return false;
   }
-  // spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_FORCETRIGGER);
+  spcm_dwSetParam_i32 (stCard.hDrv, SPC_M2CMD, M2CMD_CARD_FORCETRIGGER);
 
   cout << "Running...";
   return true;
