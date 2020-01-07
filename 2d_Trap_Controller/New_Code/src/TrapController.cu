@@ -368,7 +368,9 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 			rearrangeDataSize = loadedTrapWaveforms[start_index][dest_index].initializeFromMovingWaveform(moveDuration,starting_configuration, ending_configuration,start_index, dest_index);
 			tempWave = NULL;
 			size_t size = rearrangeDataSize*sizeof(short);
+			cout <<size/1E6<< " Megabytes" << endl;
 			if(numDevices == 1){
+				cout << 1 << endl;
 				cudaSetDevice(defaultDevice);
 				err =  cudaMalloc((void **)&tempWave, size);
 				if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;}
@@ -378,9 +380,13 @@ bool TrapController::loadPrecomputedWaveforms(double moveDuration, string starti
 			}
 
 			if(numDevices == 2){
+				cout << 2<< endl;
 				cudaSetDevice(0);
 				err =  cudaMalloc((void **)&tempWave, size);
-				if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;}
+				if(err != cudaSuccess){cout << "Memory Allocation Error"<<endl;
+					cout << cudaGetErrorString(cudaGetLastError()) << endl;
+				}
+
 				err = cudaMemcpy(tempWave,loadedTrapWaveforms[start_index][dest_index].dataShort,size,cudaMemcpyHostToDevice);
 				if(err != cudaSuccess){cout << "Memory Transfer Error" << endl;}
 				tempCudaWaveforms.push_back(tempWave);

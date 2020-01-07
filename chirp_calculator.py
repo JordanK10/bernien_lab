@@ -215,28 +215,35 @@ def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseTy
     time = []
     center_freq = []
     centroid = []
+    E_field = []
+    Voltage = []
+    currTime = []
     for i in range(num_steps):
         print("Step: ",i)
-        E1 = []
         E2 = []
+
         t1 = int(skip_length*i/t_step)
         t2 = int(t1 + calc_length/t_step)
         for t in range(t1,t2):
-            #E1.append(np.exp(1j*w*2*np.pi*t_step*float(t) + 1j*v(t_step*float(t),pulseType,width,peak)) + np.exp(1j*w*2*np.pi*t_step*float(t)))
-            E2.append(np.exp(1j*w*2*np.pi*t_step*float(t) + 0.5*1j*v(t_step*float(t),pulseType,width,peak)) + np.exp(1j*w*2*np.pi*t_step*float(t) - 0.5*1j*v(t_step*float(t),pulseType,width,peak)))
-        #y1 = abs(np.fft.fft(E1))
+            currVoltage = v(t_step*float(t),pulseType,width,peak)
+            currTime.append(float(t)*t_step)
+            Voltage.append(currVoltage)
+            curr_E = np.exp(1j*w*2*np.pi*t_step*float(t) + 0.5*1j*currVoltage) - np.exp(1j*w*2*np.pi*t_step*float(t) - 0.5*1j*currVoltage)
+            E2.append(curr_E)
+            E_field.append(abs(curr_E))
         y2 = abs(np.fft.fft(E2))
         for i in range(len(freq)):
-            #avg1[i] += y1[i]/num_steps
             avg2[i] += y2[i]/num_steps
         if save:
             writeToText(path,freq,y2,str(0.5*t_step*(t1+t2)))
         time.append(0.5*t_step*(t1+t2))
-        centroid.append(centerFreq(freq,E2))
-        center_freq.append(getPeak(freq,E2))
+        centroid.append(centerFreq(freq,y2))
+        center_freq.append(getPeak(freq,y2))
     if save:
         writeToText(path,time,centroid,"centroid_frequencies")
         writeToText(path,time,center_freq,"peak_frequencies")
+        writeToText(path,currTime,E_field,"E_vs_Time")
+        writeToText(path,currTime,Voltage,"Voltage_vs_Time")
 
 
     plt.title(pulseType)
@@ -268,18 +275,18 @@ def calculateWidth(Area,time,step, pulseType):
 ##########Control Parameters###########################
 
 w = 3.52E14         ### frequency of 852 nm light
-Area = 1E-9         ### area under tha pulse that you want, in units of W*ns
+Area = 1E-9         ### area under tha pulse that you want, in units of E*s
 t_start = 0.        ### start time - probs just leave this at 0
 t_stop = 1E-8       ### ending time - make sure that it is long enough to get the whole pulse
                     ### a good rule of thumb is to estimate the pulse width at approximately the
                     ### the same as the area, and then double that. the pulse is automatically
                     ### centered in the time frame
-calc_length = 5E-9  ### length of each time chunk to be fft'ed. Longer calc lengths mean higher
+calc_length = 1E-10  ### length of each time chunk to be fft'ed. Longer calc lengths mean higher
                     ### better frequency resolution, but they also mean your gettig more global
                     ### and less local data.
 t_step = 1/4./w     ### time step increment. This is the maximum value to avoid nyquist sampling.
                     ### much shorter and the calculations will get very long
-skip_length = 1E-10 ### how far in time you skip in  between each fft. this defines the time grain
+skip_length = 5E-11 ### how far in time you skip in  between each fft. this defines the time grain
                     ### when you look at frequency as a function of time
 save = True         ### binary, if you want to save the data
 show = False        ### binary, if you want to see the data
@@ -287,16 +294,15 @@ show = False        ### binary, if you want to see the data
 
 ###################Done###########################################
 
-for i in range(2):
-    p = ['gaussian','truegaussian','square','puretone']
-    path  = "c:/users/bernien lab/desktop/fft2/" + str(Area) + "ns_x_Intensity_" + str(1/(calc_length)/1E6) + "_MHz_resolution/"
-    if os.path.isdir(path):
-        a = input("This already Exists. Would you like to overwrite? (y/n)")
-        if a == "y":
-            for pulseType in p:
-                timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path + pulseType + "/" ,save,show)
-    else:
-        os.mkdir(path)
+
+p = ['gaussian','truegaussian','square','puretone']
+path  = "c:/users/bernien lab/desktop/fft3/" + str(Area) + "ns_x_Intensity_" + str(round(1/(calc_length)/1E6,0)) + "_MHz_resolution/"
+if os.path.isdir(path):
+    a = input("This already Exists. Would you like to overwrite? (y/n)")
+    if a == "y":
         for pulseType in p:
-            timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path  + pulseType + "/",save,show)
-    Area = 5E-10
+            timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path + pulseType + "/" ,save,show)
+else:
+    os.mkdir(path)
+    for pulseType in p:
+        timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path  + pulseType + "/",save,show)
