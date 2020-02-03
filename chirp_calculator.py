@@ -163,23 +163,6 @@ def saveParameters(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Are
     f.write("width: " + str(width) + "\n")
     f.close()
 
-def centerFreq(freq,E):
-    COM = 0.0
-    tot = 0.0
-    for i in range(len(freq)):
-        COM += freq[i]*E[i]
-        tot += E[i]
-    return COM/tot
-
-def getPeak(freq,E):
-    peakfreq = freq[0]
-    peakE = E[0]
-    for i in range(len(freq)):
-        if E[i]>peakE:
-            peakE = E[i]
-            peakfreq = freq[i]
-    return peakfreq
-
 def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path,save,show):
     print("Started")
     if save:
@@ -212,40 +195,24 @@ def timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseTy
     freq = np.fft.fftfreq(int(calc_length/t_step),d = t_step)
     avg1 = [0 for i in range(len(freq))]
     avg2 = [0 for i in range(len(freq))]
-    time = []
-    center_freq = []
-    centroid = []
-    E_field = []
-    Voltage = []
-    currTime = []
     for i in range(num_steps):
         print("Step: ",i)
+        time = []
+        E1 = []
         E2 = []
-
         t1 = int(skip_length*i/t_step)
         t2 = int(t1 + calc_length/t_step)
         for t in range(t1,t2):
-            currVoltage = v(t_step*float(t),pulseType,width,peak)
-            currTime.append(float(t)*t_step)
-            Voltage.append(currVoltage)
-            curr_E = np.exp(1j*w*2*np.pi*t_step*float(t) + 0.5*1j*currVoltage) - np.exp(1j*w*2*np.pi*t_step*float(t) - 0.5*1j*currVoltage)
-            E2.append(curr_E)
-            E_field.append(abs(curr_E))
+            time.append(t)
+            #E1.append(np.exp(1j*w*2*np.pi*t_step*float(t) + 1j*v(t_step*float(t),pulseType,width,peak)) + np.exp(1j*w*2*np.pi*t_step*float(t)))
+            E2.append(np.exp(1j*w*2*np.pi*t_step*float(t) + 0.5*1j*v(t_step*float(t),pulseType,width,peak)) + np.exp(1j*w*2*np.pi*t_step*float(t) - 0.5*1j*v(t_step*float(t),pulseType,width,peak)))
+        #y1 = abs(np.fft.fft(E1))
         y2 = abs(np.fft.fft(E2))
         for i in range(len(freq)):
+            #avg1[i] += y1[i]/num_steps
             avg2[i] += y2[i]/num_steps
         if save:
             writeToText(path,freq,y2,str(0.5*t_step*(t1+t2)))
-        time.append(0.5*t_step*(t1+t2))
-        centroid.append(centerFreq(freq,y2))
-        center_freq.append(getPeak(freq,y2))
-    if save:
-        writeToText(path,time,centroid,"centroid_frequencies")
-        writeToText(path,time,center_freq,"peak_frequencies")
-        writeToText(path,currTime,E_field,"E_vs_Time")
-        writeToText(path,currTime,Voltage,"Voltage_vs_Time")
-
-
     plt.title(pulseType)
     #plt.plot(freq,np.log(avg1),'b.',label = 'zcut')
     plt.plot(freq,np.log(avg2),'r.',label = 'xcut')
@@ -275,18 +242,18 @@ def calculateWidth(Area,time,step, pulseType):
 ##########Control Parameters###########################
 
 w = 3.52E14         ### frequency of 852 nm light
-Area = 1E-9         ### area under tha pulse that you want, in units of E*s
+Area = 1E-9         ### area under tha pulse that you want, in units of W*ns
 t_start = 0.        ### start time - probs just leave this at 0
 t_stop = 1E-8       ### ending time - make sure that it is long enough to get the whole pulse
                     ### a good rule of thumb is to estimate the pulse width at approximately the
                     ### the same as the area, and then double that. the pulse is automatically
                     ### centered in the time frame
-calc_length = 1E-10  ### length of each time chunk to be fft'ed. Longer calc lengths mean higher
+calc_length = 5E-9  ### length of each time chunk to be fft'ed. Longer calc lengths mean higher
                     ### better frequency resolution, but they also mean your gettig more global
                     ### and less local data.
-t_step = 1/4./w     ### time step increment. This is the maximum value to avoid nyquist sampling.
+t_step = 1/2./w     ### time step increment. This is the maximum value to avoid nyquist sampling.
                     ### much shorter and the calculations will get very long
-skip_length = 5E-11 ### how far in time you skip in  between each fft. this defines the time grain
+skip_length = 1E-10 ### how far in time you skip in  between each fft. this defines the time grain
                     ### when you look at frequency as a function of time
 save = True         ### binary, if you want to save the data
 show = False        ### binary, if you want to see the data
@@ -294,15 +261,244 @@ show = False        ### binary, if you want to see the data
 
 ###################Done###########################################
 
+def pulseTrain(t,clock_rate):
+    step = 1./clock_rate
+    sigma = 2.*step
+    v = 0.
+    centers = [20.*step*float(i) for i in range(51)]
+    for c in centers:
+        v += np.pi/4*np.exp(-(t-c)**2/2/sigma**2)
+    return v
 
-p = ['gaussian','truegaussian','square','puretone']
-path  = "c:/users/bernien lab/desktop/fft3/" + str(Area) + "ns_x_Intensity_" + str(round(1/(calc_length)/1E6,0)) + "_MHz_resolution/"
-if os.path.isdir(path):
-    a = input("This already Exists. Would you like to overwrite? (y/n)")
-    if a == "y":
+def singlePulse(t,clock_rate):
+    step = 1./clock_rate
+    sigma = 2.*step
+    v = 0.
+    centers = [100.*step]
+    for c in centers:
+        v += np.pi/4*np.exp(-(t-c)**2/2/sigma**2)
+    return v
+
+def noTails(t,clock_rate):
+    step = 1./clock_rate
+    sigma = 2.*step
+    v = 0.
+    centers = [5.*step]
+    for c in centers:
+        v += np.pi/4*np.exp(-(t-c)**2/2/sigma**2)
+    return v
+
+def longTails(t,clock_rate):
+    step = 1./clock_rate
+    sigma = 2.*step
+    v = 0.
+    centers = [250.*step]
+    for c in centers:
+        v += np.pi/2*np.exp(-(t-c)**2/2/sigma**2)
+    return v
+
+def g(center,sigma,t):
+    return np.exp(-(t - center)**2/2/sigma**2)
+
+def getModulationSingle(time,clock_rate):
+    return np.exp(1j*singlePulse(time,clock_rate)) + np.exp(-1j*singlePulse(time,clock_rate) + 1j*np.pi)
+
+def getModulationNoTails(time,clock_rate):
+    return np.exp(1j*noTails(time,clock_rate)) + np.exp(-1j*noTails(time,clock_rate) + 1j*np.pi)
+
+def getModulationLongTails(time,clock_rate):
+    return np.exp(1j*longTails(time,clock_rate)) + np.exp(-1j*longTails(time,clock_rate) + 1j*np.pi)
+
+def getModulationTrain(time,clock_rate):
+    return np.exp(1j*pulseTrain(time,clock_rate)) + np.exp(-1j*pulseTrain(time,clock_rate) + 1j*np.pi)
+
+def pureTone(w,t):
+    return np.exp(1j*w*2*np.pi*t)
+
+def singlePulseWithWidth(w,clock_rate,starting_width,path):
+    t_step = 1./4./w
+    num_points = int(250./4e9/t_step)
+    print("Total time points: " + str(num_points))
+    time = np.linspace(0,250./4e9,num_points)
+    modulation = getModulationSingle(time,clock_rate)
+    freqs = np.fft.fftfreq(num_points,t_step)
+    if starting_width>0:
+        E_f = g(w,starting_width,freqs)
+        print("E field constructed in frequency domain")
+        E_start = np.fft.ifft(E_f)
+        print("E converted to time domain")
+    else:
+        E_start = pureTone(w,time)
+        print("E Field Constructed")
+    E = E_start*modulation
+    print("E Field modulated in time. Beginning FFT...")
+    E_f2 = np.fft.fft(E)
+    plt.plot(freqs,E_f2,'k.')
+    plt.xlim(w-2e9,w+2e9)
+    plt.title("Single Pulse w/ " + str(starting_width) + "Hz startng Line Width")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("E Field Strength (a.u.)")
+    plt.savefig(path + "single_pulse_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.jpg")
+    plt.savefig(path + "single_pulse_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.pdf")
+    plt.close()
+    writeToText(path,freqs,E_f2,"single_pulse_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width")
+
+def singlePulseWithWidthNoTails(w,clock_rate,starting_width,path):
+    t_step = 1./10./w
+    num_points = int(10./4e9/t_step)
+    print("Total time points: " + str(num_points))
+    time = np.linspace(0,250./4e9,num_points)
+    modulation = getModulationNoTails(time,clock_rate)
+    freqs = np.fft.fftfreq(num_points,t_step)
+    if starting_width>0:
+        E_f = g(w,starting_width,freqs)
+        print("E field constructed in frequency domain")
+        E_start = np.fft.ifft(E_f)
+        print("E converted to time domain")
+    else:
+        E_start = pureTone(w,time)
+        print("E Field Constructed")
+    E = E_start*modulation
+    print("E Field modulated in time. Beginning FFT...")
+    E_f2 = np.fft.fft(E)
+    plt.plot(freqs,E_f2,'k.')
+    plt.xlim(w-2e9,w+2e9)
+    plt.title("Single Pulse (No Tails) w/ " + str(starting_width) + "Hz startng Line Width")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("E Field Strength (a.u.)")
+    plt.savefig(path + "single_pulse_no_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.jpg")
+    plt.savefig(path + "single_pulse_no_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.pdf")
+    plt.close()
+    writeToText(path,freqs,E_f2,"single_pulse_no_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width")
+
+def singlePulseWithWidthLongTails(w,clock_rate,starting_width,path):
+    t_step = 1./4./w
+    num_points = int(500./4e9/t_step)
+    print("Total time points: " + str(num_points))
+    time = np.linspace(0,500./4e9,num_points)
+    modulation = getModulationLongTails(time,clock_rate)
+    freqs = np.fft.fftfreq(num_points,t_step)
+    if starting_width>0:
+        E_f = g(w,starting_width,freqs)
+        print("E field constructed in frequency domain")
+        E_start = np.fft.ifft(E_f)
+        print("E converted to time domain")
+    else:
+        E_start = pureTone(w,time)
+        print("E Field Constructed")
+    E = E_start*modulation
+    print("E Field modulated in time. Beginning FFT...")
+    E_f2 = np.fft.fft(E)
+    plt.plot(freqs,E_f2,'k.')
+    plt.xlim(w-2e9,w+2e9)
+    plt.title("Single Pulse (Long Tails) w/ " + str(starting_width) + "Hz startng Line Width")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("E Field Strength (a.u.)")
+    plt.savefig(path + "single_pulse_long_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.jpg")
+    plt.savefig(path + "single_pulse_long_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.pdf")
+    plt.close()
+    reduced_E = []
+    new_freqs = []
+    for i in range(len(freqs)):
+        if freqs[i]>=w-2e9 and freqs[i]<=w+2e9:
+            new_freqs.append(freqs[i])
+            reduced_E.append(E_f2[i])
+    writeToText(path,new_freqs,reduced_E,"single_pulse_long_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width")
+
+def pulseTrainWithWidth(w,clock_rate,starting_width,path):
+    t_step = 1./4./w
+    num_points = int(250./4e9/t_step)
+    print("Total time points: " + str(num_points))
+    time = np.linspace(0,250./4e9,num_points)
+    modulation = getModulationTrain(time,clock_rate)
+    freqs = np.fft.fftfreq(num_points,t_step)
+    if starting_width>0:
+        E_f = g(w,starting_width,freqs)
+        print("E field constructed in frequency domain")
+        E_start = np.fft.ifft(E_f)
+        print("E converted to time domain")
+    else:
+        E_start = pureTone(w,time)
+        print("E Field Constructed")
+    E = E_start*modulation
+    print("E Field modulated in time. Beginning FFT...")
+    E_f2 = np.fft.fft(E)
+    plt.plot(freqs,E_f2,'k.')
+    plt.xlim(w-2e9,w+2e9)
+    plt.title("Pulse Train w/ " + str(starting_width) + "Hz startng Line Width")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("E Field Strength (a.u.)")
+    plt.savefig( path + "pulse_train_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.jpg")
+    plt.savefig(path + "pulse_train_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width.pdf")
+    plt.close()
+    writeToText(path,freqs,E_f2,"pulse_train_fft_" + str(clock_rate/1e9) + "GSs_" + str(starting_width) + "Hz_line_width")
+
+def extractRelevantData(path,path2,freq1,freq2):
+    freq,E = np.loadtxt(path + ".txt",unpack = True,skiprows = 1, dtype=complex, converters={0: lambda s: complex(s.decode().replace('+-', '-'))})
+    f = open(path2 + "reduced.txt",'w')
+    f.write("freq\tE\n")
+    for i in range(len(freq)):
+        if float(freq[i]) >= freq1 and freq[i] <= freq2:
+            f.write(str(freq[i]) + "\t" + str(E[i]) + "\n")
+    f.close()
+"""
+path  = "c:/users/bernien lab/desktop/pulse_ffts_variable_clock_rate_2/"
+#os.mkdir(path)
+for clock_rate in [2e9,3e9,4e9]:
+    for sigma in [0,2e5,5e5,1e6]:
+        if clock_rate == 2e9:
+            continue
+        if clock_rate == 3e9:
+            continue
+        if clock_rate == 4e9 and sigma == 0:
+            continue
+        if clock_rate == 4e9 and sigma == 2e5:
+            pulseTrainWithWidth(w,clock_rate,sigma,path)
+        else:
+            singlePulseWithWidthNoTails(w,clock_rate,sigma,path)
+            singlePulseWithWidth(w,clock_rate,sigma,path)
+            pulseTrainWithWidth(w,clock_rate,sigma,path)
+"""
+
+#SAMPLE WITH lONG Tails
+path  = "c:/users/bernien lab/desktop/long_sample/"
+#os.mkdir(path)
+for clock_rate in [3e9,4e9]:
+    for sigma in [0,2e5,5e5]:
+        singlePulseWithWidthLongTails(w,clock_rate,sigma,path)
+
+"""
+path  = "c:/users/bernien lab/desktop/pulse_ffts_variable_clock_rate_2/"
+path3 = "c:/users/bernien lab/desktop/pulse_ffts_reduced_txt/"
+os.mkdir(path3)
+freq1  = w - 2e9
+freq2 = w + 2e9
+for clock_rate in [2e9,3e9,4e9]:
+    for sigma in [0,2e5,5e5,1e6]:
+        print(sigma)
+        path2 = path + "pulse_train_fft_" + str(clock_rate/1e9) + "GSs_" + str(sigma) + "Hz_line_width"
+        path4  =path3 + "pulse_train_fft_" + str(clock_rate/1e9) + "GSs_" + str(sigma) + "Hz_line_width"
+        extractRelevantData(path2,path4,freq1,freq2)
+        path2 = path + "single_pulse_fft_" + str(clock_rate/1e9) + "GSs_" + str(sigma) + "Hz_line_width"
+        path4  =path3 + "single_pulse_fft_" + str(clock_rate/1e9) + "GSs_" + str(sigma) + "Hz_line_width"
+        extractRelevantData(path2,path4,freq1,freq2)
+        path2 = path + "single_pulse_no_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(sigma) + "Hz_line_width"
+        path4  =path3 + "single_pulse_no_tails_fft_" + str(clock_rate/1e9) + "GSs_" + str(sigma) + "Hz_line_width"
+        extractRelevantData(path2,path4,freq1,freq2)
+"""
+
+"""
+for i in range(2):
+    p = ['gaussian','truegaussian','square','puretone']
+    path  = "c:/users/bernien lab/desktop/fft2/" + str(Area) + "ns_x_Intensity_" + str(1/(calc_length)/1E6) + "_MHz_resolution/"
+    if os.path.isdir(path):
+        a = input("This already Exists. Would you like to overwrite? (y/n)")
+        if a == "y":
+            for pulseType in p:
+                timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path + pulseType + "/" ,save,show)
+    else:
+        os.mkdir(path)
         for pulseType in p:
-            timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path + pulseType + "/" ,save,show)
-else:
-    os.mkdir(path)
-    for pulseType in p:
-        timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path  + pulseType + "/",save,show)
+            timeAveragedFreqHist(t_start,t_stop,t_step,calc_length,skip_length,w,pulseType,Area,path  + pulseType + "/",save,show)
+    Area = 5E-10
+"""
